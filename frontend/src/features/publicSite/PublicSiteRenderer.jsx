@@ -174,7 +174,7 @@ const CTASection = ({ props, branding }) => {
 const ContactFormSection = ({ props, branding, websiteId }) => {
     const fields = props.fields || ["name", "email", "message"];
     const initialFormData = fields.reduce((acc, field) => ({ ...acc, [field]: "" }), {});
-    
+
     const [formData, setFormData] = useState(initialFormData);
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -250,7 +250,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
             fontFamily: font ? `"${font}", sans-serif` : undefined,
         }}>
             {props.heading && <h2 style={{ fontSize: "2rem", fontWeight: "700", color: textColor, marginBottom: "32px", textAlign: "center" }}>{props.heading}</h2>}
-            
+
             {error && (
                 <div style={{
                     padding: "12px 16px", borderRadius: "8px", marginBottom: "16px",
@@ -266,7 +266,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                     const fieldName = field.toLowerCase();
                     const isTextarea = fieldName.includes("message") || fieldName.includes("comment") || fieldName.includes("details");
                     const inputType = fieldName.includes("email") ? "email" : fieldName.includes("phone") ? "tel" : "text";
-                    
+
                     return isTextarea ? (
                         <textarea
                             key={fieldName}
@@ -357,14 +357,19 @@ export default function PublicSiteRenderer() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const slug = tenantSlug || window.location.hostname.split(".")[0];
+        let slug = tenantSlug;
+        if (!slug) {
+            // Always pass the full hostname to let backend match Domain exact string
+            slug = window.location.hostname;
+        }
+
         const websiteId = searchParams.get("websiteId");
         const url = websiteId ? `/public/sites/${slug}?websiteId=${websiteId}` : `/public/sites/${slug}`;
-        
+
         console.log("🔍 Fetching site from:", url);
         console.log("   Tenant slug:", slug);
         console.log("   Website ID param:", websiteId);
-        
+
         api.get(url)
             .then((res) => {
                 console.log("✅ API Response:", res.data);
@@ -372,7 +377,7 @@ export default function PublicSiteRenderer() {
                 console.log("   Website object:", res.data.website);
                 console.log("   Website._id:", res.data.website?._id);
                 console.log("   Type of _id:", typeof res.data.website?._id);
-                
+
                 setSiteData(res.data);
                 const home = res.data.pages.find((p) => p.isHomePage) || res.data.pages[0];
                 setCurrentPage(home);
@@ -421,13 +426,13 @@ export default function PublicSiteRenderer() {
 
     const branding = siteData?.tenant?.branding;
     const sections = currentPage?.layoutConfig?.sections || [];
-    
+
     // Get websiteId from URL query param (most reliable) or fallback to page data
     const websiteIdFromUrl = searchParams.get("websiteId");
-    const websiteId = websiteIdFromUrl || 
-                      siteData?.website?._id || 
-                      currentPage?.websiteId || 
-                      siteData?.pages?.[0]?.websiteId;
+    const websiteId = websiteIdFromUrl ||
+        siteData?.website?._id ||
+        currentPage?.websiteId ||
+        siteData?.pages?.[0]?.websiteId;
 
     console.log("✅ Website ID:", websiteId, "(from URL:", websiteIdFromUrl, ")");
 

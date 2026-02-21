@@ -165,16 +165,24 @@ export const publishWebsite = async (req, res) => {
     website.status = "published";
     website.publishedAt = new Date();
 
-    // If a domain was selected, link it to this website
+    const Domain = (await import("../domain/domain.model.js")).default;
     let linkedDomain = null;
+
     if (domainId) {
-        const Domain = (await import("../domain/domain.model.js")).default;
         const domain = await Domain.findOne({ _id: domainId, tenantId: req.tenantId, verified: true });
         if (domain) {
             domain.websiteId = website._id;
             await domain.save();
             website.defaultDomain = domain.domain;
             linkedDomain = domain.domain;
+        }
+    } else {
+        // Find default domain and map it if we are using the fallback
+        const defaultDomainDoc = await Domain.findOne({ domain: website.defaultDomain, tenantId: req.tenantId });
+        if (defaultDomainDoc) {
+            defaultDomainDoc.websiteId = website._id;
+            await defaultDomainDoc.save();
+            linkedDomain = defaultDomainDoc.domain;
         }
     }
 

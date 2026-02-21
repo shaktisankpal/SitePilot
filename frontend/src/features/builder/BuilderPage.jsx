@@ -42,9 +42,15 @@ export default function BuilderPage() {
 
     useEffect(() => {
         const socket = connectSocket(token);
+        let initJoin;
         if (socket && pageId && websiteId) {
-            socket.emit("join:website", { websiteId });
-            socket.emit("join:page", { pageId, userName: user?.name });
+            initJoin = () => {
+                socket.emit("join:website", { websiteId });
+                socket.emit("join:page", { pageId, userName: user?.name });
+            };
+
+            if (socket.connected) initJoin();
+            socket.on("connect", initJoin);
             socket.on("editors:update", ({ editors }) => dispatch(setActiveEditors(editors)));
             socket.on("content:update", (data) => { if (data.updatedBy !== user?._id) dispatch(applyRemoteUpdate(data)); });
             socket.on("autosave:success", () => { });
@@ -63,6 +69,7 @@ export default function BuilderPage() {
         return () => {
             const s = getSocket();
             if (s && pageId) {
+                if (initJoin) s.off("connect", initJoin);
                 s.emit("leave:page", { pageId });
                 s.off("editors:update");
                 s.off("content:update");

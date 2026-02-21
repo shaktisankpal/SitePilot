@@ -149,12 +149,15 @@ export const initializeSockets = (io) => {
         /**
          * chat:send — user sends a chat message (workspace/website level)
          */
-        socket.on("chat:send", async ({ websiteId, message }) => {
+        socket.on("chat:send", async ({ websiteId, message, userName }) => {
             if (!websiteId || !message?.trim()) return;
 
             const roomKey = `${socket.tenantId}:website:${websiteId}`;
-            const userName = socket.currentUserName || "Anonymous";
-            const color = socket.currentColor || "#6366f1";
+            const activeUserName = userName || socket.currentUserName || "Anonymous";
+            const color = socket.currentColor || getNextColor();
+            if (!socket.currentColor) {
+                socket.currentColor = color;
+            }
 
             try {
                 // Save to DB
@@ -162,7 +165,7 @@ export const initializeSockets = (io) => {
                     tenantId: socket.tenantId,
                     websiteId,
                     userId: socket.userId,
-                    userName,
+                    userName: activeUserName,
                     message: message.trim(),
                     color,
                 });
@@ -172,12 +175,14 @@ export const initializeSockets = (io) => {
                     _id: chatMsg._id,
                     websiteId,
                     userId: socket.userId,
-                    userName,
+                    userName: activeUserName,
                     message: chatMsg.message,
                     color,
                     createdAt: chatMsg.createdAt,
                 });
+                console.log(`💬 Chat message sent in room ${roomKey} by ${activeUserName}`);
             } catch (err) {
+                console.error("❌ Chat save error:", err);
                 socket.emit("chat:error", { message: err.message });
             }
         });

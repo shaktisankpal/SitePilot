@@ -15,7 +15,6 @@ const ChatMessageSchema = new mongoose.Schema(
         pageId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Page",
-            required: true,
             index: true,
         },
         userId: {

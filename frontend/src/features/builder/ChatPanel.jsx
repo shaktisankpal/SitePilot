@@ -17,14 +17,27 @@ export default function ChatPanel({ websiteId }) {
         const socket = getSocket();
         if (!socket || !websiteId) return;
 
-        // Request history
-        socket.emit("chat:history", { websiteId, limit: 50 });
+        const joinSetup = () => {
+            // Join the website room for chat
+            socket.emit("join:website", { websiteId });
+
+            // Request history
+            socket.emit("chat:history", { websiteId, limit: 50 });
+        };
+
+        if (socket.connected) {
+            joinSetup();
+        }
+
+        socket.on("connect", joinSetup);
 
         const handleHistory = (data) => {
+            console.log("📥 chat:history received:", data);
             if (data.websiteId === websiteId) setMessages(data.messages);
         };
 
         const handleMessage = (msg) => {
+            console.log("📥 chat:message received:", msg);
             if (msg.websiteId === websiteId) {
                 setMessages((prev) => [...prev, msg]);
                 if (!open && msg.userId !== user?._id) {
@@ -33,12 +46,19 @@ export default function ChatPanel({ websiteId }) {
             }
         };
 
+        const handleError = (err) => {
+            console.error("❌ chat:error received:", err);
+        };
+
         socket.on("chat:history", handleHistory);
         socket.on("chat:message", handleMessage);
+        socket.on("chat:error", handleError);
 
         return () => {
+            socket.off("connect", joinSetup);
             socket.off("chat:history", handleHistory);
             socket.off("chat:message", handleMessage);
+            socket.off("chat:error", handleError);
         };
     }, [websiteId, open, user]);
 
@@ -52,7 +72,7 @@ export default function ChatPanel({ websiteId }) {
     const handleSend = () => {
         const socket = getSocket();
         if (!socket || !draft.trim()) return;
-        socket.emit("chat:send", { websiteId, message: draft.trim() });
+        socket.emit("chat:send", { websiteId, message: draft.trim(), userName: user?.name });
         setDraft("");
         inputRef.current?.focus();
     };

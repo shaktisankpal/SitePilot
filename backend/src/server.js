@@ -37,13 +37,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = http.createServer(app);
 
+const corsOptions = {
+    origin: (origin, callback) => callback(null, true),
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true,
+};
+
 // Socket.io
 const io = new Server(httpServer, {
-    cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
-        methods: ["GET", "POST"],
-        credentials: true,
-    },
+    cors: corsOptions,
 });
 
 initializeSockets(io);
@@ -55,12 +57,7 @@ app.use(
     })
 );
 
-app.use(
-    cors({
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
-        credentials: true,
-    })
-);
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({

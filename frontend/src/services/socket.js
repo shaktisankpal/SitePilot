@@ -3,7 +3,10 @@ import io from "socket.io-client";
 let socket = null;
 
 export const connectSocket = (token) => {
-    if (socket?.connected) return socket;
+    if (socket) {
+        if (socket.auth?.token === token) return socket;
+        socket.disconnect();
+    }
 
     socket = io("http://localhost:5000", {
         auth: { token },

@@ -6,13 +6,24 @@ import { Rocket, Globe, X, Loader2, CheckCircle, ExternalLink, ChevronDown } fro
 
 export default function PublishModal({ websiteId, onClose }) {
     const dispatch = useDispatch();
-    const { domains } = useSelector((s) => s.website);
+    const { domains, websites } = useSelector((s) => s.website);
     const [selectedDomainId, setSelectedDomainId] = useState("");
     const [publishing, setPublishing] = useState(false);
 
     useEffect(() => {
         dispatch(fetchDomains());
     }, [dispatch]);
+
+    // Pre-select the domain if the website is already linked to one
+    useEffect(() => {
+        const website = websites.find(w => w._id === websiteId);
+        if (website && website.defaultDomain) {
+            const linkedDomain = domains.find(d => d.domain === website.defaultDomain);
+            if (linkedDomain) {
+                setSelectedDomainId(linkedDomain._id);
+            }
+        }
+    }, [websites, domains, websiteId]);
 
     const verifiedDomains = domains.filter((d) => d.verified);
 
@@ -25,11 +36,23 @@ export default function PublishModal({ websiteId, onClose }) {
         setPublishing(false);
         if (publishWebsite.fulfilled.match(res)) {
             const selectedDomain = verifiedDomains.find((d) => d._id === selectedDomainId);
+            const defaultDomain = domains.find((d) => d.isDefault);
+
+            const targetDomainStr = selectedDomain
+                ? selectedDomain.domain
+                : (defaultDomain ? defaultDomain.domain : "");
+
             toast.success(
                 selectedDomain
                     ? `Published to ${selectedDomain.domain}! 🚀`
                     : "Website published! 🚀"
             );
+
+            if (targetDomainStr) {
+                const url = `${window.location.origin}/site/${targetDomainStr}`;
+                window.open(url, "_blank");
+            }
+
             onClose();
         } else {
             toast.error(res.payload || "Publish failed");

@@ -200,7 +200,7 @@ export default function WebsitesPage() {
                                             {site.status === "published" ? "Live" : "Draft"}
                                         </span>
                                         {site.status === "published" && (
-                                            <a href={`/site/${tenant?.slug || ""}?websiteId=${site._id}`} target="_blank" rel="noreferrer"
+                                            <a href={`/site/${site.defaultDomain}`} target="_blank" rel="noreferrer"
                                                 style={{ padding: 6, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", display: "flex" }}>
                                                 <ExternalLink size={14} />
                                             </a>

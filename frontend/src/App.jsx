@@ -16,6 +16,30 @@ import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
 import HomePage from "./features/home/HomePage.jsx";
 
 export default function App() {
+  const hostname = window.location.hostname;
+
+  // Identify if we are viewing a published site via subdomain or custom domain
+  const isSaasApp =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "sitepilot.com" ||
+    hostname === "www.sitepilot.com" ||
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) ||
+    hostname.includes("ngrok");
+
+  if (!isSaasApp) {
+    return (
+      <Provider store={store}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<PublicSiteRenderer />} />
+            <Route path="/:pageSlug" element={<PublicSiteRenderer />} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
+    );
+  }
+
   return (
     <Provider store={store}>
       <BrowserRouter>
