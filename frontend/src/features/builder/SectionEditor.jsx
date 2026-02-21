@@ -133,31 +133,87 @@ export default function SectionEditor({ section, onChange }) {
         </div>
     );
 
-    const renderColorField = (label, key, defaultVal = "#6366f1") => (
-        <div key={key}>
-            <label style={labelStyle}>{label}</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                <div style={{
-                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                    background: props[key] || defaultVal,
-                    position: "relative", overflow: "hidden", cursor: "pointer",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    boxShadow: `0 2px 8px ${props[key] || defaultVal}40`,
-                }}>
-                    <input type="color" value={props[key] || defaultVal}
-                        onChange={(e) => handleChange(key, e.target.value)}
-                        style={{ position: "absolute", inset: -8, width: 60, height: 60, cursor: "pointer", opacity: 0 }}
-                    />
-                </div>
-                <input
-                    value={props[key] || defaultVal}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                    placeholder={defaultVal}
-                    style={{ ...inputStyle, marginTop: 0, flex: 1, fontFamily: "monospace", fontSize: 12 }}
-                />
+    const parseColor = (col, def) => {
+        let c = col || def;
+        if (typeof c !== 'string') return { hex: "#000000", alpha: 1 };
+        if (c.startsWith("rgba")) {
+            const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            if (m) {
+                const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+                const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                return { hex, alpha: m[4] !== undefined ? parseFloat(m[4]) : 1 };
+            }
+        }
+        if (c.startsWith("#") && c.length === 9) {
+            return { hex: c.substring(0, 7), alpha: parseInt(c.substring(7, 9), 16) / 255 };
+        }
+        return { hex: c.length === 7 || c.length === 4 ? c : "#000000", alpha: 1 };
+    };
+
+    const updateColorAlpha = (hexColor, alpha) => {
+        if (alpha === 1) return hexColor;
+        const hex = hexColor.replace("#", "");
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 3) {
+            r = parseInt(hex[0] + hex[0], 16); g = parseInt(hex[1] + hex[1], 16); b = parseInt(hex[2] + hex[2], 16);
+        } else if (hex.length === 6) {
+            r = parseInt(hex.substring(0, 2), 16); g = parseInt(hex.substring(2, 4), 16); b = parseInt(hex.substring(4, 6), 16);
+        }
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    const renderSliderField = (label, key, min = 0, max = 100, step = 1, showVal = "") => (
+        <div key={key} style={{ marginTop: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <label style={{ ...labelStyle, marginTop: 4 }}>{label}</label>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{props[key] || 0}{showVal}</span>
             </div>
+            <input
+                type="range" min={min} max={max} step={step}
+                value={props[key] || 0}
+                onChange={(e) => handleChange(key, e.target.value)}
+                style={{ width: "100%", cursor: "pointer", marginTop: 4 }}
+            />
         </div>
     );
+
+    const renderColorField = (label, key, defaultVal = "#6366f1") => {
+        const { hex, alpha } = parseColor(props[key], defaultVal);
+        return (
+            <div key={key} style={{ marginTop: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 4 }}>
+                    <label style={{ ...labelStyle, marginTop: 0 }}>{label}</label>
+                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{Math.round(alpha * 100)}% Opacity</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        background: props[key] || defaultVal,
+                        position: "relative", overflow: "hidden", cursor: "pointer",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        boxShadow: `0 2px 8px ${hex}40`,
+                    }}>
+                        <input type="color" value={hex}
+                            onChange={(e) => handleChange(key, updateColorAlpha(e.target.value, alpha))}
+                            style={{ position: "absolute", inset: -8, width: 60, height: 60, cursor: "pointer", opacity: 0 }}
+                        />
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                        <input
+                            value={props[key] || defaultVal}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                            placeholder={defaultVal}
+                            style={{ ...inputStyle, marginTop: 0, fontFamily: "monospace", fontSize: 12, padding: "7px 10px" }}
+                        />
+                        <input type="range" min="0" max="1" step="0.05" value={alpha}
+                            onChange={(e) => handleChange(key, updateColorAlpha(hex, parseFloat(e.target.value)))}
+                            style={{ marginTop: 6, width: "100%", height: 4, cursor: "pointer" }}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const renderFontField = () => (
         <div key="fontFamily">
@@ -220,25 +276,35 @@ export default function SectionEditor({ section, onChange }) {
     };
 
     /** Styling section common to all section types */
-    const renderStyleControls = () => (
-        <div style={{
-            marginTop: 16, paddingTop: 14,
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-        }}>
-            <p style={{
-                fontSize: "10px", fontWeight: 800, textTransform: "uppercase",
-                letterSpacing: "0.1em", color: "rgba(255,255,255,0.25)",
-                marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
+    const renderStyleControls = () => {
+        const hasBgImage = !!props.backgroundImage;
+        return (
+            <div style={{
+                marginTop: 16, paddingTop: 14,
+                borderTop: "1px solid rgba(255,255,255,0.06)",
             }}>
-                🎨 Style Controls
-            </p>
-            {renderColorField("Background", "bgColor", "#0a0a14")}
-            {renderColorField("Text Color", "textColor", "#f0f0ff")}
-            {renderColorField("Accent Color", "accentColor", "#6366f1")}
-            {renderColorField("Secondary Color", "secondaryColor", "#8b5cf6")}
-            {renderFontField()}
-        </div>
-    );
+                <p style={{
+                    fontSize: "10px", fontWeight: 800, textTransform: "uppercase",
+                    letterSpacing: "0.1em", color: "rgba(255,255,255,0.25)",
+                    marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
+                }}>
+                    🎨 Style Controls
+                </p>
+                {hasBgImage ? (
+                    <>
+                        {renderSliderField("Background Dim", "bgDim", 0, 100, 1, "%")}
+                        {renderSliderField("Background Blur", "bgBlur", 0, 50, 1, "px")}
+                    </>
+                ) : (
+                    renderColorField("Background Color", "bgColor", "#0a0a14")
+                )}
+                {renderColorField("Text Color", "textColor", "#f0f0ff")}
+                {renderColorField("Accent Color", "accentColor", "#6366f1")}
+                {renderColorField("Secondary Color", "secondaryColor", "#8b5cf6")}
+                {renderFontField()}
+            </div>
+        );
+    };
 
     const renderByType = () => {
         switch (type) {

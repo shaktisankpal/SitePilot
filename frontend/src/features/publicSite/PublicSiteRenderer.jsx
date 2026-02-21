@@ -54,6 +54,27 @@ export const globalResponsiveCss = `
 }
 `;
 
+// ─── Component Helpers ────────────────────────────────────────────────────────
+const BackgroundLayer = ({ props }) => {
+    const bgImg = props.backgroundImage;
+    if (!bgImg) return null;
+    const blur = parseInt(props.bgBlur || 0, 10);
+    const dim = parseInt(props.bgDim || 0, 10) / 100;
+    return (
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+            <div style={{
+                position: "absolute",
+                top: -blur * 2, left: -blur * 2, right: -blur * 2, bottom: -blur * 2,
+                backgroundImage: `url(${bgImg})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: blur > 0 ? `blur(${blur}px)` : "none",
+            }} />
+            {dim > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${dim})` }} />}
+        </div>
+    );
+};
+
 // ─── Section renderers ────────────────────────────────────────────────────────
 
 const NavbarSection = ({ props, branding }) => {
@@ -120,9 +141,8 @@ const HeroSection = ({ props, branding }) => {
 
     if (variant === "Centered Image Bg") {
         return (
-            <section style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", padding: "120px 32px", minHeight: "80vh", background: "#000", overflow: "hidden", fontFamily: baseFont, textAlign: "center" }}>
-                <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80"})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.5 }} />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)" }} />
+            <section style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "120px 32px", minHeight: "80vh", background: "#000", overflow: "hidden", fontFamily: baseFont, textAlign: "center" }}>
+                <BackgroundLayer props={{ ...props, backgroundImage: props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80", bgDim: props.bgDim !== undefined ? props.bgDim : 60, bgBlur: props.bgBlur !== undefined ? props.bgBlur : 0 }} />
                 <div style={{ position: "relative", zIndex: 2, maxWidth: "800px" }}>
                     <h1 style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", fontWeight: "900", color: "#fff", marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.05", textShadow: "0 4px 24px rgba(0,0,0,0.5)" }}>{props.heading || "Revolutionary Design"}</h1>
                     {props.subheading && <p style={{ fontSize: "1.25rem", color: "rgba(255,255,255,0.8)", marginBottom: "40px", lineHeight: "1.6" }}>{props.subheading}</p>}
@@ -134,8 +154,9 @@ const HeroSection = ({ props, branding }) => {
 
     if (variant === "Split Text Right") {
         return (
-            <section style={{ display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
-                <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
+            <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
                     <div style={{ position: "relative" }}>
                         <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "auto", borderRadius: "32px", boxShadow: `0 24px 48px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)"}`, objectFit: "cover", aspectRatio: "4/5" }} />
                     </div>
@@ -152,8 +173,9 @@ const HeroSection = ({ props, branding }) => {
 
     // Default: Split Text Left
     return (
-        <section style={{ display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
-            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
+        <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
+            <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
                 <div style={{ zIndex: 2 }}>
                     <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "50px", background: `${accent}15`, color: accent, fontWeight: "700", fontSize: "12px", marginBottom: "24px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Top Tier Design</div>
                     <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "800", lineHeight: "1.1", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em" }}>{props.heading || "Revolutionary Design"}</h1>
@@ -179,8 +201,9 @@ const TextSection = ({ props, branding }) => {
 
     if (variant === "Left Aligned Big") {
         return (
-            <section style={{ padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-                <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "flex-start" }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "flex-start" }}>
                     {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "900", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
                     {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.8 }}>{props.description}</p>}
                 </div>
@@ -189,8 +212,9 @@ const TextSection = ({ props, branding }) => {
     }
     if (variant === "Card Based") {
         return (
-            <section style={{ padding: "80px 32px", background: "transparent", fontFamily: baseFont }}>
-                <div style={{ maxWidth: "900px", margin: "0 auto", background: bg, padding: "60px", borderRadius: "32px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", textAlign: "center" }}>
+            <section style={{ position: "relative", padding: "80px 32px", background: "transparent", fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "900px", margin: "0 auto", background: bg, padding: "60px", borderRadius: "32px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", textAlign: "center" }}>
                     <div style={{ width: "48px", height: "4px", background: accent, margin: "0 auto 24px", borderRadius: "2px" }} />
                     {props.heading && <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "24px", letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                     {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>{props.description}</p>}
@@ -200,7 +224,8 @@ const TextSection = ({ props, branding }) => {
     }
     // Default: Centered Standard
     return (
-        <section style={{ padding: "120px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+        <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
             <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
                 {props.heading && <h2 style={{ fontSize: "2.8rem", fontWeight: "800", marginBottom: "24px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                 {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>{props.description}</p>}
@@ -220,8 +245,9 @@ const GallerySection = ({ props, branding }) => {
 
     if (variant === "Horizontal Flex") {
         return (
-            <section style={{ padding: "80px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
-                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <section style={{ position: "relative", padding: "80px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
                     {props.heading && <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "40px" }}>{props.heading}</h2>}
                     <div style={{ display: "flex", gap: "24px", overflowX: "auto", paddingBottom: "24px" }}>
                         {(props.items || []).map((item, i) => (
@@ -239,8 +265,9 @@ const GallerySection = ({ props, branding }) => {
 
     if (variant === "Masonry Column") {
         return (
-            <section style={{ padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
                     {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", color: textColor, marginBottom: "48px", textAlign: "center" }}>{props.heading}</h2>}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "32px" }}>
                         {(props.items || []).map((item, i) => (
@@ -257,7 +284,8 @@ const GallerySection = ({ props, branding }) => {
 
     // Default: Bento Grid
     return (
-        <section style={{ padding: "100px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
             <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
                 {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", marginBottom: "48px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gridAutoRows: "280px", gap: "24px" }}>
@@ -292,8 +320,9 @@ const CTASection = ({ props, branding }) => {
 
     if (variant === "Floating Pill") {
         return (
-            <section style={{ padding: "60px 32px", background: bg, fontFamily: baseFont }}>
-                <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px 40px", borderRadius: "100px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "20px", boxShadow: `0 20px 40px ${accent}40` }}>
+            <section style={{ position: "relative", padding: "60px 32px", background: bg, fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "800px", margin: "0 auto", padding: "24px 40px", borderRadius: "100px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "20px", boxShadow: `0 20px 40px ${accent}40` }}>
                     <h2 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#fff", margin: 0 }}>{props.heading || "Ready to dive in?"}</h2>
                     {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "12px 32px", borderRadius: "50px", background: "#fff", color: accent, fontWeight: "800", fontSize: "14px", textDecoration: "none" }}>{props.ctaText}</a>}
                 </div>
@@ -319,8 +348,9 @@ const CTASection = ({ props, branding }) => {
 
     // Default: Centered Large
     return (
-        <section style={{ padding: "80px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 48px", borderRadius: "40px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <section style={{ position: "relative", padding: "80px 32px", background: bg, fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
+            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 48px", borderRadius: "40px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", zIndex: 1 }}>
                 <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at center, ${accent}20 0%, transparent 70%)` }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
                     {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "800", color: textColor, marginBottom: "20px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
@@ -388,8 +418,9 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     if (variant === "Centered Card") {
         return (
-            <section style={{ padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-                <div style={{ maxWidth: "600px", margin: "0 auto", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", padding: "60px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", padding: "60px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
                     <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "40px", textAlign: "center", letterSpacing: "-0.02em" }}>{props.heading || "Contact Us"}</h2>
                     {error && <div style={{ padding: "16px", borderRadius: "16px", marginBottom: "24px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "600" }}>{error}</div>}
                     {renderForm()}
@@ -400,7 +431,8 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     // Default: Left Text Right Form
     return (
-        <section style={{ padding: "100px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
             <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center", position: "relative", zIndex: 1 }}>
                 <div>
                     <h2 style={{ fontSize: "3.5rem", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em" }}>{props.heading || "Let's Talk"}</h2>
@@ -426,8 +458,9 @@ const FooterSection = ({ props, branding }) => {
 
     if (variant === "Multi-Column Mock") {
         return (
-            <footer style={{ padding: "80px 32px 40px", background: bg, fontFamily: baseFont, borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
-                <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "60px" }}>
+            <footer style={{ position: "relative", padding: "80px 32px 40px", background: bg, fontFamily: baseFont, borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "60px" }}>
                     <div>
                         <h3 style={{ fontSize: "20px", fontWeight: "800", color: textColor, marginBottom: "16px" }}>Company</h3>
                         <p style={{ color: textColor, opacity: 0.6, lineHeight: "1.6", maxWidth: "300px" }}>Building the future of digital experiences with uncompromising quality.</p>
@@ -436,7 +469,7 @@ const FooterSection = ({ props, branding }) => {
                     <div><h4 style={{ color: textColor, fontWeight: "700", marginBottom: "16px" }}>Resources</h4><p style={{ color: textColor, opacity: 0.6 }}>Blog</p><p style={{ color: textColor, opacity: 0.6 }}>Docs</p></div>
                     <div><h4 style={{ color: textColor, fontWeight: "700", marginBottom: "16px" }}>Legal</h4><p style={{ color: textColor, opacity: 0.6 }}>Privacy</p><p style={{ color: textColor, opacity: 0.6 }}>Terms</p></div>
                 </div>
-                <div style={{ textAlign: "center", color: textColor, opacity: 0.5, fontSize: "14px", paddingTop: "40px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
+                <div style={{ position: "relative", zIndex: 1, textAlign: "center", color: textColor, opacity: 0.5, fontSize: "14px", paddingTop: "40px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
                     {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
                 </div>
             </footer>
@@ -445,8 +478,9 @@ const FooterSection = ({ props, branding }) => {
 
     if (variant === "Ultra Minimal") {
         return (
-            <footer style={{ padding: "40px 32px", background: bg, fontFamily: baseFont, textAlign: "left" }}>
-                <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", color: textColor, opacity: 0.6, fontSize: "14px", fontWeight: "500" }}>
+            <footer style={{ position: "relative", padding: "40px 32px", background: bg, fontFamily: baseFont, textAlign: "left" }}>
+                <BackgroundLayer props={props} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", color: textColor, opacity: 0.6, fontSize: "14px", fontWeight: "500" }}>
                     <span>{props.text || `© ${new Date().getFullYear()} All rights reserved.`}</span>
                     <span>Designed with intention.</span>
                 </div>
@@ -456,9 +490,12 @@ const FooterSection = ({ props, branding }) => {
 
     // Default: Simple Centered
     return (
-        <footer style={{ padding: "48px 32px", textAlign: "center", color: textColor, fontSize: "15px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont, opacity: 0.9 }}>
-            <div style={{ position: "relative", zIndex: 1 }}>{props.text || `© ${new Date().getFullYear()} All rights reserved.`}</div>
-            <span style={{ marginLeft: "16px", fontWeight: "600", color: accent }}>Built with SitePilot</span>
+        <footer style={{ position: "relative", padding: "48px 32px", textAlign: "center", color: textColor, fontSize: "15px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, background: bg, fontFamily: baseFont }}>
+            <BackgroundLayer props={props} />
+            <div style={{ position: "relative", zIndex: 1, opacity: 0.9 }}>
+                {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
+                <span style={{ marginLeft: "16px", fontWeight: "600", color: accent }}>Built with SitePilot</span>
+            </div>
         </footer>
     );
 };
