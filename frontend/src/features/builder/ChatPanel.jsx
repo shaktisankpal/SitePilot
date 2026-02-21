@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { getSocket } from "../../services/socket.js";
 import { MessageCircle, Send, X, ChevronDown } from "lucide-react";
 
-export default function ChatPanel({ pageId }) {
+export default function ChatPanel({ websiteId }) {
     const { user } = useSelector((s) => s.auth);
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -15,17 +15,17 @@ export default function ChatPanel({ pageId }) {
     // Load chat history + listen for new messages
     useEffect(() => {
         const socket = getSocket();
-        if (!socket || !pageId) return;
+        if (!socket || !websiteId) return;
 
         // Request history
-        socket.emit("chat:history", { pageId, limit: 50 });
+        socket.emit("chat:history", { websiteId, limit: 50 });
 
         const handleHistory = (data) => {
-            if (data.pageId === pageId) setMessages(data.messages);
+            if (data.websiteId === websiteId) setMessages(data.messages);
         };
 
         const handleMessage = (msg) => {
-            if (msg.pageId === pageId) {
+            if (msg.websiteId === websiteId) {
                 setMessages((prev) => [...prev, msg]);
                 if (!open && msg.userId !== user?._id) {
                     setUnread((u) => u + 1);
@@ -40,7 +40,7 @@ export default function ChatPanel({ pageId }) {
             socket.off("chat:history", handleHistory);
             socket.off("chat:message", handleMessage);
         };
-    }, [pageId, open, user]);
+    }, [websiteId, open, user]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -52,7 +52,7 @@ export default function ChatPanel({ pageId }) {
     const handleSend = () => {
         const socket = getSocket();
         if (!socket || !draft.trim()) return;
-        socket.emit("chat:send", { pageId, message: draft.trim() });
+        socket.emit("chat:send", { websiteId, message: draft.trim() });
         setDraft("");
         inputRef.current?.focus();
     };

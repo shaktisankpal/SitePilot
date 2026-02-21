@@ -62,7 +62,16 @@ export const initializeSockets = (io) => {
             const editors = [...activeEditors.get(pageId).values()];
             io.to(roomKey).emit("editors:update", { pageId, editors });
 
-            console.log(`👥 User ${socket.userId} joined page ${pageId}`);
+        });
+
+        /**
+         * JOIN WEBSITE — editor joins a specific website for chat & presence
+         */
+        socket.on("join:website", ({ websiteId }) => {
+            if (!websiteId) return;
+            const roomKey = `${socket.tenantId}:website:${websiteId}`;
+            socket.join(roomKey);
+            socket.currentWebsiteId = websiteId;
         });
 
         /**
@@ -138,24 +147,20 @@ export const initializeSockets = (io) => {
 
         // ─── CHAT MESSAGES ────────────────────────────────────────────────
         /**
-         * chat:send — user sends a chat message
+         * chat:send — user sends a chat message (workspace/website level)
          */
-        socket.on("chat:send", async ({ pageId, message }) => {
-            if (!pageId || !message?.trim()) return;
+        socket.on("chat:send", async ({ websiteId, message }) => {
+            if (!websiteId || !message?.trim()) return;
 
-            const roomKey = `${socket.tenantId}:page:${pageId}`;
+            const roomKey = `${socket.tenantId}:website:${websiteId}`;
             const userName = socket.currentUserName || "Anonymous";
             const color = socket.currentColor || "#6366f1";
 
             try {
-                // Look up websiteId from the page
-                const page = await Page.findById(pageId).select("websiteId").lean();
-
                 // Save to DB
                 const chatMsg = await ChatMessage.create({
                     tenantId: socket.tenantId,
-                    websiteId: page?.websiteId || null,
-                    pageId,
+                    websiteId,
                     userId: socket.userId,
                     userName,
                     message: message.trim(),
@@ -165,7 +170,7 @@ export const initializeSockets = (io) => {
                 // Broadcast to the entire room (including sender)
                 io.to(roomKey).emit("chat:message", {
                     _id: chatMsg._id,
-                    pageId,
+                    websiteId,
                     userId: socket.userId,
                     userName,
                     message: chatMsg.message,
@@ -178,13 +183,13 @@ export const initializeSockets = (io) => {
         });
 
         /**
-         * chat:history — fetch recent messages for this page
+         * chat:history — fetch recent messages for this website
          */
-        socket.on("chat:history", async ({ pageId, limit }) => {
-            if (!pageId) return;
+        socket.on("chat:history", async ({ websiteId, limit }) => {
+            if (!websiteId) return;
             try {
                 const messages = await ChatMessage.find({
-                    pageId,
+                    websiteId,
                     tenantId: socket.tenantId,
                 })
                     .sort({ createdAt: -1 })
@@ -192,7 +197,7 @@ export const initializeSockets = (io) => {
                     .lean();
 
                 socket.emit("chat:history", {
-                    pageId,
+                    websiteId,
                     messages: messages.reverse(), // oldest first
                 });
             } catch (err) {
@@ -201,11 +206,29 @@ export const initializeSockets = (io) => {
         });
 
         /**
+         * CURSOR POSITION
+         */
+        socket.on("cursor:move", ({ pageId, x, y }) => {
+            if (!pageId) return;
+            const roomKey = `${socket.tenantId}:page:${pageId}`;
+            socket.to(roomKey).emit("cursor:update", {
+                userId: socket.userId,
+                userName: socket.currentUserName,
+                color: socket.currentColor,
+                x,
+                y
+            });
+        });
+
+        /**
          * DISCONNECT
          */
         socket.on("disconnect", () => {
             if (socket.currentPageId) {
                 handleLeaveRoom(socket, socket.currentPageId, io);
+            }
+            if (socket.currentWebsiteId) {
+                socket.leave(`${socket.tenantId}:website:${socket.currentWebsiteId}`);
             }
             console.log(`🔌 Socket disconnected: ${socket.id}`);
         });

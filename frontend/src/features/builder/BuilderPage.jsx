@@ -35,22 +35,42 @@ export default function BuilderPage() {
     const { pages, currentPage, selectedSectionId, saving, activeEditors } = useSelector((s) => s.builder);
 
     const autoSaveRef = useRef(null);
+    const canvasRef = useRef(null);
     const [showVersionPanel, setShowVersionPanel] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
+    const [cursors, setCursors] = useState({});
 
     useEffect(() => {
         const socket = connectSocket(token);
-        if (socket && pageId) {
+        if (socket && pageId && websiteId) {
+            socket.emit("join:website", { websiteId });
             socket.emit("join:page", { pageId, userName: user?.name });
             socket.on("editors:update", ({ editors }) => dispatch(setActiveEditors(editors)));
             socket.on("content:update", (data) => { if (data.updatedBy !== user?._id) dispatch(applyRemoteUpdate(data)); });
             socket.on("autosave:success", () => { });
+
+            socket.on("cursor:update", (data) => {
+                if (data.userId === user?._id) return;
+                setCursors(prev => ({ ...prev, [data.userId]: data }));
+
+                // Clear cursor after 3 seconds of inactivity
+                if (window[`cursorTimeout_${data.userId}`]) clearTimeout(window[`cursorTimeout_${data.userId}`]);
+                window[`cursorTimeout_${data.userId}`] = setTimeout(() => {
+                    setCursors(p => { const copy = { ...p }; delete copy[data.userId]; return copy; });
+                }, 3000);
+            });
         }
         return () => {
             const s = getSocket();
-            if (s && pageId) { s.emit("leave:page", { pageId }); s.off("editors:update"); s.off("content:update"); s.off("autosave:success"); }
+            if (s && pageId) {
+                s.emit("leave:page", { pageId });
+                s.off("editors:update");
+                s.off("content:update");
+                s.off("autosave:success");
+                s.off("cursor:update");
+            }
         };
-    }, [pageId, token, user]);
+    }, [pageId, websiteId, token, user]);
 
     useEffect(() => {
         dispatch(fetchPages(websiteId)).then((res) => {
@@ -128,6 +148,22 @@ export default function BuilderPage() {
 
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
     const canEdit = ["OWNER", "ADMIN", "EDITOR", "DEVELOPER"].includes(user?.role);
+
+    const handleMouseMove = (e) => {
+        if (!canvasRef.current || !pageId) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+        // Throttling to 100ms
+        if (window.lastCursorEmit && Date.now() - window.lastCursorEmit < 100) return;
+        window.lastCursorEmit = Date.now();
+
+        const socket = getSocket();
+        if (socket?.connected) {
+            socket.emit("cursor:move", { pageId, x, y });
+        }
+    };
 
     return (
         <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-base)" }}>
@@ -365,12 +401,15 @@ export default function BuilderPage() {
                 {/* Canvas */}
                 <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "var(--bg-base)" }}>
                     {currentPage ? (
-                        <div style={{
-                            maxWidth: 1000, margin: "0 auto", borderRadius: 20, overflow: "hidden",
-                            background: "#0f0f1a", border: "1px solid rgba(255,255,255,0.08)",
-                            boxShadow: "0 24px 48px rgba(0,0,0,0.4)", minHeight: "60vh",
-                            display: "flex", flexDirection: "column",
-                        }}>
+                        <div
+                            ref={canvasRef}
+                            onMouseMove={handleMouseMove}
+                            style={{
+                                maxWidth: 1000, margin: "0 auto", borderRadius: 20, overflow: "hidden",
+                                background: "#0f0f1a", border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 24px 48px rgba(0,0,0,0.4)", minHeight: "60vh",
+                                display: "flex", flexDirection: "column", position: "relative"
+                            }}>
                             {/* Browser chrome */}
                             <div style={{
                                 display: "flex", alignItems: "center", padding: "14px 20px",
@@ -397,7 +436,30 @@ export default function BuilderPage() {
                             </div>
 
                             {/* Rendered sections */}
-                            <div style={{ flex: 1, color: "#f0f0ff" }}>
+                            <div style={{ flex: 1, color: "#f0f0ff", position: "relative" }}>
+                                {Object.values(cursors).map(cursor => (
+                                    <div key={cursor.userId} style={{
+                                        position: "absolute",
+                                        left: `${cursor.x * 100}%`,
+                                        top: `${cursor.y * 100}%`,
+                                        zIndex: 9999,
+                                        pointerEvents: "none",
+                                        transition: "left 0.1s linear, top 0.1s linear"
+                                    }}>
+                                        <svg width="18" height="24" viewBox="0 0 18 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M2.5 2.5L15 11.5L9.5 13L7.5 20.5L2.5 2.5Z" fill={cursor.color} stroke="white" strokeWidth="2" strokeLinejoin="round" />
+                                        </svg>
+                                        <div style={{
+                                            background: cursor.color,
+                                            color: "white", padding: "4px 8px", borderRadius: "12px",
+                                            fontSize: "11px", fontWeight: "bold", marginLeft: "14px", marginTop: "4px",
+                                            whiteSpace: "nowrap", boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                                        }}>
+                                            {cursor.userName}
+                                        </div>
+                                    </div>
+                                ))}
+
                                 {(currentPage.layoutConfig?.sections || []).map((section) => {
                                     const Component = SECTION_MAP[section.type];
                                     if (!Component) return null;
@@ -490,7 +552,7 @@ export default function BuilderPage() {
             )}
 
             {/* ====== Floating Overlays ====== */}
-            {pageId && <ChatPanel pageId={pageId} />}
+            {websiteId && <ChatPanel websiteId={websiteId} />}
 
             {showPublishModal && (
                 <PublishModal
