@@ -1,0 +1,60 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Provider } from "react-redux";
+import { Toaster } from "react-hot-toast";
+import store from "./store/store.js";
+
+import ProtectedLayout from "./layouts/ProtectedLayout.jsx";
+import LoginPage from "./features/auth/LoginPage.jsx";
+import RegisterPage from "./features/auth/RegisterPage.jsx";
+import DashboardPage from "./features/dashboard/DashboardPage.jsx";
+import WebsitesPage from "./features/dashboard/WebsitesPage.jsx";
+import BuilderPage from "./features/builder/BuilderPage.jsx";
+import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
+import SettingsPage from "./features/settings/SettingsPage.jsx";
+import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "12px",
+              fontSize: "14px",
+            },
+            success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
+            error: { iconTheme: { primary: "#f87171", secondary: "#fff" } },
+          }}
+        />
+        <Routes>
+          {/* Public auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Public site rendering */}
+          <Route path="/site/:tenantSlug" element={<PublicSiteRenderer />} />
+          <Route path="/site/:tenantSlug/:pageSlug" element={<PublicSiteRenderer />} />
+
+          {/* Protected app routes */}
+          <Route element={<ProtectedLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/websites" element={<WebsitesPage />} />
+            <Route path="/websites/:websiteId/builder" element={<BuilderPage />} />
+            <Route path="/websites/:websiteId/builder/:pageId" element={<BuilderPage />} />
+            <Route path="/ai" element={<AIGeneratorPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+
+          {/* Root redirect */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </Provider>
+  );
+}
