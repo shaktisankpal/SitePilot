@@ -24,6 +24,8 @@ import analyticsRoutes from "./modules/analytics/analytics.routes.js";
 import publishRoutes from "./agents/routes/publish.js";
 import formsRoutes from "./modules/forms/forms.routes.js";
 import uploadRoutes from "./modules/upload/upload.routes.js";
+import paymentRoutes from "./modules/payment/payment.routes.js";
+import adminRoutes from "./modules/admin/admin.routes.js";
 
 // Public routes
 import {
@@ -110,6 +112,8 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/publish", publishRoutes);
 app.use("/api/forms", formsRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Error handling
 app.use(notFound);

@@ -673,8 +673,20 @@ export default function PublicSiteRenderer() {
     useEffect(() => {
         let slug = tenantSlug;
         if (!slug) slug = window.location.hostname;
+        
         const websiteId = searchParams.get("websiteId");
-        const url = websiteId ? `/public/sites/${slug}?websiteId=${websiteId}` : `/public/sites/${slug}`;
+        const websiteSlug = searchParams.get("websiteSlug");
+        
+        // Build URL with proper query parameters
+        let url = `/public/sites/${slug}`;
+        const params = new URLSearchParams();
+        if (websiteId) params.append("websiteId", websiteId);
+        if (websiteSlug) params.append("websiteSlug", websiteSlug);
+        // If tenantSlug is provided in route, use it as websiteSlug fallback
+        if (tenantSlug && !websiteId && !websiteSlug) {
+            params.append("websiteSlug", tenantSlug);
+        }
+        if (params.toString()) url += `?${params.toString()}`;
 
         api.get(url)
             .then((res) => {

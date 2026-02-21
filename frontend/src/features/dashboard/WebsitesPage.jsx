@@ -36,71 +36,71 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
             padding: 16, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)",
         }}>
             <div style={{
-                width: "100%", maxWidth: 500, padding: 40, borderRadius: 24,
+                width: "100%", maxWidth: 480, padding: "24px 28px", borderRadius: 20,
                 background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.1)",
                 boxShadow: "0 24px 48px rgba(0,0,0,0.5)", position: "relative", overflow: "hidden",
             }}>
                 {/* Top accent bar */}
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "var(--color-primary)" }} />
 
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
                     <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)" }}>
-                                <FolderDot size={24} strokeWidth={2.5} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                            <div style={{ padding: 8, borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)" }}>
+                                <FolderDot size={20} strokeWidth={2.5} />
                             </div>
                             <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>New Project</h2>
                         </div>
-                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", paddingLeft: 52 }}>Create a new website project in this workspace.</p>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", paddingLeft: 42 }}>Create a new website project</p>
                     </div>
-                    <button onClick={onClose} style={{ padding: 8, borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
-                        <X size={20} />
+                    <button onClick={onClose} style={{ padding: 6, borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                        <X size={18} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: 20 }}>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Project Name *</label>
-                        <input value={data.name} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. My Awesome Startup" required autoFocus style={inputStyle} />
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Project Name *</label>
+                        <input value={data.name} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. My Awesome Startup" required autoFocus style={{...inputStyle, padding: "12px 16px"}} />
                     </div>
-                    <div style={{ marginBottom: 28 }}>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Description</label>
-                        <textarea value={data.description} onChange={(e) => setData((p) => ({ ...p, description: e.target.value }))} placeholder="What is this website about?" rows={3} style={{ ...inputStyle, resize: "none" }} />
+                    <div style={{ marginBottom: 20 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Description</label>
+                        <textarea value={data.description} onChange={(e) => setData((p) => ({ ...p, description: e.target.value }))} placeholder="What is this website about?" rows={2} style={{ ...inputStyle, resize: "none", padding: "12px 16px" }} />
                     </div>
 
-                    <div style={{ marginBottom: 32 }}>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Select Base Template</label>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: "300px", overflowY: "auto", paddingRight: 8 }}>
+                    <div style={{ marginBottom: 24 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Select Base Template</label>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: "240px", overflowY: "auto", paddingRight: 6 }}>
                             {TEMPLATES.map((tmpl) => (
                                 <div key={tmpl.id} onClick={() => setData(p => ({ ...p, template: tmpl.sections, theme: tmpl.themeSelected }))} style={{
-                                    display: "flex", gap: 16, alignItems: "center", padding: "16px", borderRadius: "16px", cursor: "pointer",
+                                    display: "flex", gap: 12, alignItems: "center", padding: "12px", borderRadius: "12px", cursor: "pointer",
                                     border: data.template === tmpl.sections ? "2px solid var(--color-primary)" : "1px solid rgba(255,255,255,0.1)",
                                     background: data.template === tmpl.sections ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.02)",
                                     transition: "all 0.2s"
                                 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <LayoutTemplate size={24} style={{ color: data.template === tmpl.sections ? "var(--color-primary)" : "var(--text-muted)" }} />
+                                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <LayoutTemplate size={20} style={{ color: data.template === tmpl.sections ? "var(--color-primary)" : "var(--text-muted)" }} />
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-primary)", marginBottom: 4 }}>{tmpl.name}</div>
-                                        <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.4 }}>{tmpl.description}</div>
+                                        <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)", marginBottom: 2 }}>{tmpl.name}</div>
+                                        <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.3 }}>{tmpl.description}</div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                    <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ display: "flex", gap: 10 }}>
                         <button type="button" onClick={onClose} style={{
-                            flex: 1, padding: 14, borderRadius: 14, background: "transparent",
-                            border: "1px solid var(--border-color)", color: "var(--text-primary)", cursor: "pointer", fontSize: 15, fontWeight: 600,
+                            flex: 1, padding: 12, borderRadius: 12, background: "transparent",
+                            border: "1px solid var(--border-color)", color: "var(--text-primary)", cursor: "pointer", fontSize: 14, fontWeight: 600,
                         }}>Cancel</button>
                         <button type="submit" disabled={loading} style={{
-                            flex: 2, padding: 14, borderRadius: 14, background: "var(--text-primary)",
-                            color: "var(--bg-base)", border: "none", cursor: "pointer", fontSize: 15, fontWeight: 700,
+                            flex: 2, padding: 12, borderRadius: 12, background: "var(--text-primary)",
+                            color: "var(--bg-base)", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700,
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                             opacity: loading ? 0.7 : 1,
                         }}>
-                            {loading ? <Loader2 size={18} className="animate-spin" /> : <><Plus size={18} strokeWidth={2.5} /> Create Project</>}
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : <><Plus size={16} strokeWidth={2.5} /> Create Project</>}
                         </button>
                     </div>
                 </form>
@@ -223,7 +223,7 @@ export default function WebsitesPage() {
                                             {site.status === "published" ? "Live" : "Draft"}
                                         </span>
                                         {site.status === "published" && (
-                                            <a href={`/site/${site.defaultDomain}`} target="_blank" rel="noreferrer"
+                                            <a href={`/site/${tenant?.slug || 'default'}?websiteId=${site._id}`} target="_blank" rel="noreferrer"
                                                 style={{ padding: 6, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", display: "flex" }}>
                                                 <ExternalLink size={14} />
                                             </a>

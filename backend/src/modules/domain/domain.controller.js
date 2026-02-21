@@ -174,32 +174,66 @@ export const getPublicPage = async (req, res) => {
 };
 
 /**
- * GET /api/public/sites/:tenantSlug?websiteId=xxx
+ * GET /api/public/sites/:tenantSlug?websiteId=xxx&websiteSlug=xxx
  * Full published site for public rendering
  * Supports lookup by tenant slug OR custom domain name
- * Optional websiteId query param to fetch specific website
+ * Optional websiteId or websiteSlug query param to fetch specific website
  */
 export const getPublicSite = async (req, res) => {
     const slugOrDomain = req.params.tenantSlug;
-    const { websiteId } = req.query;
+    const { websiteId, websiteSlug } = req.query;
 
     // 1. Try direct tenant slug lookup
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
     let website = null;
 
     if (tenant) {
-        // If websiteId is provided, fetch that specific website
+        // Priority 1: If websiteId is provided, fetch that specific website (HIGHEST PRIORITY)
         if (websiteId) {
             website = await Website.findOne({
                 _id: websiteId,
                 tenantId: tenant._id,
                 status: "published",
             }).lean();
-        } else {
-            // Found by tenant slug — get the latest published website
-            website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-                .sort({ publishedAt: -1 })
-                .lean();
+            
+            if (website) {
+                console.log(`✅ [Public API] Found website by websiteId: ${websiteId}`);
+            }
+        } 
+        // Priority 2: If websiteSlug is provided, fetch by slug
+        if (!website && websiteSlug) {
+            website = await Website.findOne({
+                slug: websiteSlug,
+                tenantId: tenant._id,
+                status: "published",
+            }).lean();
+            
+            if (website) {
+                console.log(`✅ [Public API] Found website by websiteSlug: ${websiteSlug}`);
+            }
+        } 
+        // Priority 3: Try to use the route param as website slug
+        if (!website) {
+            website = await Website.findOne({
+                slug: slugOrDomain,
+                tenantId: tenant._id,
+                status: "published",
+            }).lean();
+            
+            if (website) {
+                console.log(`✅ [Public API] Found website by route param slug: ${slugOrDomain}`);
+            }
+            
+            // Fallback: get the latest published website
+            if (!website) {
+                website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+                    .sort({ publishedAt: -1 })
+                    .lean();
+                    
+                if (website) {
+                    console.log(`⚠️ [Public API] Fallback to latest published website: ${website._id}`);
+                }
+            }
         }
     } else {
         // 2. Try custom domain lookup
@@ -210,10 +244,16 @@ export const getPublicSite = async (req, res) => {
         if (domainDoc) {
             tenant = await Tenant.findOne({ _id: domainDoc.tenantId, isActive: true }).lean();
             if (tenant) {
-                // If websiteId is provided, use that
+                // If websiteId is provided, use that (HIGHEST PRIORITY)
                 if (websiteId) {
                     website = await Website.findOne({
                         _id: websiteId,
+                        tenantId: tenant._id,
+                        status: "published",
+                    }).lean();
+                } else if (websiteSlug) {
+                    website = await Website.findOne({
+                        slug: websiteSlug,
                         tenantId: tenant._id,
                         status: "published",
                     }).lean();
@@ -251,7 +291,7 @@ export const getPublicSite = async (req, res) => {
 
     const pages = deployment.snapshot;
 
-    console.log(`📄 [Public API] Returning ${pages?.length || 0} pages for website ${website._id} (Version: ${deployment?.version || 'N/A'})`);
+    console.log(`📄 [Public API] Returning ${pages?.length || 0} pages for website ${website._id} (slug: ${website.slug || 'N/A'}, Version: ${deployment?.version || 'N/A'})`);
 
     res.json({
         success: true,

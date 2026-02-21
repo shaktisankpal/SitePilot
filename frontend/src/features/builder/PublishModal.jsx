@@ -7,6 +7,7 @@ import { Rocket, Globe, X, Loader2, CheckCircle, ExternalLink, ChevronDown } fro
 export default function PublishModal({ websiteId, onClose }) {
     const dispatch = useDispatch();
     const { domains, websites } = useSelector((s) => s.website);
+    const { tenant } = useSelector((s) => s.auth);
     const [selectedDomainId, setSelectedDomainId] = useState("");
     const [publishing, setPublishing] = useState(false);
 
@@ -49,7 +50,7 @@ export default function PublishModal({ websiteId, onClose }) {
             );
 
             if (targetDomainStr) {
-                const url = `${window.location.origin}/site/${targetDomainStr}`;
+                const url = `${window.location.origin}/site/${tenant?.slug || 'default'}?websiteId=${websiteId}`;
                 window.open(url, "_blank");
             }
 

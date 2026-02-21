@@ -12,6 +12,7 @@ import WebsitesPage from "./features/dashboard/WebsitesPage.jsx";
 import BuilderPage from "./features/builder/BuilderPage.jsx";
 import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
 import SettingsPage from "./features/settings/SettingsPage.jsx";
+import SubscriptionPage from "./features/subscription/SubscriptionPage.jsx";
 import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
 import HomePage from "./features/home/HomePage.jsx";
 
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="/websites/:websiteId/builder" element={<BuilderPage />} />
             <Route path="/websites/:websiteId/builder/:pageId" element={<BuilderPage />} />
             <Route path="/ai" element={<AIGeneratorPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 

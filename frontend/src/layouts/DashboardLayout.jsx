@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice.js";
 import {
     LayoutDashboard, Globe, Wand2, Settings, LogOut,
-    Menu, X, Zap,
+    Menu, X, Zap, CreditCard,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -12,6 +12,7 @@ const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { label: "Projects", icon: Globe, path: "/websites" },
     { label: "AI Playground", icon: Wand2, path: "/ai" },
+    { label: "Subscription", icon: CreditCard, path: "/subscription" },
     { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
