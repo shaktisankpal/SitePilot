@@ -57,6 +57,13 @@ initializeSockets(io);
 app.use(
     helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" },
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                "img-src": ["'self'", "data:", "blob:", "*"],
+                "media-src": ["'self'", "data:", "blob:", "*"],
+            },
+        },
     })
 );
 
@@ -114,6 +121,15 @@ app.use("/api/forms", formsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
+
+// Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+    const frontendDist = path.join(__dirname, "../../frontend/dist");
+    app.use(express.static(frontendDist));
+    app.get(/^\/(?!api).*/, (req, res) => {
+        res.sendFile(path.join(frontendDist, "index.html"));
+    });
+}
 
 // Error handling
 app.use(notFound);
