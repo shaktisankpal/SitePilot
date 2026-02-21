@@ -51,11 +51,10 @@ export default function BuilderPage() {
 
             if (socket.connected) initJoin();
             socket.on("connect", initJoin);
-            socket.on("editors:update", ({ editors }) => dispatch(setActiveEditors(editors)));
-            socket.on("content:update", (data) => { if (data.updatedBy !== user?._id) dispatch(applyRemoteUpdate(data)); });
-            socket.on("autosave:success", () => { });
-
-            socket.on("cursor:update", (data) => {
+            const handleEditorsUpdate = ({ editors }) => dispatch(setActiveEditors(editors));
+            const handleContentUpdate = (data) => { if (data.updatedBy !== user?._id) dispatch(applyRemoteUpdate(data)); };
+            const handleAutosaveSuccess = () => { };
+            const handleCursorUpdate = (data) => {
                 if (data.userId === user?._id) return;
                 setCursors(prev => ({ ...prev, [data.userId]: data }));
 
@@ -64,19 +63,25 @@ export default function BuilderPage() {
                 window[`cursorTimeout_${data.userId}`] = setTimeout(() => {
                     setCursors(p => { const copy = { ...p }; delete copy[data.userId]; return copy; });
                 }, 3000);
-            });
+            };
+
+            socket.on("editors:update", handleEditorsUpdate);
+            socket.on("content:update", handleContentUpdate);
+            socket.on("autosave:success", handleAutosaveSuccess);
+            socket.on("cursor:update", handleCursorUpdate);
+
+            return () => {
+                const s = getSocket();
+                if (s && pageId) {
+                    if (initJoin) s.off("connect", initJoin);
+                    s.emit("leave:page", { pageId });
+                    s.off("editors:update", handleEditorsUpdate);
+                    s.off("content:update", handleContentUpdate);
+                    s.off("autosave:success", handleAutosaveSuccess);
+                    s.off("cursor:update", handleCursorUpdate);
+                }
+            };
         }
-        return () => {
-            const s = getSocket();
-            if (s && pageId) {
-                if (initJoin) s.off("connect", initJoin);
-                s.emit("leave:page", { pageId });
-                s.off("editors:update");
-                s.off("content:update");
-                s.off("autosave:success");
-                s.off("cursor:update");
-            }
-        };
     }, [pageId, websiteId, token, user]);
 
     useEffect(() => {

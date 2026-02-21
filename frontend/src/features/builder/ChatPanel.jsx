@@ -185,6 +185,7 @@ export default function ChatPanel({ websiteId }) {
                         <div key={msg._id || i} style={{
                             display: "flex", flexDirection: "column",
                             alignItems: isMe ? "flex-end" : "flex-start",
+                            width: "100%"
                         }}>
                             {!isMe && (
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>

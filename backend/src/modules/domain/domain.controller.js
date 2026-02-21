@@ -2,6 +2,7 @@ import Domain from "./domain.model.js";
 import Tenant from "../tenant/tenant.model.js";
 import Website from "../website/website.model.js";
 import Page from "../builder/page.model.js";
+import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -237,15 +238,17 @@ export const getPublicSite = async (req, res) => {
     if (!tenant) return res.status(404).json({ success: false, message: "Tenant not found" });
     if (!website) return res.status(404).json({ success: false, message: "No published website" });
 
-    const pages = await Page.find({
+    const deployment = await Deployment.findOne({
         tenantId: tenant._id,
         websiteId: website._id,
-        status: "published",
+        status: "success",
     })
-        .select("title slug isHomePage layoutConfig websiteId")
+        .sort({ version: -1 })
         .lean();
 
-    console.log(`📄 [Public API] Returning ${pages.length} pages for website ${website._id}`);
+    const pages = deployment ? deployment.snapshot : [];
+
+    console.log(`📄 [Public API] Returning ${pages?.length || 0} pages for website ${website._id} (Version: ${deployment?.version || 'N/A'})`);
 
     res.json({
         success: true,
