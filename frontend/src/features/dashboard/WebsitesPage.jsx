@@ -61,7 +61,7 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: 16 }}>
                         <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Project Name *</label>
-                        <input value={data.name} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. My Awesome Startup" required autoFocus style={{...inputStyle, padding: "12px 16px"}} />
+                        <input value={data.name} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. My Awesome Startup" required autoFocus style={{ ...inputStyle, padding: "12px 16px" }} />
                     </div>
                     <div style={{ marginBottom: 20 }}>
                         <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Description</label>
@@ -223,7 +223,7 @@ export default function WebsitesPage() {
                                             {site.status === "published" ? "Live" : "Draft"}
                                         </span>
                                         {site.status === "published" && (
-                                            <a href={`/site/${tenant?.slug || 'default'}?websiteId=${site._id}`} target="_blank" rel="noreferrer"
+                                            <a href={`/site/${site.defaultDomain || tenant?.slug}`} target="_blank" rel="noreferrer"
                                                 style={{ padding: 6, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", display: "flex" }}>
                                                 <ExternalLink size={14} />
                                             </a>
@@ -242,9 +242,11 @@ export default function WebsitesPage() {
                                         <p style={{ fontSize: 14, color: "var(--text-muted)", fontStyle: "italic", opacity: 0.5 }}>No description provided.</p>
                                     )}
                                     <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 6 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "var(--text-muted)" }}>
-                                            <LinkIcon size={13} /> <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{site.defaultDomain}</span>
-                                        </div>
+                                        {site.status === "published" && (
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "var(--text-muted)" }}>
+                                                <LinkIcon size={13} /> <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{site.defaultDomain}</span>
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: 12, color: "var(--text-muted)", opacity: 0.7 }}>
                                             Created by <span style={{ fontWeight: 700 }}>{site.createdBy?.name || "You"}</span>
                                         </div>

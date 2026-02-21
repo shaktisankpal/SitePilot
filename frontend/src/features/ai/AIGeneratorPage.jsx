@@ -56,7 +56,7 @@ export default function AIGeneratorPage() {
         if (form.features.length === 0) return toast.error("Select at least one feature");
         setLoading(true); setResult(null);
         try {
-            const res = await api.post("/ai/generate-website", { ...form, autoPublish: true });
+            const res = await api.post("/ai/generate-website", { ...form, autoPublish: false });
             setResult(res.data);
             toast.success("Layout generated! ✨");
             if (form.websiteId) {

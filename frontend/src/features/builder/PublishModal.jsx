@@ -41,7 +41,7 @@ export default function PublishModal({ websiteId, onClose }) {
 
             const targetDomainStr = selectedDomain
                 ? selectedDomain.domain
-                : (defaultDomain ? defaultDomain.domain : "");
+                : (defaultDomain ? defaultDomain.domain : (website ? website.defaultDomain : tenant?.slug));
 
             toast.success(
                 selectedDomain
@@ -50,7 +50,7 @@ export default function PublishModal({ websiteId, onClose }) {
             );
 
             if (targetDomainStr) {
-                const url = `${window.location.origin}/site/${tenant?.slug || 'default'}?websiteId=${websiteId}`;
+                const url = `${window.location.origin}/site/${targetDomainStr}`;
                 window.open(url, "_blank");
             }
 

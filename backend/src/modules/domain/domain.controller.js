@@ -137,6 +137,10 @@ export const getPublicPage = async (req, res) => {
     const slugOrDomain = req.params.tenantSlug;
 
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    if (!tenant && slugOrDomain.includes('.localhost')) {
+        const defaultSlug = slugOrDomain.split('.')[0];
+        tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+    }
     let website = null;
 
     if (tenant) {
@@ -185,6 +189,10 @@ export const getPublicSite = async (req, res) => {
 
     // 1. Try direct tenant slug lookup
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    if (!tenant && slugOrDomain.includes('.localhost')) {
+        const defaultSlug = slugOrDomain.split('.')[0];
+        tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+    }
     let website = null;
 
     if (tenant) {
@@ -195,11 +203,11 @@ export const getPublicSite = async (req, res) => {
                 tenantId: tenant._id,
                 status: "published",
             }).lean();
-            
+
             if (website) {
                 console.log(`✅ [Public API] Found website by websiteId: ${websiteId}`);
             }
-        } 
+        }
         // Priority 2: If websiteSlug is provided, fetch by slug
         if (!website && websiteSlug) {
             website = await Website.findOne({
@@ -207,11 +215,11 @@ export const getPublicSite = async (req, res) => {
                 tenantId: tenant._id,
                 status: "published",
             }).lean();
-            
+
             if (website) {
                 console.log(`✅ [Public API] Found website by websiteSlug: ${websiteSlug}`);
             }
-        } 
+        }
         // Priority 3: Try to use the route param as website slug
         if (!website) {
             website = await Website.findOne({
@@ -219,17 +227,17 @@ export const getPublicSite = async (req, res) => {
                 tenantId: tenant._id,
                 status: "published",
             }).lean();
-            
+
             if (website) {
                 console.log(`✅ [Public API] Found website by route param slug: ${slugOrDomain}`);
             }
-            
+
             // Fallback: get the latest published website
             if (!website) {
                 website = await Website.findOne({ tenantId: tenant._id, status: "published" })
                     .sort({ publishedAt: -1 })
                     .lean();
-                    
+
                 if (website) {
                     console.log(`⚠️ [Public API] Fallback to latest published website: ${website._id}`);
                 }
