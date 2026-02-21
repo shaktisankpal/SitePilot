@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import {
     ArrowLeft, Plus, Trash2, GripVertical, Rocket, Save,
     Users, Pencil, FileText, Eye, Loader2, LayoutGrid, Globe, History, GitCommitHorizontal,
-    Monitor, Tablet, Smartphone
+    Monitor, Tablet, Smartphone, Maximize, Minimize
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import SectionEditor from "./SectionEditor.jsx";
@@ -41,6 +41,7 @@ export default function BuilderPage() {
     const [showVersionPanel, setShowVersionPanel] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [previewWidth, setPreviewWidth] = useState("100%");
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [cursors, setCursors] = useState({});
 
     useEffect(() => {
@@ -184,65 +185,69 @@ export default function BuilderPage() {
         <DragDropContext onDragEnd={handleDragEnd}>
             <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-base)" }}>
                 {/* ====== 1. LEFT — Pages Panel ====== */}
-                <div style={{
-                    width: 220, minWidth: 220, background: "var(--bg-surface)",
-                    borderRight: "1px solid var(--border-color)", display: "flex", flexDirection: "column", overflow: "hidden",
-                }}>
-                    {/* Header */}
-                    <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: 14 }}>
-                        <Link to="/websites" style={{
-                            display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600,
-                            color: "rgba(255,255,255,0.4)", textDecoration: "none",
-                        }}>
-                            <ArrowLeft size={14} /> Back
-                        </Link>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>Pages</h3>
-                            {canEdit && (
-                                <button onClick={handleAddPage} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-primary)", padding: 4 }}>
-                                    <Plus size={16} strokeWidth={2.5} />
-                                </button>
-                            )}
+                {!isFullscreen && (
+                    <div style={{
+                        width: 220, minWidth: 150, maxWidth: 500, background: "var(--bg-surface)",
+                        borderRight: "1px solid var(--border-color)", display: "flex", flexDirection: "column",
+                        resize: "horizontal", overflow: "hidden", flexShrink: 0
+                    }}>
+                        {/* Header */}
+                        <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: 14 }}>
+                            <Link to="/websites" style={{
+                                display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600,
+                                color: "rgba(255,255,255,0.4)", textDecoration: "none",
+                            }}>
+                                <ArrowLeft size={14} /> Back
+                            </Link>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>Pages</h3>
+                                {canEdit && (
+                                    <button onClick={handleAddPage} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-primary)", padding: 4 }}>
+                                        <Plus size={16} strokeWidth={2.5} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Pages list */}
+                        <div style={{ flex: 1, overflowY: "auto", padding: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                            {pages.map((page) => {
+                                const active = page._id === currentPage?._id;
+                                return (
+                                    <div key={page._id} onClick={() => handlePageSelect(page)} style={{
+                                        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
+                                        cursor: "pointer", transition: "all 0.15s ease",
+                                        background: active ? "rgba(99,102,241,0.12)" : "transparent",
+                                        border: active ? "1px solid rgba(99,102,241,0.25)" : "1px solid transparent",
+                                    }}>
+                                        <FileText size={14} style={{ color: active ? "var(--color-primary)" : "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                                        <span style={{
+                                            fontSize: 13, fontWeight: active ? 700 : 500, flex: 1,
+                                            color: active ? "var(--color-primary)" : "var(--text-secondary)",
+                                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                        }}>{page.title}</span>
+                                        {page.isHomePage && (
+                                            <span style={{ fontSize: 9, fontWeight: 800, background: "rgba(255,255,255,0.08)", padding: "2px 6px", borderRadius: 6, color: "rgba(255,255,255,0.4)" }}>HOME</span>
+                                        )}
+                                        {!page.isHomePage && canEdit && (
+                                            <button onClick={(e) => { e.stopPropagation(); handleDeletePage(page); }}
+                                                style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", opacity: 0.5, padding: 2 }}>
+                                                <Trash2 size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-
-                    {/* Pages list */}
-                    <div style={{ flex: 1, overflowY: "auto", padding: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-                        {pages.map((page) => {
-                            const active = page._id === currentPage?._id;
-                            return (
-                                <div key={page._id} onClick={() => handlePageSelect(page)} style={{
-                                    display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
-                                    cursor: "pointer", transition: "all 0.15s ease",
-                                    background: active ? "rgba(99,102,241,0.12)" : "transparent",
-                                    border: active ? "1px solid rgba(99,102,241,0.25)" : "1px solid transparent",
-                                }}>
-                                    <FileText size={14} style={{ color: active ? "var(--color-primary)" : "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-                                    <span style={{
-                                        fontSize: 13, fontWeight: active ? 700 : 500, flex: 1,
-                                        color: active ? "var(--color-primary)" : "var(--text-secondary)",
-                                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                    }}>{page.title}</span>
-                                    {page.isHomePage && (
-                                        <span style={{ fontSize: 9, fontWeight: 800, background: "rgba(255,255,255,0.08)", padding: "2px 6px", borderRadius: 6, color: "rgba(255,255,255,0.4)" }}>HOME</span>
-                                    )}
-                                    {!page.isHomePage && canEdit && (
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeletePage(page); }}
-                                            style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", opacity: 0.5, padding: 2 }}>
-                                            <Trash2 size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                )}
 
                 {/* ====== 2. LEFT — Page Layers (DND) ====== */}
-                {currentPage && (
+                {currentPage && !isFullscreen && (
                     <div style={{
-                        width: 300, minWidth: 300, background: "var(--bg-surface)",
-                        borderRight: "1px solid var(--border-color)", display: "flex", flexDirection: "column", overflow: "hidden",
+                        width: 300, minWidth: 200, maxWidth: 600, background: "var(--bg-surface)",
+                        borderRight: "1px solid var(--border-color)", display: "flex", flexDirection: "column",
+                        resize: "horizontal", overflow: "hidden", flexShrink: 0
                     }}>
                         <div style={{
                             padding: "14px 16px", borderBottom: "1px solid var(--border-color)",
@@ -363,6 +368,10 @@ export default function BuilderPage() {
                             <button onClick={() => setPreviewWidth("100%")} style={{ background: previewWidth === "100%" ? "rgba(255,255,255,0.1)" : "transparent", color: previewWidth === "100%" ? "white" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Monitor size={14} /></button>
                             <button onClick={() => setPreviewWidth("768px")} style={{ background: previewWidth === "768px" ? "rgba(255,255,255,0.1)" : "transparent", color: previewWidth === "768px" ? "white" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Tablet size={14} /></button>
                             <button onClick={() => setPreviewWidth("375px")} style={{ background: previewWidth === "375px" ? "rgba(255,255,255,0.1)" : "transparent", color: previewWidth === "375px" ? "white" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Smartphone size={14} /></button>
+                            <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
+                            <button onClick={() => setIsFullscreen(!isFullscreen)} title="Presentation Mode" style={{ background: isFullscreen ? "rgba(99,102,241,0.2)" : "transparent", color: isFullscreen ? "#818cf8" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                                {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                            </button>
                         </div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -549,46 +558,49 @@ export default function BuilderPage() {
                 />
 
                 {/* ====== 4. RIGHT — Add Section ====== */}
-                {canEdit && (
+                {canEdit && !isFullscreen && (
                     <div style={{
-                        width: 200, minWidth: 200, background: "var(--bg-surface)",
-                        borderLeft: "1px solid var(--border-color)", display: "flex", flexDirection: "column", overflow: "hidden",
+                        width: 200, minWidth: 150, maxWidth: 400, background: "var(--bg-surface)",
+                        borderLeft: "1px solid var(--border-color)", display: "flex", flexDirection: "column",
+                        resize: "horizontal", overflowX: "auto", flexShrink: 0, direction: "rtl"
                     }}>
-                        <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", flexShrink: 0 }}>
-                            <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
-                                Add Section
-                            </h3>
-                        </div>
-                        <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                            {SECTION_TYPES.map((type) => (
-                                <button
-                                    key={type}
-                                    onClick={() => handleAddSection(type)}
-                                    style={{
-                                        width: "100%", display: "flex", alignItems: "center", gap: 12,
-                                        padding: "12px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700,
-                                        textAlign: "left", cursor: "pointer", transition: "all 0.15s ease",
-                                        background: "var(--bg-input)", border: "1px solid var(--border-color)",
-                                        color: "var(--text-secondary)",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor = SECTION_COLORS[type];
-                                        e.currentTarget.style.color = SECTION_COLORS[type];
-                                        e.currentTarget.style.background = `${SECTION_COLORS[type]}10`;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor = "var(--border-color)";
-                                        e.currentTarget.style.color = "var(--text-secondary)";
-                                        e.currentTarget.style.background = "var(--bg-input)";
-                                    }}
-                                >
-                                    <span style={{
-                                        width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                                        background: SECTION_COLORS[type], boxShadow: `0 0 10px ${SECTION_COLORS[type]}`,
-                                    }} />
-                                    {type}
-                                </button>
-                            ))}
+                        <div style={{ direction: "ltr", display: "flex", flexDirection: "column", height: "100%" }}>
+                            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", flexShrink: 0 }}>
+                                <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
+                                    Add Section
+                                </h3>
+                            </div>
+                            <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                                {SECTION_TYPES.map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => handleAddSection(type)}
+                                        style={{
+                                            width: "100%", display: "flex", alignItems: "center", gap: 12,
+                                            padding: "12px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                                            textAlign: "left", cursor: "pointer", transition: "all 0.15s ease",
+                                            background: "var(--bg-input)", border: "1px solid var(--border-color)",
+                                            color: "var(--text-secondary)",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = SECTION_COLORS[type];
+                                            e.currentTarget.style.color = SECTION_COLORS[type];
+                                            e.currentTarget.style.background = `${SECTION_COLORS[type]}10`;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = "var(--border-color)";
+                                            e.currentTarget.style.color = "var(--text-secondary)";
+                                            e.currentTarget.style.background = "var(--bg-input)";
+                                        }}
+                                    >
+                                        <span style={{
+                                            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                                            background: SECTION_COLORS[type], boxShadow: `0 0 10px ${SECTION_COLORS[type]}`,
+                                        }} />
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
