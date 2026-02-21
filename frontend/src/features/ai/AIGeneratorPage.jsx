@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
 import { updateTenantBranding } from "../../store/slices/authSlice.js";
+import { TEMPLATES } from "../../utils/templates.js";
 
 const FEATURES = [
     "Hero Banner", "Service Cards", "Team Section", "Gallery", "Testimonials",
@@ -33,8 +34,10 @@ export default function AIGeneratorPage() {
     const [form, setForm] = useState({
         businessType: "", tone: "Professional", targetAudience: "General Public",
         features: ["Hero Banner", "Contact Form"], websiteId: "",
+        theme: "Light",
         primaryColor: tenant?.branding?.primaryColor || "#6366f1",
         secondaryColor: tenant?.branding?.secondaryColor || "#8b5cf6",
+        baseTemplateSections: null
     });
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -98,6 +101,25 @@ export default function AIGeneratorPage() {
                             </div>
 
                             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                                <div style={{ marginBottom: 8 }}>
+                                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Pick A Base Template</label>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxHeight: "200px", overflowY: "auto", paddingRight: 8 }}>
+                                        {TEMPLATES.map((tmpl) => (
+                                            <div key={tmpl.id} onClick={() => setForm(p => ({ ...p, baseTemplateSections: tmpl.sections, theme: tmpl.themeSelected }))} style={{
+                                                display: "flex", gap: 12, alignItems: "center", padding: "12px", borderRadius: "12px", cursor: "pointer",
+                                                border: form.baseTemplateSections === tmpl.sections ? "2px solid var(--color-primary)" : "1px solid rgba(255,255,255,0.1)",
+                                                background: form.baseTemplateSections === tmpl.sections ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.02)",
+                                                transition: "all 0.2s"
+                                            }}>
+                                                <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                                    <LayoutTemplate size={16} style={{ color: form.baseTemplateSections === tmpl.sections ? "var(--color-primary)" : "var(--text-muted)" }} />
+                                                </div>
+                                                <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>{tmpl.name}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
                                         Describe Your Concept *
@@ -107,7 +129,7 @@ export default function AIGeneratorPage() {
                                         rows={4} required style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }} />
                                 </div>
 
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                                     <div style={{ position: "relative" }}>
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Tone</label>
                                         <select value={form.tone} onChange={(e) => setForm((p) => ({ ...p, tone: e.target.value }))}
@@ -121,6 +143,15 @@ export default function AIGeneratorPage() {
                                         <select value={form.targetAudience} onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
+                                        </select>
+                                        <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
+                                    </div>
+                                    <div style={{ position: "relative" }}>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Theme Mode</label>
+                                        <select value={form.theme} onChange={(e) => setForm((p) => ({ ...p, theme: e.target.value }))}
+                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
+                                            <option value="Light">Light</option>
+                                            <option value="Dark">Dark</option>
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>

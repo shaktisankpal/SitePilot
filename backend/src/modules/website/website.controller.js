@@ -47,7 +47,12 @@ export const createWebsite = async (req, res) => {
         slug: "home",
         isHomePage: true,
         layoutConfig: {
-            sections: [
+            sections: value.template ? value.template.map((s, i) => ({
+                id: `section-${Date.now() + i}`,
+                type: s.type,
+                props: s.props,
+                order: i,
+            })) : [
                 {
                     id: `section-${Date.now()}`,
                     type: "Navbar",

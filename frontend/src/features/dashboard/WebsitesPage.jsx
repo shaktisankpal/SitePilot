@@ -6,8 +6,10 @@ import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import toast from "react-hot-toast";
 import {
     Globe, Plus, Pencil, Trash2, Rocket, ExternalLink,
-    CheckCircle, Clock, X, Loader2, Link as LinkIcon, FolderDot
+    CheckCircle, Clock, X, Loader2, Link as LinkIcon, FolderDot,
+    LayoutTemplate
 } from "lucide-react";
+import { TEMPLATES } from "../../utils/templates.js";
 
 const inputStyle = {
     width: "100%", padding: "14px 18px", borderRadius: 14,
@@ -17,7 +19,7 @@ const inputStyle = {
 };
 
 const CreateWebsiteModal = ({ onClose, onCreate }) => {
-    const [data, setData] = useState({ name: "", description: "" });
+    const [data, setData] = useState({ name: "", description: "", template: TEMPLATES[0].sections, theme: TEMPLATES[0].themeSelected });
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -64,6 +66,28 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
                     <div style={{ marginBottom: 28 }}>
                         <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Description</label>
                         <textarea value={data.description} onChange={(e) => setData((p) => ({ ...p, description: e.target.value }))} placeholder="What is this website about?" rows={3} style={{ ...inputStyle, resize: "none" }} />
+                    </div>
+
+                    <div style={{ marginBottom: 32 }}>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Select Base Template</label>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: "300px", overflowY: "auto", paddingRight: 8 }}>
+                            {TEMPLATES.map((tmpl) => (
+                                <div key={tmpl.id} onClick={() => setData(p => ({ ...p, template: tmpl.sections, theme: tmpl.themeSelected }))} style={{
+                                    display: "flex", gap: 16, alignItems: "center", padding: "16px", borderRadius: "16px", cursor: "pointer",
+                                    border: data.template === tmpl.sections ? "2px solid var(--color-primary)" : "1px solid rgba(255,255,255,0.1)",
+                                    background: data.template === tmpl.sections ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.02)",
+                                    transition: "all 0.2s"
+                                }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <LayoutTemplate size={24} style={{ color: data.template === tmpl.sections ? "var(--color-primary)" : "var(--text-muted)" }} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-primary)", marginBottom: 4 }}>{tmpl.name}</div>
+                                        <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.4 }}>{tmpl.description}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div style={{ display: "flex", gap: 12 }}>
                         <button type="button" onClick={onClose} style={{

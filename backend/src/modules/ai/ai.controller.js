@@ -58,7 +58,7 @@ export const generateLayout = async (req, res) => {
         return res.status(400).json({ success: false, message: error.details[0].message });
     }
 
-    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor } = value;
+    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor, theme, baseTemplateSections } = value;
 
     // Verify website ownership if provided
     let website = null;
@@ -72,8 +72,18 @@ You are a professional website layout designer. Generate a complete website layo
 
 Business Type: ${businessType}
 Tone: ${tone}
+Theme Mode: ${theme || "Light"}
 Target Audience: ${targetAudience}
 Key Features/Sections needed: ${features.join(", ")}
+
+${baseTemplateSections ? `IMPORTANT: The user wants to start from this specific template layout. DO NOT generate from scratch. Keep the section types intact, but modify their text (headings, subheadings, etc.) and styling (colors) to match the Business Type and Theme Mode requested above.
+Base Template Sections JSON: ${JSON.stringify(baseTemplateSections)}` : ""}
+
+IMPORTANT THEME INSTRUCTIONS:
+Since the user requested a ${theme || "Light"} theme:
+- If Light: use soft, clean, bright backgrounds (e.g. #ffffff, #f8f9fa) and VERY dark text (e.g. #111827).
+- If Dark: use deep, elegant dark backgrounds (e.g. #0f172a, #1e293b) and bright white/light grey text.
+You MUST output \`bgColor\` and \`textColor\` accurately inside EVERY single section's \`props\` to match the requested theme!
 
 Return ONLY a valid JSON object (no markdown, no explanation) in this exact format:
 {

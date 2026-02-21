@@ -82,6 +82,39 @@ export default function SectionEditor({ section, onChange }) {
         </div>
     );
 
+    const handleImageUpload = (key, file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            handleChange(key, reader.result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const renderImageField = (label, key) => (
+        <div key={key} style={{ marginTop: 10 }}>
+            <label style={labelStyle}>{label}</label>
+            <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <input
+                    type="text" value={props[key] || ""}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    placeholder="https://..." style={{ ...inputStyle, flex: 1, marginTop: 0 }}
+                />
+                <label style={{
+                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "6px", color: "var(--color-primary)", cursor: "pointer", padding: "0 10px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap"
+                }}>
+                    Upload
+                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(key, e.target.files[0])} style={{ display: "none" }} />
+                </label>
+            </div>
+            {props[key] && props[key].length > 10 && props[key].startsWith("data:") && (
+                <div style={{ marginTop: 8, borderRadius: 6, overflow: "hidden", height: 100, border: "1px solid var(--border-color)", background: "#000" }}>
+                    <img src={props[key]} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+                </div>
+            )}
+        </div>
+    );
+
     const renderColorField = (label, key, defaultVal = "#6366f1") => (
         <div key={key}>
             <label style={labelStyle}>{label}</label>
@@ -122,7 +155,7 @@ export default function SectionEditor({ section, onChange }) {
                     }}
                 >
                     {FONT_OPTIONS.map((f) => (
-                        <option key={f} value={f}>{f}</option>
+                        <option key={f} value={f} style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>{f}</option>
                     ))}
                 </select>
                 <div style={{
@@ -134,6 +167,39 @@ export default function SectionEditor({ section, onChange }) {
             </div>
         </div>
     );
+
+    const renderVariantField = () => {
+        const variants = {
+            Navbar: ["Glassy Island", "Full Width Solid", "Minimal Transparent"],
+            Hero: ["Split Text Left", "Centered Image Bg", "Split Text Right"],
+            Text: ["Centered Standard", "Left Aligned Big", "Card Based"],
+            Gallery: ["Bento Grid", "Masonry Column", "Horizontal Flex"],
+            CTA: ["Centered Large", "Floating Pill", "Split Screen CTA"],
+            ContactForm: ["Left Text Right Form", "Centered Card", "Minimal Left Form"],
+            Footer: ["Simple Centered", "Multi-Column Mock", "Ultra Minimal"],
+            Button: ["Primary Pill", "Secondary Outline", "Ghost Action"],
+            Image: ["Rounded Shadow", "Full Bleed Edge", "Circle Cropped"],
+            Spacer: ["Standard", "Large", "Divider Line"]
+        };
+        const opts = variants[type] || ["Default", "Variant 2", "Variant 3"];
+        return (
+            <div key="variant" style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <label style={{ ...labelStyle, color: "var(--color-primary)", marginTop: 0 }}>Choose Design Template</label>
+                <div style={{ position: "relative", marginTop: 8 }}>
+                    <select
+                        value={props.variant || opts[0]}
+                        onChange={(e) => handleChange("variant", e.target.value)}
+                        style={{ ...inputStyle, marginTop: 0, appearance: "none", cursor: "pointer", paddingRight: 28, background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "14px", fontWeight: "600" }}
+                    >
+                        {opts.map((v) => <option key={v} value={v} style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>{v}</option>)}
+                    </select>
+                    <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", opacity: 0.8, color: "var(--color-primary)" }}>
+                        <ChevronDown size={14} />
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     /** Styling section common to all section types */
     const renderStyleControls = () => (
@@ -170,7 +236,7 @@ export default function SectionEditor({ section, onChange }) {
                     {renderField("Subheading", "subheading", "text", "Your tagline")}
                     {renderField("CTA Button Text", "ctaText", "text", "Get Started")}
                     {renderField("CTA Link", "ctaLink", "text", "#")}
-                    {renderField("Background Image URL", "backgroundImage", "text", "https://...")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "Text":
@@ -204,6 +270,23 @@ export default function SectionEditor({ section, onChange }) {
                     {renderField("Footer Text", "text", "text", "© 2026 Company. All rights reserved.")}
                 </>;
 
+            case "Button":
+                return <>
+                    {renderField("Text", "text", "text", "Click Me")}
+                    {renderField("Link", "link", "text", "#")}
+                </>;
+
+            case "Image":
+                return <>
+                    {renderImageField("Source URL", "src")}
+                    {renderField("Alt text", "alt", "text", "Image")}
+                </>;
+
+            case "Spacer":
+                return <>
+                    {renderField("Height (e.g. 40px, 5vh)", "height", "text", "80px")}
+                </>;
+
             default:
                 return <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "8px" }}>No editable fields for this section.</p>;
         }
@@ -211,9 +294,10 @@ export default function SectionEditor({ section, onChange }) {
 
     return (
         <div style={{ paddingTop: 8 }}>
-            <p style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+            <p style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
                 Editing: {type}
             </p>
+            {renderVariantField()}
             {renderByType()}
             {renderStyleControls()}
         </div>
