@@ -44,14 +44,14 @@ const inputSchema = Joi.object({
     targetAudience: Joi.string().min(2).max(200).required(),
     features: Joi.array().items(Joi.string()).min(1).required(),
     websiteId: Joi.string().allow("").optional(),
-});
+}).unknown(true);
 
 /**
  * POST /api/ai/generate-layout
  */
 export const generateLayout = async (req, res) => {
     console.log("📥 [AI] Received request:", { body: req.body });
-    
+
     const { error, value } = inputSchema.validate(req.body);
     if (error) {
         console.error("❌ [AI] Validation error:", error.details[0].message);
@@ -154,7 +154,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
         // If websiteId provided, save pages to DB
         if (website) {
             const autoPublish = req.query.autoPublish === "true" || req.body.autoPublish === true;
-            
+
             for (const pageData of validated.pages) {
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
@@ -203,7 +203,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
             // 🔥 AUTO-TRIGGER FIREBASE AGENT for form backend setup
             if (autoPublish) {
                 console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
-                
+
                 const firebaseAgent = new FirebaseAgent();
                 const deploymentContext = {
                     tenantId: req.tenantId.toString(),
