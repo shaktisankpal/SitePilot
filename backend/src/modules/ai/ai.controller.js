@@ -3,6 +3,7 @@ import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
 import Website from "../website/website.model.js";
+import Tenant from "../tenant/tenant.model.js";
 import { v4 as uuidv4 } from "uuid";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -42,6 +43,8 @@ const inputSchema = Joi.object({
     targetAudience: Joi.string().min(2).max(200).required(),
     features: Joi.array().items(Joi.string()).min(1).required(),
     websiteId: Joi.string().allow("").optional(),
+    primaryColor: Joi.string().allow("").optional(),
+    secondaryColor: Joi.string().allow("").optional(),
 });
 
 /**
@@ -51,7 +54,7 @@ export const generateLayout = async (req, res) => {
     const { error, value } = inputSchema.validate(req.body);
     if (error) return res.status(400).json({ success: false, message: error.details[0].message });
 
-    const { businessType, tone, targetAudience, features, websiteId } = value;
+    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor } = value;
 
     // Verify website ownership if provided
     let website = null;
@@ -147,7 +150,11 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
                     type: s.type,
-                    props: s.props || {},
+                    props: {
+                        ...(s.props || {}),
+                        accentColor: primaryColor || undefined,
+                        secondaryColor: secondaryColor || undefined,
+                    },
                     order: idx,
                 }));
 

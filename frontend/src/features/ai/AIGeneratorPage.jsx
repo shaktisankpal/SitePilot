@@ -8,6 +8,8 @@ import {
     Wand2, Sparkles, Loader2, CheckCircle,
     Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate
 } from "lucide-react";
+import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
+import { updateTenantBranding } from "../../store/slices/authSlice.js";
 
 const FEATURES = [
     "Hero Banner", "Service Cards", "Team Section", "Gallery", "Testimonials",
@@ -27,13 +29,16 @@ const inputStyle = {
 export default function AIGeneratorPage() {
     const dispatch = useDispatch();
     const { websites } = useSelector((s) => s.website);
+    const { tenant } = useSelector((s) => s.auth);
     const [form, setForm] = useState({
         businessType: "", tone: "Professional", targetAudience: "General Public",
         features: ["Hero Banner", "Contact Form"], websiteId: "",
+        primaryColor: tenant?.branding?.primaryColor || "#6366f1",
+        secondaryColor: tenant?.branding?.secondaryColor || "#8b5cf6",
     });
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
-    const [expandedPage, setExpandedPage] = useState(null);
+    const [activePageIdx, setActivePageIdx] = useState(0);
 
     const toggleFeature = (f) => {
         setForm((p) => ({
@@ -51,7 +56,9 @@ export default function AIGeneratorPage() {
             const res = await api.post("/ai/generate-website", form);
             setResult(res.data);
             toast.success("Layout generated! ✨");
-            if (form.websiteId) dispatch(fetchWebsites());
+            if (form.websiteId) {
+                dispatch(fetchWebsites());
+            }
         } catch (err) {
             toast.error(err.response?.data?.message || "AI generation failed");
         } finally { setLoading(false); }
@@ -116,6 +123,31 @@ export default function AIGeneratorPage() {
                                             {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Primary Color</label>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-input)", border: "1px solid var(--border-color)", borderRadius: 14, padding: "8px" }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+                                                <input type="color" value={form.primaryColor} onChange={(e) => setForm((p) => ({ ...p, primaryColor: e.target.value }))}
+                                                    style={{ position: "absolute", inset: -8, width: 48, height: 48, cursor: "pointer", border: "none" }} />
+                                            </div>
+                                            <input type="text" value={form.primaryColor} onChange={(e) => setForm((p) => ({ ...p, primaryColor: e.target.value }))}
+                                                style={{ border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 15, outline: "none", width: "100%", fontFamily: "monospace" }} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Secondary Color</label>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-input)", border: "1px solid var(--border-color)", borderRadius: 14, padding: "8px" }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+                                                <input type="color" value={form.secondaryColor} onChange={(e) => setForm((p) => ({ ...p, secondaryColor: e.target.value }))}
+                                                    style={{ position: "absolute", inset: -8, width: 48, height: 48, cursor: "pointer", border: "none" }} />
+                                            </div>
+                                            <input type="text" value={form.secondaryColor} onChange={(e) => setForm((p) => ({ ...p, secondaryColor: e.target.value }))}
+                                                style={{ border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 15, outline: "none", width: "100%", fontFamily: "monospace" }} />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -216,13 +248,13 @@ export default function AIGeneratorPage() {
                         {result && (
                             <div style={{
                                 background: "var(--bg-card)", border: "1px solid var(--border-color)",
-                                borderRadius: 24, padding: 32, display: "flex", flexDirection: "column",
+                                borderRadius: 24, padding: 24, display: "flex", flexDirection: "column", height: "100%", minHeight: 600
                             }}>
                                 {/* Success banner */}
                                 <div style={{
                                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                                    marginBottom: 28, background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 16,
-                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    marginBottom: 20, background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 16,
+                                    border: "1px solid rgba(255,255,255,0.06)", flexShrink: 0
                                 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                         <div style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", padding: 8, borderRadius: "50%" }}>
@@ -240,63 +272,35 @@ export default function AIGeneratorPage() {
                                     )}
                                 </div>
 
-                                {/* Pages */}
-                                <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, overflowY: "auto" }}>
+                                {/* Tabs */}
+                                <div style={{ display: "flex", gap: 8, marginBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, overflowX: "auto", flexShrink: 0 }}>
                                     {result.layout?.pages?.map((page, i) => (
-                                        <div key={i} style={{
-                                            borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)",
-                                            background: "rgba(255,255,255,0.02)",
+                                        <button key={i} onClick={() => setActivePageIdx(i)} style={{
+                                            padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
+                                            background: activePageIdx === i ? "var(--color-primary)" : "var(--bg-input)",
+                                            color: activePageIdx === i ? "white" : "var(--text-secondary)",
+                                            transition: "all 0.2s"
                                         }}>
-                                            <button onClick={() => setExpandedPage(expandedPage === i ? null : i)} style={{
-                                                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                                                padding: 16, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary)",
-                                            }}>
-                                                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                                    <div style={{ padding: 8, background: "rgba(99,102,241,0.15)", borderRadius: 8, color: "#818cf8" }}>
-                                                        <Eye size={16} strokeWidth={2.5} />
-                                                    </div>
-                                                    <span style={{ fontSize: 15, fontWeight: 700 }}>{page.title}</span>
-                                                    <code style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "var(--bg-input)", color: "var(--text-secondary)", border: "1px solid var(--border-color)", fontWeight: 700 }}>
-                                                        /{page.slug}
-                                                    </code>
-                                                </div>
-                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                    <span style={{ fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "4px 8px", borderRadius: 6, color: "var(--text-secondary)" }}>
-                                                        {page.sections.length} blocks
-                                                    </span>
-                                                    <div style={{ color: "rgba(255,255,255,0.3)" }}>
-                                                        {expandedPage === i ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                                                    </div>
-                                                </div>
-                                            </button>
-
-                                            {expandedPage === i && (
-                                                <div style={{ padding: "8px 16px 16px", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", gap: 8 }}>
-                                                    {page.sections.map((section, j) => (
-                                                        <div key={j} style={{
-                                                            display: "flex", alignItems: "center", gap: 12,
-                                                            padding: 12, borderRadius: 12, background: "var(--bg-card)",
-                                                            border: "1px solid rgba(255,255,255,0.04)",
-                                                        }}>
-                                                            <Code2 size={16} style={{ color: "#818cf8", opacity: 0.7 }} />
-                                                            <span style={{ fontSize: 12, fontWeight: 800, padding: "4px 8px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(99,102,241,0.15)", color: "var(--color-primary)" }}>
-                                                                {section.type}
-                                                            </span>
-                                                            {section.props?.heading && (
-                                                                <span style={{ fontSize: 13, color: "var(--text-primary)", opacity: 0.8, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                                    {section.props.heading}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                                            {page.title}
+                                        </button>
                                     ))}
                                 </div>
 
+                                {/* Live Preview Full */}
+                                <div style={{ flex: 1, background: "#0f0f1a", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", position: "relative" }}>
+                                    <div style={{ position: "absolute", inset: 0, overflowY: "auto" }}>
+                                        <div style={{ pointerEvents: "none" }}>
+                                            {result.layout?.pages[activePageIdx]?.sections.map((section, j) => {
+                                                const Component = SECTION_MAP[section.type];
+                                                if (!Component) return null;
+                                                return <Component key={j} props={{ ...section.props, accentColor: form.primaryColor, secondaryColor: form.secondaryColor }} branding={{ font: tenant?.branding?.font || "Inter" }} />;
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {!result.savedToWebsite && (
-                                    <div style={{ marginTop: 24, padding: 16, borderRadius: 16, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", textAlign: "center" }}>
+                                    <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", textAlign: "center", flexShrink: 0 }}>
                                         <p style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b" }}>
                                             ⚠️ Sandbox preview. Choose a project above to apply directly.
                                         </p>

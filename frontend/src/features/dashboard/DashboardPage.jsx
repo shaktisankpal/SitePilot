@@ -44,6 +44,8 @@ export default function DashboardPage() {
     const { user, tenant } = useSelector((s) => s.auth);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showAllActivity, setShowAllActivity] = useState(false);
+    const [showAllDeployments, setShowAllDeployments] = useState(false);
 
     useEffect(() => {
         api.get("/analytics/dashboard")
@@ -58,6 +60,9 @@ export default function DashboardPage() {
         { icon: Wand2, label: "Generations", value: stats.stats.aiUsageCount, color: "#ec4899" },
         { icon: Rocket, label: "Deployments", value: stats.stats.deploymentCount, color: "#10b981" },
     ] : [];
+
+    const activityList = showAllActivity ? stats?.recentActivity : stats?.recentActivity?.slice(0, 5);
+    const deploymentList = showAllDeployments ? stats?.recentDeployments : stats?.recentDeployments?.slice(0, 5);
 
     return (
         <DashboardLayout>
@@ -127,7 +132,7 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {stats?.recentActivity?.slice(0, 8).map((log) => (
+                                {activityList?.map((log) => (
                                     <div key={log._id} style={{
                                         display: "flex", alignItems: "center", justifyContent: "space-between",
                                         padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.02)",
@@ -152,6 +157,19 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                 ))}
+                                {stats?.recentActivity?.length > 5 && (
+                                    <button onClick={() => setShowAllActivity(!showAllActivity)} style={{
+                                        background: "none", border: "1px solid rgba(255,255,255,0.06)",
+                                        borderRadius: 14, padding: "12px", color: "var(--text-secondary)",
+                                        fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                        marginTop: 8, transition: "all 0.15s ease",
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                                    >
+                                        {showAllActivity ? "View Less" : "View All Activity"}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -186,7 +204,7 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {stats?.recentDeployments?.map((dep) => (
+                                {deploymentList?.map((dep) => (
                                     <div key={dep._id} style={{
                                         display: "flex", alignItems: "center", justifyContent: "space-between",
                                         padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.02)",
@@ -227,6 +245,19 @@ export default function DashboardPage() {
                                         </span>
                                     </div>
                                 ))}
+                                {stats?.recentDeployments?.length > 5 && (
+                                    <button onClick={() => setShowAllDeployments(!showAllDeployments)} style={{
+                                        background: "none", border: "1px solid rgba(255,255,255,0.06)",
+                                        borderRadius: 14, padding: "12px", color: "var(--text-secondary)",
+                                        fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                        marginTop: 8, transition: "all 0.15s ease",
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                                    >
+                                        {showAllDeployments ? "View Less" : "View All Deployments"}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

@@ -151,6 +151,7 @@ export default function SectionEditor({ section, onChange }) {
             {renderColorField("Background", "bgColor", "#0a0a14")}
             {renderColorField("Text Color", "textColor", "#f0f0ff")}
             {renderColorField("Accent Color", "accentColor", "#6366f1")}
+            {renderColorField("Secondary Color", "secondaryColor", "#8b5cf6")}
             {renderFontField()}
         </div>
     );

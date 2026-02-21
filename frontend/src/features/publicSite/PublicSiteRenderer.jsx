@@ -36,7 +36,7 @@ const NavbarSection = ({ props, branding }) => {
 
 const HeroSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const secondary = props.secondaryColor || branding?.secondaryColor || "#8b5cf6";
     const bg = props.bgColor;
     const textColor = props.textColor || "#f0f0ff";
     const font = props.fontFamily || branding?.font;
@@ -108,7 +108,7 @@ const TextSection = ({ props, branding }) => {
 
 const GallerySection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const secondary = props.secondaryColor || branding?.secondaryColor || "#8b5cf6";
     const bg = props.bgColor || "transparent";
     const textColor = props.textColor || "#f0f0ff";
     const font = props.fontFamily || branding?.font;
@@ -141,7 +141,7 @@ const GallerySection = ({ props, branding }) => {
 
 const CTASection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const secondary = props.secondaryColor || branding?.secondaryColor || "#8b5cf6";
     const bg = props.bgColor || `linear-gradient(135deg, ${accent}15, ${secondary}15)`;
     const textColor = props.textColor || "#f0f0ff";
     const font = props.fontFamily || branding?.font;
@@ -173,7 +173,7 @@ const CTASection = ({ props, branding }) => {
 
 const ContactFormSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const secondary = props.secondaryColor || branding?.secondaryColor || "#8b5cf6";
     const bg = props.bgColor || "transparent";
     const textColor = props.textColor || "#f0f0ff";
     const font = props.fontFamily || branding?.font;

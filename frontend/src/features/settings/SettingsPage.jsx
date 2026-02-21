@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
                 {/* ============ BRANDING TAB ============ */}
                 {activeTab === "branding" && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 32, maxWidth: 800 }}>
                         {/* Workspace Info Card */}
                         <div style={{
                             background: "var(--bg-card)", border: "1px solid var(--border-color)",
@@ -197,61 +197,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
-                        {/* Current Branding Preview */}
-                        <div style={{
-                            background: "var(--bg-card)", border: "1px solid var(--border-color)",
-                            borderRadius: 24, padding: 36, display: "flex", flexDirection: "column",
-                        }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-                                <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
-                                    <LayoutTemplate size={22} strokeWidth={2.5} />
-                                </div>
-                                <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Current Theme</h3>
-                            </div>
 
-                            <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", flex: 1 }}>
-                                {/* Mock navbar */}
-                                <div style={{
-                                    padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center",
-                                    background: "rgba(0,0,0,0.5)", borderBottom: "1px solid rgba(255,255,255,0.05)",
-                                }}>
-                                    <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.02em", color: branding.primaryColor || "#6366f1" }}>
-                                        {tenant?.name}
-                                    </span>
-                                    <div style={{ display: "flex", gap: 20 }}>
-                                        {["Features", "Pricing", "Contact"].map((l) => (
-                                            <span key={l} style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.5)" }}>{l}</span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Hero mock */}
-                                <div style={{
-                                    padding: "60px 32px", textAlign: "center", minHeight: 340,
-                                    display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-                                    background: `radial-gradient(circle at 50% -20%, ${branding.primaryColor || "#6366f1"}25 0%, var(--bg-surface) 100%)`,
-                                }}>
-                                    <div style={{
-                                        fontSize: 40, lineHeight: 1.1, fontWeight: 800, marginBottom: 20, maxWidth: "85%",
-                                        background: `linear-gradient(135deg, ${branding.primaryColor || "#6366f1"}, ${branding.secondaryColor || "#8b5cf6"})`,
-                                        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                                        fontFamily: `"${branding.font || "Google Sans"}", sans-serif`, letterSpacing: "-0.03em",
-                                    }}>
-                                        Create the extraordinary with {tenant?.name}
-                                    </div>
-                                    <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", marginBottom: 32, maxWidth: "75%", lineHeight: 1.6 }}>
-                                        Build stunning, high-performance websites generated seamlessly through artificial intelligence.
-                                    </p>
-                                    <div style={{
-                                        display: "inline-block", padding: "14px 32px", borderRadius: 100, fontSize: 15, fontWeight: 700,
-                                        background: `linear-gradient(135deg, ${branding.primaryColor || "#6366f1"}, ${branding.secondaryColor || "#8b5cf6"})`,
-                                        color: "white", boxShadow: `0 10px 30px ${branding.primaryColor || "#6366f1"}35`,
-                                    }}>
-                                        Start Building Now
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
 
