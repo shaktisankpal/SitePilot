@@ -5,7 +5,7 @@ import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import { fetchWebsites } from "../../store/slices/websiteSlice.js";
 import toast from "react-hot-toast";
 import {
-    Wand2, Sparkles, Plus, X, Loader2, CheckCircle,
+    Wand2, Sparkles, Loader2, CheckCircle,
     Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate
 } from "lucide-react";
 
@@ -14,19 +14,22 @@ const FEATURES = [
     "FAQ", "Pricing Table", "Contact Form", "Newsletter", "Blog Preview",
     "Stats Counter", "Call to Action",
 ];
-
 const TONES = ["Professional", "Friendly", "Bold", "Minimalist", "Playful", "Luxury"];
 const AUDIENCES = ["General Public", "Businesses", "Developers", "Creatives", "Students", "Executives"];
+
+const inputStyle = {
+    width: "100%", padding: "14px 18px", borderRadius: 14,
+    background: "var(--bg-input)", border: "1px solid var(--border-color)",
+    color: "var(--text-primary)", fontSize: 15, outline: "none",
+    transition: "all 0.2s ease", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.15)",
+};
 
 export default function AIGeneratorPage() {
     const dispatch = useDispatch();
     const { websites } = useSelector((s) => s.website);
     const [form, setForm] = useState({
-        businessType: "",
-        tone: "Professional",
-        targetAudience: "General Public",
-        features: ["Hero Banner", "Contact Form"],
-        websiteId: "",
+        businessType: "", tone: "Professional", targetAudience: "General Public",
+        features: ["Hero Banner", "Contact Form"], websiteId: "",
     });
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -35,9 +38,7 @@ export default function AIGeneratorPage() {
     const toggleFeature = (f) => {
         setForm((p) => ({
             ...p,
-            features: p.features.includes(f)
-                ? p.features.filter((x) => x !== f)
-                : [...p.features, f],
+            features: p.features.includes(f) ? p.features.filter((x) => x !== f) : [...p.features, f],
         }));
     };
 
@@ -45,9 +46,7 @@ export default function AIGeneratorPage() {
         e.preventDefault();
         if (!form.businessType) return toast.error("Please describe your business");
         if (form.features.length === 0) return toast.error("Select at least one feature");
-
-        setLoading(true);
-        setResult(null);
+        setLoading(true); setResult(null);
         try {
             const res = await api.post("/ai/generate-website", form);
             setResult(res.data);
@@ -55,149 +54,107 @@ export default function AIGeneratorPage() {
             if (form.websiteId) dispatch(fetchWebsites());
         } catch (err) {
             toast.error(err.response?.data?.message || "AI generation failed");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const inputStyle = {
-        width: "100%", padding: "14px 18px", borderRadius: "14px",
-        background: "var(--bg-input)", border: "1px solid var(--border-color)",
-        color: "var(--text-primary)", fontSize: "15px", outline: "none",
-        transition: "all 0.2s ease",
-        boxShadow: "inset 0 2px 4px rgba(0,0,0,0.15)"
+        } finally { setLoading(false); }
     };
 
     return (
         <DashboardLayout>
-            <div className="w-full max-w-[1200px] mx-auto p-6 md:p-10 space-y-10">
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="flex items-center justify-center rounded-[14px] shadow-sm ring-1 ring-white/5"
-                            style={{ width: "48px", height: "48px", background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
-                        >
-                            <Wand2 size={24} className="text-white" />
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 40px 60px" }}>
+                {/* Header */}
+                <div style={{ marginBottom: 40 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
+                        <div style={{
+                            width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
+                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                            boxShadow: "0 0 20px rgba(99,102,241,0.2)",
+                        }}>
+                            <Wand2 size={24} color="white" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>AI Playground</h1>
+                        <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>AI Playground</h1>
                     </div>
-                    <p className="text-[16px] md:pl-[64px]" style={{ color: "var(--text-secondary)" }}>
+                    <p style={{ fontSize: 16, color: "var(--text-secondary)", paddingLeft: 64 }}>
                         Powered by Google Gemini — Generate a complete, stunning website layout in seconds.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    {/* Form */}
-                    <form onSubmit={handleGenerate} className="space-y-6">
-                        <div
-                            className="glass rounded-[24px] p-8"
-                            style={{ border: "1px solid var(--border-color)" }}
-                        >
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2.5 rounded-[12px] bg-white/5 text-white">
+                {/* Two Column Layout */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                    {/* Left: Form */}
+                    <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                        {/* Architect Details Card */}
+                        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 32 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                                <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
                                     <LayoutTemplate size={20} />
                                 </div>
-                                <h3 className="font-bold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>Architect Details</h3>
+                                <h3 style={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Architect Details</h3>
                             </div>
 
-                            <div className="space-y-5">
+                            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                                 <div>
-                                    <label className="block text-[13px] font-bold uppercase tracking-wider text-white/50 mb-2">
+                                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
                                         Describe Your Concept *
                                     </label>
-                                    <textarea
-                                        value={form.businessType}
-                                        onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
+                                    <textarea value={form.businessType} onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
                                         placeholder="e.g. A futuristic startup building smart AI agents with a sleek, dark aesthetic..."
-                                        rows={4}
-                                        required
-                                        style={{ ...inputStyle, resize: "none", lineHeight: "1.6" }}
-                                    />
+                                        rows={4} required style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }} />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="relative">
-                                        <label className="block text-[13px] font-bold uppercase tracking-wider text-white/50 mb-2">
-                                            Aesthetics Target
-                                        </label>
-                                        <select
-                                            value={form.tone}
-                                            onChange={(e) => setForm((p) => ({ ...p, tone: e.target.value }))}
-                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
-                                        >
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                                    <div style={{ position: "relative" }}>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Tone</label>
+                                        <select value={form.tone} onChange={(e) => setForm((p) => ({ ...p, tone: e.target.value }))}
+                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
                                         </select>
-                                        <div className="absolute right-4 bottom-4 pointer-events-none opacity-50">
-                                            <ChevronDown size={16} />
-                                        </div>
+                                        <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
-                                    <div className="relative">
-                                        <label className="block text-[13px] font-bold uppercase tracking-wider text-white/50 mb-2">
-                                            Core Audience
-                                        </label>
-                                        <select
-                                            value={form.targetAudience}
-                                            onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
-                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
-                                        >
+                                    <div style={{ position: "relative" }}>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Audience</label>
+                                        <select value={form.targetAudience} onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
+                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
                                         </select>
-                                        <div className="absolute right-4 bottom-4 pointer-events-none opacity-50">
-                                            <ChevronDown size={16} />
-                                        </div>
+                                        <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
                                 </div>
 
                                 {websites.length > 0 && (
-                                    <div className="relative pt-2">
-                                        <label className="block text-[13px] font-bold uppercase tracking-wider text-white/50 mb-2">
-                                            Apply Directly (Optional)
-                                        </label>
-                                        <select
-                                            value={form.websiteId}
-                                            onChange={(e) => setForm((p) => ({ ...p, websiteId: e.target.value }))}
-                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
-                                        >
+                                    <div style={{ position: "relative" }}>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Apply Directly (Optional)</label>
+                                        <select value={form.websiteId} onChange={(e) => setForm((p) => ({ ...p, websiteId: e.target.value }))}
+                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             <option value="">— Preview Sandbox Only —</option>
-                                            {websites.map((w) => (
-                                                <option key={w._id} value={w._id}>{w.name}</option>
-                                            ))}
+                                            {websites.map((w) => <option key={w._id} value={w._id}>{w.name}</option>)}
                                         </select>
-                                        <div className="absolute right-4 bottom-4 pointer-events-none opacity-50">
-                                            <ChevronDown size={16} />
-                                        </div>
+                                        <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Feature Selection */}
-                        <div
-                            className="glass rounded-[24px] p-8"
-                            style={{ border: "1px solid var(--border-color)" }}
-                        >
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-bold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>Required Blocks</h3>
-                                <p className="text-[13px] font-bold uppercase tracking-wider bg-white/5 px-3 py-1.5 rounded-full" style={{ color: "var(--color-primary)" }}>
+                        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 32 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                                <h3 style={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Required Blocks</h3>
+                                <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 100, color: "var(--color-primary)" }}>
                                     {form.features.length} selected
-                                </p>
+                                </span>
                             </div>
-                            <div className="flex flex-wrap gap-2.5">
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                                 {FEATURES.map((f) => {
-                                    const selected = form.features.includes(f);
+                                    const sel = form.features.includes(f);
                                     return (
-                                        <button
-                                            key={f} type="button" onClick={() => toggleFeature(f)}
-                                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-bold transition-all hover:-translate-y-0.5"
-                                            style={{
-                                                background: selected ? "var(--color-primary)" : "var(--bg-input)",
-                                                border: selected ? "1px solid transparent" : "1px solid var(--border-color)",
-                                                color: selected ? "white" : "var(--text-secondary)",
-                                                cursor: "pointer",
-                                                boxShadow: selected ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
-                                            }}
-                                        >
-                                            {selected && <CheckCircle size={14} strokeWidth={3} />}
+                                        <button key={f} type="button" onClick={() => toggleFeature(f)} style={{
+                                            display: "flex", alignItems: "center", gap: 7,
+                                            padding: "9px 18px", borderRadius: 100, fontSize: 14, fontWeight: 700,
+                                            background: sel ? "var(--color-primary)" : "var(--bg-input)",
+                                            border: sel ? "1px solid transparent" : "1px solid var(--border-color)",
+                                            color: sel ? "white" : "var(--text-secondary)",
+                                            cursor: "pointer", transition: "all 0.15s ease",
+                                            boxShadow: sel ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
+                                        }}>
+                                            {sel && <CheckCircle size={14} strokeWidth={3} />}
                                             {f}
                                         </button>
                                     );
@@ -205,148 +162,128 @@ export default function AIGeneratorPage() {
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full flex items-center justify-center gap-2 py-5 rounded-[16px] text-[16px] font-extrabold transition-all outline-none"
-                            style={{
-                                background: loading ? "var(--bg-input)" : "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                                color: loading ? "var(--text-muted)" : "white", border: "none",
-                                cursor: loading ? "not-allowed" : "pointer",
-                                boxShadow: loading ? "none" : "0 8px 20px rgba(99,102,241,0.4)",
-                                transform: loading ? "none" : "scale(1)",
-                            }}
-                            onMouseDown={(e) => !loading && (e.currentTarget.style.transform = "scale(0.98)")}
-                            onMouseUp={(e) => !loading && (e.currentTarget.style.transform = "scale(1)")}
-                            onMouseLeave={(e) => !loading && (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                            {loading ? (
-                                <><Loader2 size={20} className="animate-spin" /> Cooking Layout...</>
-                            ) : (
-                                <><Sparkles size={20} strokeWidth={2.5} /> Generate Website Layout</>
-                            )}
+                        {/* Generate Button */}
+                        <button type="submit" disabled={loading} style={{
+                            width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                            padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 800, border: "none",
+                            background: loading ? "var(--bg-input)" : "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                            color: loading ? "var(--text-muted)" : "white",
+                            cursor: loading ? "not-allowed" : "pointer",
+                            boxShadow: loading ? "none" : "0 8px 20px rgba(99,102,241,0.4)",
+                        }}>
+                            {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking Layout...</> : <><Sparkles size={20} strokeWidth={2.5} /> Generate Website Layout</>}
                         </button>
                     </form>
 
-                    {/* Result preview */}
-                    <div className="h-full">
+                    {/* Right: Preview */}
+                    <div>
                         {!result && !loading && (
-                            <div
-                                className="glass rounded-[24px] flex flex-col items-center justify-center p-12 h-full text-center"
-                                style={{ border: "1px solid var(--border-color)", minHeight: "600px" }}
-                            >
-                                <div className="p-6 rounded-full bg-white/5 mb-6 text-white/20">
+                            <div style={{
+                                background: "var(--bg-card)", border: "1px solid var(--border-color)",
+                                borderRadius: 24, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                padding: 48, minHeight: 600, textAlign: "center",
+                            }}>
+                                <div style={{ padding: 28, borderRadius: "50%", background: "rgba(255,255,255,0.04)", marginBottom: 24, color: "rgba(255,255,255,0.15)" }}>
                                     <Wand2 size={56} strokeWidth={1.5} />
                                 </div>
-                                <h2 className="text-2xl font-bold mb-3 tracking-tight" style={{ color: "var(--text-primary)" }}>
-                                    Awaiting Instructions
-                                </h2>
-                                <p className="text-[16px] max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
-                                    Describe your concept, select the blocks you need, and watch our AI engineer your dream layout in seconds.
+                                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Awaiting Instructions</h2>
+                                <p style={{ fontSize: 16, color: "var(--text-muted)", maxWidth: 340, lineHeight: 1.5 }}>
+                                    Describe your concept, select blocks, and watch our AI generate your layout.
                                 </p>
                             </div>
                         )}
 
                         {loading && (
-                            <div
-                                className="glass rounded-[24px] flex flex-col items-center justify-center p-12 h-full text-center relative overflow-hidden"
-                                style={{ border: "1px solid var(--border-color)", minHeight: "600px" }}
-                            >
-                                <div
-                                    className="absolute inset-0 opacity-20"
-                                    style={{ background: "radial-gradient(circle at center, var(--color-primary) 0%, transparent 60%)" }}
-                                />
-                                <div
-                                    className="flex items-center justify-center relative z-10 mb-8"
-                                    style={{
-                                        width: "80px", height: "80px", borderRadius: "50%",
-                                        background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                                        boxShadow: "0 0 40px var(--color-primary)",
-                                        animation: "pulse-glow 2s ease-in-out infinite",
-                                    }}
-                                >
-                                    <Sparkles size={36} className="text-white animate-spin" style={{ animationDuration: '3s' }} />
+                            <div style={{
+                                background: "var(--bg-card)", border: "1px solid var(--border-color)",
+                                borderRadius: 24, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                padding: 48, minHeight: 600, textAlign: "center", position: "relative", overflow: "hidden",
+                            }}>
+                                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at center, var(--color-primary) 0%, transparent 60%)", opacity: 0.15 }} />
+                                <div style={{
+                                    width: 80, height: 80, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                    background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                                    boxShadow: "0 0 40px var(--color-primary)", marginBottom: 28,
+                                    animation: "pulse-glow 2s ease-in-out infinite", position: "relative", zIndex: 1,
+                                }}>
+                                    <Sparkles size={36} color="white" className="animate-spin" style={{ animationDuration: "3s" }} />
                                 </div>
-                                <h2 className="text-2xl font-bold mb-2 tracking-tight relative z-10" style={{ color: "var(--text-primary)" }}>Engineering Layout...</h2>
-                                <p className="text-[15px] relative z-10" style={{ color: "var(--text-secondary)" }}>Gemini AI is analyzing requirements and structuring pages.</p>
+                                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: "var(--text-primary)", position: "relative", zIndex: 1 }}>Engineering Layout...</h2>
+                                <p style={{ fontSize: 15, color: "var(--text-secondary)", position: "relative", zIndex: 1 }}>Gemini AI is structuring your pages.</p>
                             </div>
                         )}
 
                         {result && (
-                            <div
-                                className="glass rounded-[24px] p-8 animate-fade-in flex flex-col h-full"
-                                style={{ border: "1px solid var(--border-color)" }}
-                            >
-                                <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-[16px] border border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-emerald-500/20 text-emerald-400 p-2 rounded-full">
+                            <div style={{
+                                background: "var(--bg-card)", border: "1px solid var(--border-color)",
+                                borderRadius: 24, padding: 32, display: "flex", flexDirection: "column",
+                            }}>
+                                {/* Success banner */}
+                                <div style={{
+                                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    marginBottom: 28, background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 16,
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                        <div style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", padding: 8, borderRadius: "50%" }}>
                                             <CheckCircle size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-[18px] tracking-tight" style={{ color: "var(--text-primary)" }}>
-                                                Generation Successful
-                                            </h3>
-                                            <p className="text-[13px] text-emerald-400 font-medium">{result.layout?.pages?.length} Pages Designed</p>
+                                            <h3 style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Generation Successful</h3>
+                                            <p style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>{result.layout?.pages?.length} Pages Designed</p>
                                         </div>
                                     </div>
                                     {result.savedToWebsite && (
-                                        <span className="text-[11px] uppercase tracking-wider font-bold bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full">
-                                            Saved to Project
+                                        <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, background: "rgba(16,185,129,0.15)", color: "#10b981", padding: "6px 12px", borderRadius: 100 }}>
+                                            Saved
                                         </span>
                                     )}
                                 </div>
 
-                                <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                {/* Pages */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1, overflowY: "auto" }}>
                                     {result.layout?.pages?.map((page, i) => (
-                                        <div
-                                            key={i}
-                                            className="rounded-[16px] overflow-hidden transition-all duration-300 border border-white/10"
-                                            style={{ background: "rgba(255,255,255,0.02)" }}
-                                        >
-                                            <button
-                                                className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
-                                                style={{ background: "none", border: "none", cursor: "pointer" }}
-                                                onClick={() => setExpandedPage(expandedPage === i ? null : i)}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                                        <div key={i} style={{
+                                            borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)",
+                                            background: "rgba(255,255,255,0.02)",
+                                        }}>
+                                            <button onClick={() => setExpandedPage(expandedPage === i ? null : i)} style={{
+                                                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                                                padding: 16, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary)",
+                                            }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                    <div style={{ padding: 8, background: "rgba(99,102,241,0.15)", borderRadius: 8, color: "#818cf8" }}>
                                                         <Eye size={16} strokeWidth={2.5} />
                                                     </div>
-                                                    <span className="text-[15px] font-bold tracking-wide" style={{ color: "var(--text-primary)" }}>{page.title}</span>
-                                                    <code
-                                                        className="text-[12px] px-2 py-1 rounded-md font-bold"
-                                                        style={{ background: "var(--bg-input)", color: "var(--text-secondary)", border: "1px solid var(--border-color)" }}
-                                                    >
+                                                    <span style={{ fontSize: 15, fontWeight: 700 }}>{page.title}</span>
+                                                    <code style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "var(--bg-input)", color: "var(--text-secondary)", border: "1px solid var(--border-color)", fontWeight: 700 }}>
                                                         /{page.slug}
                                                     </code>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[12px] font-bold bg-white/10 px-2 py-1 rounded-md" style={{ color: "var(--text-secondary)" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                    <span style={{ fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "4px 8px", borderRadius: 6, color: "var(--text-secondary)" }}>
                                                         {page.sections.length} blocks
                                                     </span>
-                                                    <div className="text-white/40">
+                                                    <div style={{ color: "rgba(255,255,255,0.3)" }}>
                                                         {expandedPage === i ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                                                     </div>
                                                 </div>
                                             </button>
 
                                             {expandedPage === i && (
-                                                <div className="px-4 pb-4 space-y-2 animate-fade-in bg-black/20 pt-2">
+                                                <div style={{ padding: "8px 16px 16px", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", gap: 8 }}>
                                                     {page.sections.map((section, j) => (
-                                                        <div
-                                                            key={j}
-                                                            className="flex items-center gap-3 p-3 rounded-[12px] border border-white/5"
-                                                            style={{ background: "var(--bg-card)" }}
-                                                        >
-                                                            <Code2 size={16} className="text-indigo-400 opacity-70" />
-                                                            <span
-                                                                className="text-[13px] font-bold px-2 py-1 rounded-md uppercase tracking-wider"
-                                                                style={{ background: "rgba(99,102,241,0.15)", color: "var(--color-primary)" }}
-                                                            >
+                                                        <div key={j} style={{
+                                                            display: "flex", alignItems: "center", gap: 12,
+                                                            padding: 12, borderRadius: 12, background: "var(--bg-card)",
+                                                            border: "1px solid rgba(255,255,255,0.04)",
+                                                        }}>
+                                                            <Code2 size={16} style={{ color: "#818cf8", opacity: 0.7 }} />
+                                                            <span style={{ fontSize: 12, fontWeight: 800, padding: "4px 8px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(99,102,241,0.15)", color: "var(--color-primary)" }}>
                                                                 {section.type}
                                                             </span>
                                                             {section.props?.heading && (
-                                                                <span className="text-[14px] truncate font-medium opacity-80" style={{ color: "var(--text-primary)" }}>
+                                                                <span style={{ fontSize: 13, color: "var(--text-primary)", opacity: 0.8, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                                     {section.props.heading}
                                                                 </span>
                                                             )}
@@ -359,9 +296,9 @@ export default function AIGeneratorPage() {
                                 </div>
 
                                 {!result.savedToWebsite && (
-                                    <div className="mt-6 p-4 rounded-[16px] bg-amber-500/10 border border-amber-500/20 text-center">
-                                        <p className="text-[14px] font-medium text-amber-500">
-                                            ⚠️ This is a sandbox preview. Select a target website project above to apply these changes directly to your live site.
+                                    <div style={{ marginTop: 24, padding: 16, borderRadius: 16, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", textAlign: "center" }}>
+                                        <p style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b" }}>
+                                            ⚠️ Sandbox preview. Choose a project above to apply directly.
                                         </p>
                                     </div>
                                 )}

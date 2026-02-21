@@ -19,22 +19,22 @@ const aiLayoutSchema = Joi.object({
         .items(
             Joi.object({
                 title: Joi.string().required(),
-                slug: Joi.string().lowercase().required(),
+                slug: Joi.string().required(),
                 sections: Joi.array()
                     .items(
                         Joi.object({
                             type: Joi.string()
                                 .valid(...VALID_SECTION_TYPES)
                                 .required(),
-                            props: Joi.object().default({}),
-                        })
+                            props: Joi.any().default({}),
+                        }).unknown(true)
                     )
                     .required(),
-            })
+            }).unknown(true)
         )
         .min(1)
         .required(),
-});
+}).unknown(true);
 
 const inputSchema = Joi.object({
     businessType: Joi.string().min(2).max(200).required(),
@@ -153,7 +153,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
 
                 const existing = await Page.findOne({
                     websiteId: website._id,
-                    slug: pageData.slug,
+                    slug: pageData.slug.toLowerCase(),
                     tenantId: req.tenantId,
                 });
 
@@ -167,8 +167,8 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
                         tenantId: req.tenantId,
                         websiteId: website._id,
                         title: pageData.title,
-                        slug: pageData.slug,
-                        isHomePage: pageData.slug === "home",
+                        slug: pageData.slug.toLowerCase(),
+                        isHomePage: pageData.slug.toLowerCase() === "home",
                         layoutConfig: { sections: sectionsWithIds },
                         createdBy: req.user._id,
                     });

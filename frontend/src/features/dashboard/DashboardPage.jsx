@@ -9,28 +9,33 @@ import {
 } from "lucide-react";
 
 const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div
-        className="glass rounded-2xl p-6 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
-        style={{ border: "1px solid var(--border-color)", background: "var(--bg-card)" }}
+    <div style={{
+        background: "var(--bg-card)", border: "1px solid var(--border-color)",
+        borderRadius: 20, padding: 28, position: "relative", overflow: "hidden",
+        transition: "transform 0.3s ease", cursor: "default",
+        display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 160,
+    }}
+        onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
     >
-        {/* Subtle background glow */}
-        <div
-            className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-[0.15] transition-transform duration-500 group-hover:scale-110 group-hover:opacity-20"
-            style={{ background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }}
-        />
+        {/* Glow */}
+        <div style={{
+            position: "absolute", right: -30, top: -30, width: 120, height: 120, borderRadius: "50%",
+            background: `radial-gradient(circle, ${color} 0%, transparent 70%)`, opacity: 0.12, pointerEvents: "none",
+        }} />
 
-        <div className="flex items-center justify-between mb-6 relative z-10 w-full">
-            <div
-                className="flex items-center justify-center rounded-[14px] p-3 shadow-sm ring-1 ring-white/5 transition-transform duration-300 group-hover:scale-110"
-                style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
-            >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, position: "relative", zIndex: 1 }}>
+            <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: 14, padding: 12, background: `color-mix(in srgb, ${color} 15%, transparent)`, color,
+            }}>
                 <Icon size={24} strokeWidth={2.5} />
             </div>
-            <span className="text-xs font-bold tracking-[0.1em] uppercase" style={{ color: "var(--text-secondary)" }}>{label}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-secondary)" }}>{label}</span>
         </div>
 
-        <div className="relative z-10 w-full mt-2">
-            <div className="text-[40px] leading-tight font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>{value}</div>
+        <div style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ fontSize: 42, lineHeight: 1, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>{value}</div>
         </div>
     </div>
 );
@@ -54,102 +59,94 @@ export default function DashboardPage() {
         { icon: Rocket, label: "Deployments", value: stats.stats.deploymentCount, color: "#10b981" },
     ] : [];
 
-    const actionStyle = (primary) => ({
-        display: "inline-flex", alignItems: "center", gap: "10px",
-        padding: "14px 26px", borderRadius: "14px",
-        fontSize: "15px", fontWeight: "600", textDecoration: "none",
-        border: primary ? "1px solid transparent" : "1px solid var(--border-color)",
-        cursor: "pointer", transition: "all 0.2s ease",
-        background: primary ? "var(--color-primary)" : "rgba(255,255,255,0.03)",
-        color: primary ? "#ffffff" : "var(--text-primary)",
-        boxShadow: primary ? "0 4px 14px 0 rgba(99, 102, 241, 0.3)" : "none",
-    });
-
     return (
         <DashboardLayout>
-            <div className="w-full max-w-[1400px] mx-auto p-6 md:p-10 space-y-10">
+            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 40px 60px" }}>
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20, marginBottom: 40 }}>
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight" style={{ color: "var(--text-primary)" }}>
+                        <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", marginBottom: 6 }}>
                             Welcome back, {user?.name?.split(" ")[0]} 👋
                         </h1>
-                        <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
-                            Here's what's happening in <span className="font-semibold" style={{ color: "var(--color-primary)" }}>{tenant?.name}</span> today.
+                        <p style={{ fontSize: 15, color: "var(--text-secondary)" }}>
+                            Here's what's happening in <span style={{ fontWeight: 600, color: "var(--color-primary)" }}>{tenant?.name}</span> today.
                         </p>
                     </div>
-                    <Link
-                        to="/websites"
-                        className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl text-white shadow-lg transition-transform hover:-translate-y-0.5 active:translate-y-0"
-                        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))", fontWeight: "600", fontSize: "15px" }}
-                    >
-                        <Plus size={18} strokeWidth={2.5} />
-                        Create Project
+                    <Link to="/websites" style={{
+                        display: "inline-flex", alignItems: "center", gap: 8,
+                        padding: "14px 28px", borderRadius: 14, textDecoration: "none",
+                        background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                        color: "white", fontWeight: 700, fontSize: 15,
+                        boxShadow: "0 6px 20px rgba(99,102,241,0.3)",
+                    }}>
+                        <Plus size={18} strokeWidth={2.5} /> Create Project
                     </Link>
                 </div>
 
                 {/* Stats Grid */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className="rounded-2xl shimmer" style={{ height: "160px" }} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {statCards.map((s) => <StatCard key={s.label} {...s} />)}
-                    </div>
-                )}
+                <div style={{
+                    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: 24, marginBottom: 40,
+                }}>
+                    {loading
+                        ? [...Array(4)].map((_, i) => (
+                            <div key={i} className="shimmer" style={{ height: 160, borderRadius: 20 }} />
+                        ))
+                        : statCards.map((s) => <StatCard key={s.label} {...s} />)
+                    }
+                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Recent Activity */}
-                    <div
-                        className="glass rounded-[24px] p-6 md:p-8 flex flex-col"
-                        style={{ border: "1px solid var(--border-color)" }}
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3.5">
-                                <div className="p-2.5 rounded-[12px] shadow-sm" style={{ background: "color-mix(in srgb, var(--color-primary) 15%, transparent)", color: "var(--color-primary)" }}>
-                                    <Activity size={20} strokeWidth={2.5} />
-                                </div>
-                                <h3 className="font-bold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>Activity Log</h3>
+                {/* Activity + Deployments */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginBottom: 40 }}>
+                    {/* Activity Log */}
+                    <div style={{
+                        background: "var(--bg-card)", border: "1px solid var(--border-color)",
+                        borderRadius: 24, padding: 32, display: "flex", flexDirection: "column",
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+                            <div style={{
+                                padding: 10, borderRadius: 12,
+                                background: "color-mix(in srgb, var(--color-primary) 15%, transparent)",
+                                color: "var(--color-primary)",
+                            }}>
+                                <Activity size={20} strokeWidth={2.5} />
                             </div>
+                            <h3 style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>Activity Log</h3>
                         </div>
 
                         {loading ? (
-                            <div className="space-y-4">
-                                {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="shimmer rounded-[14px]" style={{ height: "70px" }} />
-                                ))}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                {[...Array(4)].map((_, i) => <div key={i} className="shimmer" style={{ height: 64, borderRadius: 14 }} />)}
                             </div>
                         ) : stats?.recentActivity?.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
-                                <div className="p-5 rounded-full mb-4" style={{ background: "var(--bg-input)" }}>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", textAlign: "center" }}>
+                                <div style={{ padding: 20, borderRadius: "50%", background: "var(--bg-input)", marginBottom: 16 }}>
                                     <Activity size={32} style={{ color: "var(--text-muted)" }} />
                                 </div>
-                                <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>No recent activity to show.</p>
+                                <p style={{ color: "var(--text-muted)", fontSize: 15 }}>No recent activity to show.</p>
                             </div>
                         ) : (
-                            <div className="space-y-3.5">
-                                {stats?.recentActivity?.slice(0, 8).map((log, index) => (
-                                    <div
-                                        key={log._id}
-                                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-[14px] transition-colors border border-transparent hover:border-white/5 hover:bg-white/5"
-                                        style={{ background: "rgba(255, 255, 255, 0.015)" }}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {stats?.recentActivity?.slice(0, 8).map((log) => (
+                                    <div key={log._id} style={{
+                                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                                        padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.02)",
+                                        border: "1px solid transparent", transition: "all 0.15s ease",
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "transparent"; }}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex-shrink-0 w-2.5 h-2.5 rounded-full shadow-[0_0_10px_var(--color-primary)]" style={{ background: "var(--color-primary)" }} />
+                                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-primary)", boxShadow: "0 0 8px var(--color-primary)", flexShrink: 0 }} />
                                             <div>
-                                                <p className="text-[15px] font-semibold tracking-wide" style={{ color: "var(--text-primary)" }}>
-                                                    {log.action.replace(/_/g, " ")}
-                                                </p>
-                                                <p className="text-[13px] mt-1 font-medium" style={{ color: "var(--text-muted)" }}>
+                                                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{log.action.replace(/_/g, " ")}</p>
+                                                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                                                     by <span style={{ color: "var(--text-secondary)" }}>{log.userId?.name || "System"}</span>
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 mt-3 sm:mt-0 text-[12px] font-medium px-3 flex-shrink-0" style={{ color: "var(--text-muted)" }}>
-                                            <Clock size={14} />
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
+                                            <Clock size={12} />
                                             <span>{new Date(log.createdAt).toLocaleDateString()}</span>
                                             <span>{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
@@ -159,78 +156,75 @@ export default function DashboardPage() {
                         )}
                     </div>
 
-                    {/* Recent Deployments */}
-                    <div
-                        className="glass rounded-[24px] p-6 md:p-8 flex flex-col"
-                        style={{ border: "1px solid var(--border-color)" }}
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3.5">
-                                <div className="p-2.5 rounded-[12px] shadow-sm" style={{ background: "color-mix(in srgb, #10b981 15%, transparent)", color: "#10b981" }}>
+                    {/* Deployments */}
+                    <div style={{
+                        background: "var(--bg-card)", border: "1px solid var(--border-color)",
+                        borderRadius: 24, padding: 32, display: "flex", flexDirection: "column",
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                <div style={{ padding: 10, borderRadius: 12, background: "color-mix(in srgb, #10b981 15%, transparent)", color: "#10b981" }}>
                                     <Rocket size={20} strokeWidth={2.5} />
                                 </div>
-                                <h3 className="font-bold text-xl tracking-tight" style={{ color: "var(--text-primary)" }}>Deployments</h3>
+                                <h3 style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.01em", color: "var(--text-primary)" }}>Deployments</h3>
                             </div>
-                            <Link to="/websites" className="text-[14px] font-semibold flex items-center gap-1.5 hover:underline transition-all" style={{ color: "var(--color-primary)" }}>
+                            <Link to="/websites" style={{ fontSize: 14, fontWeight: 600, color: "var(--color-primary)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                                 View All <ArrowRight size={16} />
                             </Link>
                         </div>
 
                         {loading ? (
-                            <div className="space-y-4">
-                                {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="shimmer rounded-[14px]" style={{ height: "76px" }} />
-                                ))}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                {[...Array(4)].map((_, i) => <div key={i} className="shimmer" style={{ height: 72, borderRadius: 14 }} />)}
                             </div>
                         ) : stats?.recentDeployments?.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
-                                <div className="p-5 rounded-full mb-4" style={{ background: "var(--bg-input)" }}>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", textAlign: "center" }}>
+                                <div style={{ padding: 20, borderRadius: "50%", background: "var(--bg-input)", marginBottom: 16 }}>
                                     <Rocket size={32} style={{ color: "var(--text-muted)" }} />
                                 </div>
-                                <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>No completed deployments.</p>
+                                <p style={{ color: "var(--text-muted)", fontSize: 15 }}>No completed deployments.</p>
                             </div>
                         ) : (
-                            <div className="space-y-3.5">
-                                {stats?.recentDeployments?.map((dep, index) => (
-                                    <div
-                                        key={dep._id}
-                                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-[14px] transition-colors border border-transparent hover:border-white/5 hover:bg-white/5"
-                                        style={{ background: "rgba(255, 255, 255, 0.015)" }}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {stats?.recentDeployments?.map((dep) => (
+                                    <div key={dep._id} style={{
+                                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                                        padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.02)",
+                                        transition: "all 0.15s ease",
+                                    }}
+                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
                                     >
-                                        <div className="flex items-start sm:items-center gap-4">
-                                            <div
-                                                className="flex flex-shrink-0 items-center justify-center rounded-[10px] shadow-sm"
-                                                style={{ width: "42px", height: "42px", background: "color-mix(in srgb, #10b981 15%, transparent)", color: "#10b981" }}
-                                            >
-                                                <LayoutGrid size={20} strokeWidth={2} />
+                                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                            <div style={{
+                                                width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                                                background: "color-mix(in srgb, #10b981 15%, transparent)", color: "#10b981",
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                            }}>
+                                                <LayoutGrid size={20} />
                                             </div>
                                             <div>
-                                                <p className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                                                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                                                     {dep.websiteId?.name || "Website Project"}
-                                                    <span className="text-[12px] font-medium opacity-60 ml-2 px-1.5 py-0.5 rounded-md bg-white/10 uppercase">
+                                                    <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.5, marginLeft: 8, padding: "2px 6px", borderRadius: 6, background: "rgba(255,255,255,0.1)", textTransform: "uppercase" }}>
                                                         v{dep.version}
                                                     </span>
                                                 </p>
-                                                <p className="text-[13px] mt-1 font-medium flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
-                                                    <Clock size={12} /> {new Date(dep.createdAt).toLocaleDateString()}
-                                                    <span className="mx-1">•</span>
-                                                    by <span style={{ color: "var(--text-secondary)" }}>{dep.deployedBy?.name}</span>
+                                                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                                                    <Clock size={11} /> {new Date(dep.createdAt).toLocaleDateString()} · by <span style={{ color: "var(--text-secondary)" }}>{dep.deployedBy?.name}</span>
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex justify-end mt-3 sm:mt-0">
-                                            <span
-                                                className="text-[11px] uppercase tracking-wider font-extrabold px-3 py-1.5 rounded-full flex items-center gap-1.5"
-                                                style={{
-                                                    background: dep.status === "success" ? "color-mix(in srgb, #10b981 12%, transparent)" : "color-mix(in srgb, #ef4444 12%, transparent)",
-                                                    color: dep.status === "success" ? "#10b981" : "#ef4444",
-                                                    border: `1px solid color-mix(in srgb, ${dep.status === "success" ? "#10b981" : "#ef4444"} 30%, transparent)`
-                                                }}
-                                            >
-                                                {dep.status === "success" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                                                {dep.status}
-                                            </span>
-                                        </div>
+                                        <span style={{
+                                            fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em",
+                                            padding: "6px 12px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5,
+                                            background: dep.status === "success" ? "color-mix(in srgb, #10b981 12%, transparent)" : "color-mix(in srgb, #ef4444 12%, transparent)",
+                                            color: dep.status === "success" ? "#10b981" : "#ef4444",
+                                            border: `1px solid ${dep.status === "success" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+                                        }}>
+                                            {dep.status === "success" ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                                            {dep.status}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -239,24 +233,29 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="pt-2">
-                    <h3 className="font-bold text-[17px] mb-5 tracking-tight px-1" style={{ color: "var(--text-primary)" }}>Launch Quick Actions</h3>
-                    <div className="flex flex-wrap gap-4">
-                        <Link to="/websites" className="group hover:border-indigo-500/30" style={actionStyle(false)}>
-                            <Globe size={18} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                            Manage Websites
-                        </Link>
-                        <Link to="/ai" className="group hover:border-pink-500/30" style={actionStyle(false)}>
-                            <Wand2 size={18} className="text-pink-400 group-hover:scale-110 transition-transform" />
-                            Generate with AI
-                        </Link>
-                        <Link to="/settings" className="group hover:border-emerald-500/30" style={actionStyle(false)}>
-                            <Activity size={18} className="text-emerald-400 group-hover:scale-110 transition-transform" />
-                            Tenant Settings
-                        </Link>
+                <div>
+                    <h3 style={{ fontWeight: 800, fontSize: 17, marginBottom: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Launch Quick Actions</h3>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+                        {[
+                            { to: "/websites", icon: Globe, label: "Manage Websites", iconColor: "#818cf8" },
+                            { to: "/ai", icon: Wand2, label: "Generate with AI", iconColor: "#f472b6" },
+                            { to: "/settings", icon: Activity, label: "Tenant Settings", iconColor: "#34d399" },
+                        ].map(({ to, icon: QIcon, label, iconColor }) => (
+                            <Link key={to} to={to} style={{
+                                display: "inline-flex", alignItems: "center", gap: 10,
+                                padding: "14px 26px", borderRadius: 14, textDecoration: "none",
+                                background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)",
+                                color: "var(--text-primary)", fontSize: 15, fontWeight: 600,
+                                transition: "all 0.15s ease",
+                            }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-color)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                            >
+                                <QIcon size={18} style={{ color: iconColor }} /> {label}
+                            </Link>
+                        ))}
                     </div>
                 </div>
-
             </div>
         </DashboardLayout>
     );

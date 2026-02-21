@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice.js";
 import {
     LayoutDashboard, Globe, Wand2, Settings, LogOut,
-    Menu, X, ChevronRight, Zap, SidebarClose, SidebarOpen
+    Menu, X, Zap,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -28,142 +28,102 @@ export default function DashboardLayout({ children }) {
         navigate("/login");
     };
 
-    return (
-        <div className="flex h-screen overflow-hidden text-white" style={{ background: "var(--bg-base)" }}>
-            {/* Sidebar */}
-            <aside
-                className="flex flex-col transition-all duration-300 ease-in-out relative z-20"
-                style={{
-                    width: sidebarOpen ? "280px" : "88px",
-                    minWidth: sidebarOpen ? "280px" : "88px",
-                    background: "var(--bg-card)",
-                    borderRight: "1px solid var(--border-color)",
-                    overflow: "hidden",
-                    boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.2)" : "none",
-                }}
-            >
-                {/* Logo Area */}
-                <div
-                    className="flex items-center gap-3 px-6 py-8"
-                >
-                    <div
-                        className="flex items-center justify-center rounded-[14px] flex-shrink-0 relative overflow-hidden group"
-                        style={{
-                            width: "44px", height: "44px",
-                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
-                        }}
-                    >
-                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <Zap size={22} color="white" strokeWidth={2.5} />
-                    </div>
+    const sidebarW = sidebarOpen ? 260 : 72;
 
-                    <div className={`flex-1 transition-opacity duration-300 min-w-0 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                        <span className="font-extrabold text-2xl text-white tracking-tight animate-fade-in block leading-none">
+    return (
+        <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-base)" }}>
+            {/* Sidebar */}
+            <aside style={{
+                width: sidebarW, minWidth: sidebarW, display: "flex", flexDirection: "column",
+                background: "var(--bg-surface)", borderRight: "1px solid var(--border-color)",
+                transition: "width 0.3s ease, min-width 0.3s ease", overflow: "hidden",
+            }}>
+                {/* Logo */}
+                <div style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "20px 16px", borderBottom: "1px solid var(--border-color)",
+                }}>
+                    <div style={{
+                        width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                        background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 0 20px rgba(99,102,241,0.2)",
+                    }}>
+                        <Zap size={20} color="white" />
+                    </div>
+                    {sidebarOpen && (
+                        <span style={{ fontWeight: 800, fontSize: 20, color: "white", letterSpacing: "-0.02em" }}>
                             SitePilot
                         </span>
-                    </div>
-
-                    <button
-                        className="p-2 rounded-[12px] hover:bg-white/10 transition-colors ml-auto absolute right-4 top-8"
-                        style={{ color: "var(--text-secondary)" }}
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                    >
-                        {sidebarOpen ? <SidebarClose size={20} /> : <SidebarOpen size={20} />}
+                    )}
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
+                        marginLeft: "auto", padding: 4, borderRadius: 8,
+                        background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)",
+                    }}>
+                        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
                 </div>
 
-                {/* Tenant Context */}
+                {/* Tenant badge */}
                 {sidebarOpen && tenant && (
-                    <div className="px-6 mb-6 animate-fade-in">
-                        <div
-                            className="px-4 py-3 rounded-[16px] flex flex-col items-start"
-                            style={{ background: "var(--bg-input)", border: "1px solid var(--border-color)" }}
-                        >
-                            <span style={{ fontSize: "11px", color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: "800" }}>Workspace</span>
-                            <span className="font-bold text-[15px] mt-0.5 truncate w-full tracking-tight" style={{ color: "var(--text-primary)" }}>{tenant.name}</span>
-                        </div>
+                    <div style={{ margin: "12px 12px 0", padding: "10px 14px", borderRadius: 10, background: "var(--bg-input)", border: "1px solid var(--border-color)" }}>
+                        <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Workspace</p>
+                        <p style={{ fontWeight: 700, fontSize: 14, marginTop: 2, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tenant.name}</p>
                     </div>
                 )}
 
-                {/* Navigation */}
-                <nav className={`flex-1 overflow-y-auto custom-scrollbar px-4 pt-2 space-y-2 ${!sidebarOpen ? 'mt-8' : ''}`}>
+                {/* Nav */}
+                <nav style={{ flex: 1, padding: "16px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
                     {navItems.map(({ label, icon: Icon, path }) => {
                         const active = location.pathname.startsWith(path);
                         return (
-                            <Link
-                                key={path}
-                                to={path}
-                                className={`flex items-center gap-4 px-4 py-3.5 rounded-[16px] transition-all duration-200 group relative border border-transparent`}
-                                style={{
-                                    background: active ? "var(--bg-input)" : "transparent",
-                                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                                    borderColor: active ? "var(--border-color)" : "transparent"
-                                }}
-                                title={!sidebarOpen ? label : ""}
-                            >
-                                {active && (
-                                    <div
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-r-md"
-                                        style={{ background: "var(--color-primary)" }}
-                                    />
+                            <Link key={path} to={path} title={!sidebarOpen ? label : ""} style={{
+                                display: "flex", alignItems: "center", gap: 12,
+                                padding: "10px 14px", borderRadius: 10, textDecoration: "none",
+                                background: active ? "var(--bg-input)" : "transparent",
+                                color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                                transition: "all 0.15s ease",
+                            }}>
+                                <Icon size={20} style={{ flexShrink: 0 }} />
+                                {sidebarOpen && (
+                                    <span style={{ fontSize: 14, fontWeight: active ? 700 : 500 }}>{label}</span>
                                 )}
-                                <div className={`flex items-center justify-center ${active ? 'text-indigo-400' : 'group-hover:text-white transition-colors'}`}>
-                                    <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-                                </div>
-                                <div className={`flex-1 transition-all duration-300 min-w-0 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                                    <span className={`text-[15px] ${active ? 'font-bold' : 'font-semibold'} animate-fade-in truncate block`}>{label}</span>
-                                </div>
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* User Profile */}
-                <div
-                    className="p-5"
-                    style={{ borderTop: "1px solid var(--border-color)" }}
-                >
-                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'} bg-white/5 p-2 rounded-[16px] border border-white/5`}>
-                        <div
-                            className="flex items-center justify-center rounded-[12px] flex-shrink-0 text-[15px] font-bold ring-2 ring-white/10 relative"
-                            style={{
-                                width: "42px", height: "42px",
-                                background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                                color: "white",
-                            }}
-                        >
+                {/* User */}
+                <div style={{ padding: 12, borderTop: "1px solid var(--border-color)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "white", fontSize: 14, fontWeight: 700,
+                        }}>
                             {user?.name?.[0]?.toUpperCase()}
-                            <div className="absolute right-[-4px] bottom-[-4px] w-3 h-3 bg-emerald-500 rounded-full border-2 border-black" />
                         </div>
-
-                        <div className={`flex-1 min-w-0 transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                            <p className="text-[14px] font-bold truncate tracking-wide" style={{ color: "var(--text-primary)" }}>{user?.name}</p>
-                            <p className="text-[12px] font-medium tracking-wider truncate uppercase opacity-60" style={{ color: "var(--color-primary)" }}>{user?.role}</p>
-                        </div>
-
-                        <div className={`${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                            <button
-                                onClick={handleLogout}
-                                className="p-2.5 rounded-[12px] hover:bg-red-500/20 hover:text-red-400 transition-colors"
-                                style={{ color: "var(--text-muted)" }}
-                                title="Sign Out"
-                            >
-                                <LogOut size={18} strokeWidth={2.5} />
-                            </button>
-                        </div>
+                        {sidebarOpen && (
+                            <>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
+                                    <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{user?.role}</p>
+                                </div>
+                                <button onClick={handleLogout} title="Logout" style={{
+                                    padding: 6, borderRadius: 8, background: "none", border: "none",
+                                    cursor: "pointer", color: "var(--text-muted)",
+                                }}>
+                                    <LogOut size={16} />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <main
-                className="flex-1 overflow-auto custom-scrollbar relative"
-                style={{
-                    background: "var(--bg-base)",
-                    backgroundImage: "radial-gradient(ellipse at top right, rgba(99,102,241,0.05) 0%, transparent 60%)"
-                }}
-            >
+            {/* Main */}
+            <main style={{ flex: 1, overflowY: "auto", background: "var(--bg-base)" }}>
                 {children}
             </main>
         </div>
