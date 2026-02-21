@@ -23,6 +23,7 @@ import domainRoutes from "./modules/domain/domain.routes.js";
 import analyticsRoutes from "./modules/analytics/analytics.routes.js";
 import publishRoutes from "./agents/routes/publish.js";
 import formsRoutes from "./modules/forms/forms.routes.js";
+import uploadRoutes from "./modules/upload/upload.routes.js";
 
 // Public routes
 import {
@@ -108,6 +109,7 @@ app.use("/api/domains", domainRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/publish", publishRoutes);
 app.use("/api/forms", formsRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Error handling
 app.use(notFound);

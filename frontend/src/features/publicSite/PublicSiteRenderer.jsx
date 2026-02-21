@@ -200,8 +200,8 @@ const TextSection = ({ props, branding }) => {
     }
     // Default: Centered Standard
     return (
-        <section style={{ padding: "120px 32px", background: bg, fontFamily: baseFont }}>
-            <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+        <section style={{ padding: "120px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+            <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
                 {props.heading && <h2 style={{ fontSize: "2.8rem", fontWeight: "800", marginBottom: "24px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                 {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>{props.description}</p>}
             </div>
@@ -257,8 +257,8 @@ const GallerySection = ({ props, branding }) => {
 
     // Default: Bento Grid
     return (
-        <section style={{ padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <section style={{ padding: "100px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+            <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
                 {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", marginBottom: "48px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gridAutoRows: "280px", gap: "24px" }}>
                     {(props.items || []).map((item, i) => {
@@ -319,7 +319,7 @@ const CTASection = ({ props, branding }) => {
 
     // Default: Centered Large
     return (
-        <section style={{ padding: "80px 32px", background: bg, fontFamily: baseFont }}>
+        <section style={{ padding: "80px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
             <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 48px", borderRadius: "40px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at center, ${accent}20 0%, transparent 70%)` }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
@@ -400,8 +400,8 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     // Default: Left Text Right Form
     return (
-        <section style={{ padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
+        <section style={{ padding: "100px 32px", background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont }}>
+            <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center", position: "relative", zIndex: 1 }}>
                 <div>
                     <h2 style={{ fontSize: "3.5rem", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em" }}>{props.heading || "Let's Talk"}</h2>
                     <p style={{ fontSize: "1.25rem", color: textColor, opacity: 0.7, lineHeight: "1.6" }}>We'd love to hear from you. Fill out the form and our team will respond within 24 hours.</p>
@@ -456,8 +456,8 @@ const FooterSection = ({ props, branding }) => {
 
     // Default: Simple Centered
     return (
-        <footer style={{ padding: "48px 32px", textAlign: "center", color: textColor, fontSize: "15px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, background: bg, fontFamily: baseFont, opacity: 0.9 }}>
-            {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
+        <footer style={{ padding: "48px 32px", textAlign: "center", color: textColor, fontSize: "15px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, background: bg, backgroundImage: props.backgroundImage ? `url(${props.backgroundImage})` : "none", backgroundSize: "cover", backgroundPosition: "center", fontFamily: baseFont, opacity: 0.9 }}>
+            <div style={{ position: "relative", zIndex: 1 }}>{props.text || `© ${new Date().getFullYear()} All rights reserved.`}</div>
             <span style={{ marginLeft: "16px", fontWeight: "600", color: accent }}>Built with SitePilot</span>
         </footer>
     );

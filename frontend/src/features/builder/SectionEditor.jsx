@@ -1,4 +1,6 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import api from "../../services/api.js";
+import { useState } from "react";
 
 /**
  * SectionEditor
@@ -10,6 +12,7 @@ const FONT_OPTIONS = ["Google Sans", "Inter", "Roboto", "Outfit", "Playfair Disp
 
 export default function SectionEditor({ section, onChange }) {
     const { type, props } = section;
+    const [uploading, setUploading] = useState(false);
 
     const inputStyle = {
         width: "100%", padding: "8px 10px", borderRadius: "6px",
@@ -82,13 +85,28 @@ export default function SectionEditor({ section, onChange }) {
         </div>
     );
 
-    const handleImageUpload = (key, file) => {
+    const handleImageUpload = async (key, file) => {
         if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            handleChange(key, reader.result);
-        };
-        reader.readAsDataURL(file);
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("image", file);
+            const res = await api.post("/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            if (res.data.success) {
+                // If it starts with /uploads, prepend the backend URL if we need to, 
+                // but the sitepilot router usually handles relative paths via proxy or base url.
+                // Let's use the full absolute URL for the image
+                const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+                const base = backendUrl.replace("/api", "");
+                handleChange(key, base + res.data.url);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setUploading(false);
+        }
     };
 
     const renderImageField = (label, key) => (
@@ -101,13 +119,13 @@ export default function SectionEditor({ section, onChange }) {
                     placeholder="https://..." style={{ ...inputStyle, flex: 1, marginTop: 0 }}
                 />
                 <label style={{
-                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "6px", color: "var(--color-primary)", cursor: "pointer", padding: "0 10px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap"
+                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "6px", color: "var(--color-primary)", cursor: uploading ? "wait" : "pointer", padding: "0 10px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap"
                 }}>
-                    Upload
-                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(key, e.target.files[0])} style={{ display: "none" }} />
+                    {uploading ? <Loader2 size={12} className="animate-spin" /> : "Upload"}
+                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(key, e.target.files[0])} style={{ display: "none" }} disabled={uploading} />
                 </label>
             </div>
-            {props[key] && props[key].length > 10 && props[key].startsWith("data:") && (
+            {props[key] && props[key].length > 10 && (props[key].startsWith("http") || props[key].startsWith("data:")) && (
                 <div style={{ marginTop: 8, borderRadius: 6, overflow: "hidden", height: 100, border: "1px solid var(--border-color)", background: "#000" }}>
                     <img src={props[key]} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
                 </div>
@@ -243,12 +261,14 @@ export default function SectionEditor({ section, onChange }) {
                 return <>
                     {renderField("Heading", "heading", "text", "Section Title")}
                     {renderField("Content", "description", "textarea", "Write your content here...")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "Gallery":
                 return <>
                     {renderField("Heading", "heading", "text", "Our Gallery")}
-                    {renderArrayField("Image Descriptions", "items")}
+                    {renderArrayField("Image URLs or Descriptions", "items")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "CTA":
@@ -257,17 +277,20 @@ export default function SectionEditor({ section, onChange }) {
                     {renderField("Subheading", "subheading", "text", "Join us today")}
                     {renderField("Button Text", "ctaText", "text", "Sign Up")}
                     {renderField("Button Link", "ctaLink", "text", "#")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "ContactForm":
                 return <>
                     {renderField("Heading", "heading", "text", "Contact Us")}
                     {renderArrayField("Form Fields", "fields")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "Footer":
                 return <>
                     {renderField("Footer Text", "text", "text", "© 2026 Company. All rights reserved.")}
+                    {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
             case "Button":
