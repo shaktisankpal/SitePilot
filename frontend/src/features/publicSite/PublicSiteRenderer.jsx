@@ -269,7 +269,7 @@ const TextSection = ({ props, branding }) => {
         <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
             <BackgroundLayer props={props} />
             <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
-                <div style={{ display: "inline-block", width: "80px", height: "80px", borderRadius: "24px", background: `${accent}15`, color: accent, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px", transform: "rotate(10deg)" }}>
+                <div style={{ display: "flex", width: "80px", height: "80px", borderRadius: "24px", background: `${accent}15`, color: accent, alignItems: "center", justifyContent: "center", margin: "0 auto 32px", transform: "rotate(10deg)" }}>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z" /></svg>
                 </div>
                 {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "900", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
@@ -726,8 +726,9 @@ export default function PublicSiteRenderer() {
     const websiteId = websiteIdFromUrl || siteData?.website?._id || currentPage?.websiteId || siteData?.pages?.[0]?.websiteId;
 
     return (
-        <div className="responsive-master-container" style={{ minHeight: "100vh", background: "#0f0f1a", fontFamily: `"${branding?.font || "Google Sans"}", "DM Sans", sans-serif`, color: "#f0f0ff", overflowX: "hidden" }}>
+        <div className="responsive-master-container" style={{ minHeight: "100vh", background: "#0f0f1a", fontFamily: `"${branding?.font || "Montserrat"}", "DM Sans", sans-serif`, color: "#f0f0ff", overflowX: "hidden" }}>
             <style>{globalResponsiveCss}</style>
+            {/* Page navigation (multi-page) */}
             {siteData?.pages?.length > 1 && (
                 <div style={{ display: "flex", gap: "4px", padding: "8px 32px", background: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                     {siteData.pages.map((page) => (

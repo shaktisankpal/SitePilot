@@ -286,7 +286,7 @@ export default function BuilderPage() {
                                                                     </span>
                                                                 )}
                                                                 <span style={{
-                                                                    fontSize: 10, fontWeight: 800, padding: "4px 8px", borderRadius: 6,
+                                                                    fontSize: 10, fontWeight: 700, padding: "4px 8px", borderRadius: 6,
                                                                     textTransform: "uppercase", letterSpacing: "0.04em",
                                                                     background: `${sColor}18`, color: sColor, border: `1px solid ${sColor}35`,
                                                                 }}>
@@ -386,7 +386,7 @@ export default function BuilderPage() {
                                         {activeEditors.slice(0, 3).map((ed) => (
                                             <div key={ed.socketId} title={ed.userName} style={{
                                                 width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                                                fontSize: 9, fontWeight: 800, background: ed.color, color: "white",
+                                                fontSize: 9, fontWeight: 700, background: ed.color, color: "white",
                                                 border: "2px solid var(--bg-surface)", marginLeft: -4,
                                             }}>
                                                 {ed.userName?.[0]}
@@ -426,6 +426,8 @@ export default function BuilderPage() {
                             )}
                         </div>
                     </div>
+
+
 
                     {/* Canvas */}
                     <div style={{ flex: 1, overflowY: "auto", padding: 32, background: "var(--bg-base)" }}>
@@ -547,75 +549,80 @@ export default function BuilderPage() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div >
 
                 {/* ====== VERSION HISTORY — Inline Panel ====== */}
-                <VersionPanel
+                < VersionPanel
                     websiteId={websiteId}
                     pageId={pageId}
                     open={showVersionPanel}
-                    onClose={() => setShowVersionPanel(false)}
+                    onClose={() => setShowVersionPanel(false)
+                    }
                 />
 
                 {/* ====== 4. RIGHT — Add Section ====== */}
-                {canEdit && !isFullscreen && (
-                    <div style={{
-                        width: 200, minWidth: 150, maxWidth: 400, background: "var(--bg-surface)",
-                        borderLeft: "1px solid var(--border-color)", display: "flex", flexDirection: "column",
-                        resize: "horizontal", overflowX: "auto", flexShrink: 0, direction: "rtl"
-                    }}>
-                        <div style={{ direction: "ltr", display: "flex", flexDirection: "column", height: "100%" }}>
-                            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", flexShrink: 0 }}>
-                                <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
-                                    Add Section
-                                </h3>
-                            </div>
-                            <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                                {SECTION_TYPES.map((type) => (
-                                    <button
-                                        key={type}
-                                        onClick={() => handleAddSection(type)}
-                                        style={{
-                                            width: "100%", display: "flex", alignItems: "center", gap: 12,
-                                            padding: "12px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700,
-                                            textAlign: "left", cursor: "pointer", transition: "all 0.15s ease",
-                                            background: "var(--bg-input)", border: "1px solid var(--border-color)",
-                                            color: "var(--text-secondary)",
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.borderColor = SECTION_COLORS[type];
-                                            e.currentTarget.style.color = SECTION_COLORS[type];
-                                            e.currentTarget.style.background = `${SECTION_COLORS[type]}10`;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.borderColor = "var(--border-color)";
-                                            e.currentTarget.style.color = "var(--text-secondary)";
-                                            e.currentTarget.style.background = "var(--bg-input)";
-                                        }}
-                                    >
-                                        <span style={{
-                                            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                                            background: SECTION_COLORS[type], boxShadow: `0 0 10px ${SECTION_COLORS[type]}`,
-                                        }} />
-                                        {type}
-                                    </button>
-                                ))}
+                {
+                    canEdit && !isFullscreen && (
+                        <div style={{
+                            width: 200, minWidth: 150, maxWidth: 400, background: "var(--bg-surface)",
+                            borderLeft: "1px solid var(--border-color)", display: "flex", flexDirection: "column",
+                            resize: "horizontal", overflowX: "auto", flexShrink: 0, direction: "rtl"
+                        }}>
+                            <div style={{ direction: "ltr", display: "flex", flexDirection: "column", height: "100%" }}>
+                                <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-color)", flexShrink: 0 }}>
+                                    <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
+                                        Add Section
+                                    </h3>
+                                </div>
+                                <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                                    {SECTION_TYPES.map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => handleAddSection(type)}
+                                            style={{
+                                                width: "100%", display: "flex", alignItems: "center", gap: 12,
+                                                padding: "12px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                                                textAlign: "left", cursor: "pointer", transition: "all 0.15s ease",
+                                                background: "var(--bg-input)", border: "1px solid var(--border-color)",
+                                                color: "var(--text-secondary)",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = SECTION_COLORS[type];
+                                                e.currentTarget.style.color = SECTION_COLORS[type];
+                                                e.currentTarget.style.background = `${SECTION_COLORS[type]}10`;
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = "var(--border-color)";
+                                                e.currentTarget.style.color = "var(--text-secondary)";
+                                                e.currentTarget.style.background = "var(--bg-input)";
+                                            }}
+                                        >
+                                            <span style={{
+                                                width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                                                background: SECTION_COLORS[type], boxShadow: `0 0 10px ${SECTION_COLORS[type]}`,
+                                            }} />
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* ====== Floating Overlays ====== */}
                 {websiteId && <ChatPanel websiteId={websiteId} />}
 
-                {showPublishModal && (
-                    <PublishModal
-                        websiteId={websiteId}
-                        onClose={() => setShowPublishModal(false)}
-                    />
-                )}
-            </div>
-        </DragDropContext>
+                {
+                    showPublishModal && (
+                        <PublishModal
+                            websiteId={websiteId}
+                            onClose={() => setShowPublishModal(false)}
+                        />
+                    )
+                }
+            </div >
+        </DragDropContext >
     );
 }
 

@@ -111,10 +111,10 @@ export default function SettingsPage() {
 
     return (
         <DashboardLayout>
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 40px 60px" }}>
+            <div style={{ maxWidth: 1600, margin: "0 auto", padding: "40px 40px 60px" }}>
                 {/* Header */}
                 <div style={{ marginBottom: 36 }}>
-                    <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", marginBottom: 6 }}>Settings</h1>
+                    <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", marginBottom: 6 }}>Settings</h1>
                     <p style={{ fontSize: 16, color: "var(--text-secondary)" }}>Manage your workspace preferences, team, and domains.</p>
                 </div>
 
@@ -150,7 +150,7 @@ export default function SettingsPage() {
                                     <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
                                         <Palette size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Workspace Identity</h3>
+                                    <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Workspace Identity</h3>
                                 </div>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                                     <div style={{ padding: 10, borderRadius: 12, background: "rgba(99,102,241,0.12)", color: "#818cf8" }}>
                                         <Users size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Invite Member</h3>
+                                    <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Invite Member</h3>
                                 </div>
                                 <form onSubmit={handleInvite} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 16, alignItems: "end" }}>
                                     <div>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
                                 <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)" }}>
                                     <Shield size={22} strokeWidth={2.5} />
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                                <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                                     Active Directory <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 18, marginLeft: 8 }}>({users.length})</span>
                                 </h3>
                             </div>
@@ -281,7 +281,7 @@ export default function SettingsPage() {
                                                     width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
                                                     background: "var(--bg-input)", border: "1px solid var(--border-color)",
                                                     display: "flex", alignItems: "center", justifyContent: "center",
-                                                    color: "var(--text-primary)", fontSize: 18, fontWeight: 800,
+                                                    color: "var(--text-primary)", fontSize: 18, fontWeight: 700,
                                                 }}>
                                                     {u.name[0].toUpperCase()}
                                                 </div>
@@ -293,7 +293,7 @@ export default function SettingsPage() {
 
                                             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                                                 <span style={{
-                                                    display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 800,
+                                                    display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700,
                                                     textTransform: "uppercase", letterSpacing: "0.06em",
                                                     padding: "6px 14px", borderRadius: 100,
                                                     background: rs.bg, color: rs.color, border: `1px solid ${rs.border}`,
@@ -340,7 +340,7 @@ export default function SettingsPage() {
                                 <div style={{ padding: 10, borderRadius: 12, background: "rgba(16,185,129,0.12)", color: "#34d399" }}>
                                     <Globe size={22} strokeWidth={2.5} />
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Connectivity</h3>
+                                <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Connectivity</h3>
                             </div>
                             <form onSubmit={handleAddDomain} style={{ display: "flex", gap: 16, alignItems: "end" }}>
                                 <div style={{ flex: 1 }}>
@@ -360,7 +360,7 @@ export default function SettingsPage() {
 
                         {/* Domains List */}
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 36 }}>
-                            <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em", marginBottom: 24 }}>Active Domains</h3>
+                            <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em", marginBottom: 24 }}>Active Domains</h3>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 {domains.map((d) => (
                                     <div key={d._id} style={{
@@ -377,16 +377,16 @@ export default function SettingsPage() {
                                             </div>
                                             <div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                    <span style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>{d.domain}</span>
+                                                    <span style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{d.domain}</span>
                                                     {d.isDefault && (
-                                                        <span style={{ background: "rgba(255,255,255,0.08)", fontSize: 10, textTransform: "uppercase", fontWeight: 800, padding: "3px 8px", borderRadius: 100, color: "rgba(255,255,255,0.5)" }}>Primary</span>
+                                                        <span style={{ background: "rgba(255,255,255,0.08)", fontSize: 10, textTransform: "uppercase", fontWeight: 700, padding: "3px 8px", borderRadius: 100, color: "rgba(255,255,255,0.5)" }}>Primary</span>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                                             <span style={{
-                                                display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 800,
+                                                display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700,
                                                 textTransform: "uppercase", letterSpacing: "0.06em", padding: "6px 14px", borderRadius: 100,
                                                 background: d.verified ? "rgba(16,185,129,0.12)" : "rgba(251,191,36,0.12)",
                                                 color: d.verified ? "#10b981" : "#fbbf24",

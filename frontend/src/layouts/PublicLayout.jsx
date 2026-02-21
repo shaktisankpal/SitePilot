@@ -3,7 +3,7 @@ import { Link, Outlet } from "react-router-dom";
 
 /* ─── Shared CSS for the public navbar & footer ──────────────────────────── */
 export const PUBLIC_LAYOUT_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Removed Inter font import, inheriting from global styles instead */
 
   .sp-nav-link {
     color: rgba(255,255,255,0.6);
@@ -12,14 +12,13 @@ export const PUBLIC_LAYOUT_STYLES = `
     font-weight: 450;
     transition: color 0.15s ease;
     letter-spacing: -0.01em;
-    font-family: 'Inter', sans-serif;
   }
   .sp-nav-link:hover { color: rgba(255,255,255,0.95); }
 
   .sp-cta-primary {
     position: relative;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
+    background: var(--color-primary);
+    color: #000;
     border: none;
     padding: 9px 20px;
     border-radius: 10px;
@@ -32,11 +31,10 @@ export const PUBLIC_LAYOUT_STYLES = `
     gap: 6px;
     transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease;
     letter-spacing: -0.01em;
-    font-family: 'Inter', sans-serif;
   }
   .sp-cta-primary:hover {
     transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 6px 28px rgba(99,102,241,0.45);
+    box-shadow: 0 6px 28px rgba(249, 115, 22, 0.45); /* Orange glow */
   }
   .sp-cta-primary:active { transform: translateY(0) scale(0.99); }
 
@@ -44,11 +42,11 @@ export const PUBLIC_LAYOUT_STYLES = `
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 18px rgba(99,102,241,0.35);
+    box-shadow: 0 0 18px rgba(249, 115, 22, 0.35); /* Orange glow */
     flex-shrink: 0;
   }
 `;
@@ -63,14 +61,13 @@ function Logo() {
                 </svg>
             </div>
             <span style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: 19,
                 letterSpacing: "-0.04em",
                 color: "white",
                 lineHeight: 1,
             }}>
-                Site<span style={{ color: "#8b5cf6" }}>Pilot</span>
+                Site<span style={{ color: "var(--color-primary)" }}>Pilot</span>
             </span>
         </div>
     );

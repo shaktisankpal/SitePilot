@@ -41,7 +41,7 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
                 boxShadow: "0 24px 48px rgba(0,0,0,0.5)", position: "relative", overflow: "hidden",
             }}>
                 {/* Top accent bar */}
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, var(--color-primary), var(--color-secondary))" }} />
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "var(--color-primary)" }} />
 
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
                     <div>
@@ -49,7 +49,7 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
                             <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.8)" }}>
                                 <FolderDot size={24} strokeWidth={2.5} />
                             </div>
-                            <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>New Project</h2>
+                            <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>New Project</h2>
                         </div>
                         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", paddingLeft: 52 }}>Create a new website project in this workspace.</p>
                     </div>
@@ -142,11 +142,11 @@ export default function WebsitesPage() {
 
     return (
         <DashboardLayout>
-            <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 40px 60px" }}>
+            <div style={{ maxWidth: 1600, margin: "0 auto", padding: "40px 40px 60px" }}>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20, marginBottom: 40 }}>
                     <div>
-                        <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", marginBottom: 6 }}>Projects</h1>
+                        <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", marginBottom: 6 }}>Projects</h1>
                         <p style={{ fontSize: 16, color: "var(--text-secondary)" }}>
                             You have <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{websites.length}</span> active project{websites.length !== 1 ? "s" : ""} in this workspace.
                         </p>
@@ -155,9 +155,8 @@ export default function WebsitesPage() {
                         <button onClick={() => setShowCreate(true)} style={{
                             display: "inline-flex", alignItems: "center", gap: 8,
                             padding: "14px 28px", borderRadius: 14, border: "none", cursor: "pointer",
-                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            color: "white", fontWeight: 700, fontSize: 15,
-                            boxShadow: "0 6px 20px rgba(99,102,241,0.3)",
+                            background: "var(--color-primary)",
+                            color: "#000", fontWeight: 700, fontSize: 15,
                         }}>
                             <Plus size={18} strokeWidth={2.5} /> New Project
                         </button>
@@ -178,7 +177,7 @@ export default function WebsitesPage() {
                         <div style={{ padding: 24, borderRadius: "50%", background: "rgba(255,255,255,0.04)", marginBottom: 24 }}>
                             <FolderDot size={56} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.15)" }} />
                         </div>
-                        <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>No Projects Found</h3>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>No Projects Found</h3>
                         <p style={{ fontSize: 15, color: "var(--text-secondary)", maxWidth: 360, lineHeight: 1.6, marginBottom: 32 }}>
                             Your workspace is empty. Create your first project to start building your website.
                         </p>
@@ -214,7 +213,7 @@ export default function WebsitesPage() {
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                         <span style={{
                                             fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em",
-                                            padding: "5px 12px", borderRadius: 100, fontWeight: 800,
+                                            padding: "5px 12px", borderRadius: 100, fontWeight: 700,
                                             display: "flex", alignItems: "center", gap: 5,
                                             background: site.status === "published" ? "rgba(16,185,129,0.12)" : "rgba(99,102,241,0.12)",
                                             color: site.status === "published" ? "#10b981" : "var(--color-primary)",
@@ -234,7 +233,7 @@ export default function WebsitesPage() {
 
                                 {/* Content */}
                                 <div style={{ flex: 1, marginBottom: 28 }}>
-                                    <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <h3 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 8, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                         {site.name}
                                     </h3>
                                     {site.description ? (

@@ -61,8 +61,8 @@ const HERO_STYLES = `
 
   .hp-cta-primary {
     position: relative;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
+    background: var(--color-primary);
+    color: #000;
     border: none;
     padding: 14px 32px;
     border-radius: 14px;
@@ -75,11 +75,10 @@ const HERO_STYLES = `
     gap: 8px;
     transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease;
     letter-spacing: -0.01em;
-    font-family: 'Inter', sans-serif;
   }
   .hp-cta-primary:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 40px rgba(99,102,241,0.45), 0 0 0 1px rgba(139,92,246,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(255,255,255,0.25);
   }
   .hp-cta-primary:active { transform: translateY(0) scale(0.99); }
 
@@ -99,7 +98,6 @@ const HERO_STYLES = `
     transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
     backdrop-filter: blur(12px);
     letter-spacing: -0.01em;
-    font-family: 'Inter', sans-serif;
   }
   .hp-cta-secondary:hover {
     background: rgba(255,255,255,0.08);
@@ -128,8 +126,8 @@ const HERO_STYLES = `
   }
   .hp-feature-card:hover {
     transform: translateY(-6px);
-    border-color: rgba(99,102,241,0.3);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .hp-feature-card:hover::before { opacity: 1; }
 
@@ -143,9 +141,9 @@ const HERO_STYLES = `
   }
   .hp-stat-card:hover {
     background: rgba(255,255,255,0.04);
-    border-color: rgba(99,102,241,0.25);
+    border-color: rgba(255,255,255,0.2);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
   }
 `;
 
@@ -181,12 +179,12 @@ const ChartIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 
 /* ─── Feature data ─────────────────────────────────────────────────────── */
 const FEATURES = [
-    { icon: <MagicIcon />, gradient: "linear-gradient(135deg,#6366f1,#8b5cf6)", shadow: "rgba(99,102,241,0.35)", title: "AI-Powered Builder", desc: "Describe your vision in plain english. SitePilot's AI drafts pixel-perfect pages in seconds — no design skills required." },
-    { icon: <BrushIcon />, gradient: "linear-gradient(135deg,#ec4899,#f43f5e)", shadow: "rgba(236,72,153,0.35)", title: "Visual Drag & Drop", desc: "A canvas that feels as natural as sketching. Move, resize, and style every element with professional-grade precision." },
-    { icon: <GlobeIcon />, gradient: "linear-gradient(135deg,#06b6d4,#3b82f6)", shadow: "rgba(6,182,212,0.35)", title: "One-Click Publishing", desc: "A global CDN, automatic SSL, and custom domains. Your site goes live instantly and stays blazing fast worldwide." },
-    { icon: <BoltIcon />, gradient: "linear-gradient(135deg,#f59e0b,#ef4444)", shadow: "rgba(245,158,11,0.35)", title: "Edge Performance", desc: "Sub-100ms load times. Intelligent caching, optimised assets, and Core Web Vitals built in from the ground up." },
-    { icon: <ShieldIcon />, gradient: "linear-gradient(135deg,#10b981,#06b6d4)", shadow: "rgba(16,185,129,0.35)", title: "Enterprise Security", desc: "SOC 2 Type II certified. End-to-end encryption, DDoS protection, and granular team permissions out of the box." },
-    { icon: <ChartIcon />, gradient: "linear-gradient(135deg,#8b5cf6,#6366f1)", shadow: "rgba(139,92,246,0.35)", title: "Built-in Analytics", desc: "Privacy-first visitor analytics with real-time dashboards. Understand your audience without sacrificing their data." },
+    { icon: <MagicIcon />, gradient: "#111", title: "AI-Powered Builder", desc: "Describe your vision in plain english. SitePilot's AI drafts pixel-perfect pages in seconds — no design skills required." },
+    { icon: <BrushIcon />, gradient: "#111", title: "Visual Drag & Drop", desc: "A canvas that feels as natural as sketching. Move, resize, and style every element with professional-grade precision." },
+    { icon: <GlobeIcon />, gradient: "#111", title: "One-Click Publishing", desc: "A global CDN, automatic SSL, and custom domains. Your site goes live instantly and stays blazing fast worldwide." },
+    { icon: <BoltIcon />, gradient: "#111", title: "Edge Performance", desc: "Sub-100ms load times. Intelligent caching, optimised assets, and Core Web Vitals built in from the ground up." },
+    { icon: <ShieldIcon />, gradient: "#111", title: "Enterprise Security", desc: "SOC 2 Type II certified. End-to-end encryption, DDoS protection, and granular team permissions out of the box." },
+    { icon: <ChartIcon />, gradient: "#111", title: "Built-in Analytics", desc: "Privacy-first visitor analytics with real-time dashboards. Understand your audience without sacrificing their data." },
 ];
 
 const STATS = [
@@ -214,7 +212,7 @@ export default function HomePage() {
     return (
         <>
             <style>{HERO_STYLES}</style>
-            <div style={{ fontFamily: "'Inter','DM Sans',sans-serif", color: "white", background: "#000" }}>
+            <div style={{ color: "white", background: "#000" }}>
 
                 {/* ══════ HERO ══════ */}
                 <section style={{
@@ -227,20 +225,7 @@ export default function HomePage() {
                     paddingTop: 120,
                     paddingBottom: 80,
                 }}>
-                    {/* Background orbs */}
-                    {[
-                        { w: 700, h: 700, color: "rgba(99,102,241,0.12)", top: "5%", left: "50%", tx: "-80%", anim: "orb1 12s ease-in-out infinite" },
-                        { w: 500, h: 500, color: "rgba(139,92,246,0.10)", top: "30%", right: "5%", anim: "orb2 14s ease-in-out infinite" },
-                        { w: 300, h: 300, color: "rgba(236,72,153,0.07)", bottom: "10%", left: "15%", anim: "orb3 10s ease-in-out infinite" },
-                    ].map((o, i) => (
-                        <div key={i} style={{
-                            position: "absolute", width: o.w, height: o.h, borderRadius: "50%",
-                            background: `radial-gradient(circle,${o.color},transparent 70%)`,
-                            top: o.top, left: o.left, right: o.right, bottom: o.bottom,
-                            transform: o.tx ? `translateX(${o.tx})` : undefined,
-                            animation: o.anim, pointerEvents: "none",
-                        }} />
-                    ))}
+                    {/* Background orbs removed for strictly structural clean SaaS aesthetic */}
 
                     {/* Grid overlay */}
                     <div style={{
@@ -289,17 +274,13 @@ export default function HomePage() {
 
                         {/* Headline */}
                         <h1 style={{
-                            fontSize: "clamp(42px,7vw,80px)", fontWeight: 900, lineHeight: 1.05,
+                            fontSize: "clamp(42px,7vw,80px)", fontWeight: 800, lineHeight: 1.05,
                             letterSpacing: "-0.04em", marginBottom: 24,
                             animation: "heroFadeUp 0.7s cubic-bezier(0.4,0,0.2,1) 0.3s both",
                         }}>
                             <span style={{ color: "white" }}>Build websites</span>
                             <br />
-                            <span style={{
-                                background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 40%,#ec4899 80%)",
-                                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                                backgroundSize: "200% 100%", animation: "shimmerBg 4s linear infinite",
-                            }}>
+                            <span style={{ color: "var(--text-secondary)" }}>
                                 at the speed of thought.
                             </span>
                         </h1>
@@ -363,13 +344,12 @@ export default function HomePage() {
                         {STATS.map(({ value, label }, i) => (
                             <div key={label} className="hp-stat-card" style={{ animation: `statCount 0.5s cubic-bezier(0.4,0,0.2,1) ${0.1 * i}s both` }}>
                                 <div style={{
-                                    fontSize: "clamp(28px,3vw,40px)", fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 6,
-                                    background: "linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.6) 100%)",
-                                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                                    fontSize: "clamp(28px,3vw,40px)", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 6,
+                                    color: "var(--color-primary)"
                                 }}>
                                     {value}
                                 </div>
-                                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 450, letterSpacing: "-0.01em" }}>{label}</div>
+                                <div style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "-0.01em" }}>{label}</div>
                             </div>
                         ))}
                     </div>
@@ -389,14 +369,11 @@ export default function HomePage() {
                                 Everything you need
                             </div>
                             <h2 style={{
-                                fontSize: "clamp(32px,5vw,52px)", fontWeight: 800, letterSpacing: "-0.04em",
+                                fontSize: "clamp(32px,5vw,52px)", fontWeight: 700, letterSpacing: "-0.04em",
                                 color: "white", lineHeight: 1.1, marginBottom: 16,
                             }}>
                                 The complete platform<br />
-                                <span style={{
-                                    background: "linear-gradient(135deg,#8b5cf6,#6366f1)",
-                                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                                }}>
+                                <span style={{ color: "var(--text-secondary)" }}>
                                     for modern web teams.
                                 </span>
                             </h2>
@@ -409,13 +386,13 @@ export default function HomePage() {
                             {FEATURES.map(({ icon, gradient, shadow, title, desc }) => (
                                 <div key={title} className="hp-feature-card">
                                     <div style={{
-                                        width: 48, height: 48, borderRadius: 14, background: gradient,
+                                        width: 48, height: 48, borderRadius: 14, background: "var(--bg-input)", border: "1px solid var(--border-color)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
-                                        marginBottom: 22, color: "white", boxShadow: `0 8px 24px ${shadow}`, flexShrink: 0,
+                                        marginBottom: 22, color: "var(--color-primary)", flexShrink: 0,
                                     }}>
                                         {icon}
                                     </div>
-                                    <h3 style={{ fontSize: 17, fontWeight: 700, color: "white", marginBottom: 10, letterSpacing: "-0.025em" }}>{title}</h3>
+                                    <h3 style={{ fontSize: 17, fontWeight: 600, color: "white", marginBottom: 10, letterSpacing: "-0.025em" }}>{title}</h3>
                                     <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontWeight: 400, letterSpacing: "-0.01em" }}>{desc}</p>
                                 </div>
                             ))}
@@ -427,10 +404,9 @@ export default function HomePage() {
                 <section style={{ padding: "0 5% 120px" }}>
                     <div style={{
                         maxWidth: 1100, margin: "0 auto", borderRadius: 28, padding: "72px 60px",
-                        background: "linear-gradient(135deg,rgba(99,102,241,0.15) 0%,rgba(139,92,246,0.15) 50%,rgba(236,72,153,0.08) 100%)",
-                        border: "1px solid rgba(99,102,241,0.2)", textAlign: "center",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-color)", textAlign: "center",
                         position: "relative", overflow: "hidden",
-                        boxShadow: "0 40px 80px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06)",
                     }}>
                         <div style={{
                             position: "absolute", width: 400, height: 400, borderRadius: "50%",
@@ -438,7 +414,7 @@ export default function HomePage() {
                             top: "-50%", left: "50%", transform: "translateX(-50%)", pointerEvents: "none",
                         }} />
                         <div style={{ position: "relative", zIndex: 1 }}>
-                            <h2 style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 800, letterSpacing: "-0.04em", marginBottom: 16, color: "white", lineHeight: 1.1 }}>
+                            <h2 style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 700, letterSpacing: "-0.04em", marginBottom: 16, color: "white", lineHeight: 1.1 }}>
                                 Ready to ship something<br />
                                 <span style={{
                                     background: "linear-gradient(135deg,#a5b4fc,#c4b5fd,#f9a8d4)",

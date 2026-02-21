@@ -4,7 +4,7 @@ const SectionSchema = new mongoose.Schema({
     id: { type: String, required: true }, // client-side unique id
     type: {
         type: String,
-        enum: ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer"],
+        enum: ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer", "Button", "Image", "Spacer"],
         required: true,
     },
     props: { type: mongoose.Schema.Types.Mixed, default: {} },

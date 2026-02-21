@@ -16,7 +16,6 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }) {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -28,101 +27,98 @@ export default function DashboardLayout({ children }) {
         navigate("/login");
     };
 
-    const sidebarW = sidebarOpen ? 260 : 72;
-
     return (
-        <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-base)" }}>
-            {/* Sidebar */}
-            <aside style={{
-                width: sidebarW, minWidth: sidebarW, display: "flex", flexDirection: "column",
-                background: "var(--bg-surface)", borderRight: "1px solid var(--border-color)",
-                transition: "width 0.3s ease, min-width 0.3s ease", overflow: "hidden",
+        <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg-base)" }}>
+            {/* Top Navigation */}
+            <header style={{
+                height: 68,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0 40px",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-color)",
+                position: "sticky",
+                top: 0,
+                zIndex: 50,
             }}>
-                {/* Logo */}
-                <div style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "20px 16px", borderBottom: "1px solid var(--border-color)",
-                }}>
-                    <div style={{
-                        width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                        background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 0 20px rgba(99,102,241,0.2)",
-                    }}>
-                        <Zap size={20} color="white" />
-                    </div>
-                    {sidebarOpen && (
-                        <span style={{ fontWeight: 800, fontSize: 20, color: "white", letterSpacing: "-0.02em" }}>
-                            SitePilot
-                        </span>
-                    )}
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-                        marginLeft: "auto", padding: 4, borderRadius: 8,
-                        background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)",
-                    }}>
-                        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-                    </button>
-                </div>
-
-                {/* Tenant badge */}
-                {sidebarOpen && tenant && (
-                    <div style={{ margin: "12px 12px 0", padding: "10px 14px", borderRadius: 10, background: "var(--bg-input)", border: "1px solid var(--border-color)" }}>
-                        <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Workspace</p>
-                        <p style={{ fontWeight: 700, fontSize: 14, marginTop: 2, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tenant.name}</p>
-                    </div>
-                )}
-
-                {/* Nav */}
-                <nav style={{ flex: 1, padding: "16px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
-                    {navItems.map(({ label, icon: Icon, path }) => {
-                        const active = location.pathname.startsWith(path);
-                        return (
-                            <Link key={path} to={path} title={!sidebarOpen ? label : ""} style={{
-                                display: "flex", alignItems: "center", gap: 12,
-                                padding: "10px 14px", borderRadius: 10, textDecoration: "none",
-                                background: active ? "var(--bg-input)" : "transparent",
-                                color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                                transition: "all 0.15s ease",
+                <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+                    {/* Logo & Tenant */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <Link to="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+                            <div style={{
+                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                background: "var(--color-primary)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
-                                <Icon size={20} style={{ flexShrink: 0 }} />
-                                {sidebarOpen && (
-                                    <span style={{ fontSize: 14, fontWeight: active ? 700 : 500 }}>{label}</span>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
+                                <Zap size={16} color="#000" />
+                            </div>
+                            <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                                SitePilot
+                            </span>
+                        </Link>
 
-                {/* User */}
-                <div style={{ padding: 12, borderTop: "1px solid var(--border-color)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{
-                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "white", fontSize: 14, fontWeight: 700,
-                        }}>
-                            {user?.name?.[0]?.toUpperCase()}
-                        </div>
-                        {sidebarOpen && (
+                        {tenant && (
                             <>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</p>
-                                    <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{user?.role}</p>
+                                <div style={{ width: 1, height: 24, background: "var(--border-color)" }} />
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-primary)" }} />
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{tenant.name}</span>
                                 </div>
-                                <button onClick={handleLogout} title="Logout" style={{
-                                    padding: 6, borderRadius: 8, background: "none", border: "none",
-                                    cursor: "pointer", color: "var(--text-muted)",
-                                }}>
-                                    <LogOut size={16} />
-                                </button>
                             </>
                         )}
                     </div>
-                </div>
-            </aside>
 
-            {/* Main */}
+                    {/* Nav Links */}
+                    <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {navItems.map(({ label, path }) => {
+                            const active = location.pathname.startsWith(path);
+                            return (
+                                <Link key={path} to={path} style={{
+                                    padding: "8px 16px",
+                                    borderRadius: 100,
+                                    textDecoration: "none",
+                                    fontSize: 14,
+                                    fontWeight: active ? 600 : 500,
+                                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                                    background: active ? "var(--bg-input)" : "transparent",
+                                    transition: "all 0.15s ease",
+                                }}>
+                                    {label}
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </div>
+
+                {/* Right: User Menu */}
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{user?.name}</span>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>{user?.role}</span>
+                        </div>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: "50%",
+                            background: "var(--bg-input)", border: "1px solid var(--border-color)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "var(--text-primary)", fontSize: 14, fontWeight: 700,
+                        }}>
+                            {user?.name?.[0]?.toUpperCase()}
+                        </div>
+                    </div>
+
+                    <button onClick={handleLogout} title="Logout" style={{
+                        padding: 8, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
+                        cursor: "pointer", color: "#f87171", display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.15s ease"
+                    }} onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}>
+                        <LogOut size={16} />
+                    </button>
+                </div>
+            </header>
+
+            {/* Main Content Area */}
             <main style={{ flex: 1, overflowY: "auto", background: "var(--bg-base)" }}>
                 {children}
             </main>

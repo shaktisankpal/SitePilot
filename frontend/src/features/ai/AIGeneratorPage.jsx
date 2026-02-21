@@ -69,18 +69,17 @@ export default function AIGeneratorPage() {
 
     return (
         <DashboardLayout>
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 40px 60px" }}>
+            <div style={{ maxWidth: 1600, margin: "0 auto", padding: "40px 40px 60px" }}>
                 {/* Header */}
                 <div style={{ marginBottom: 40 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
                         <div style={{
                             width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
-                            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            boxShadow: "0 0 20px rgba(99,102,241,0.2)",
+                            background: "var(--color-primary)", color: "#000",
                         }}>
-                            <Wand2 size={24} color="white" />
+                            <Wand2 size={24} color="#000" />
                         </div>
-                        <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>AI Playground</h1>
+                        <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>AI Playground</h1>
                     </div>
                     <p style={{ fontSize: 16, color: "var(--text-secondary)", paddingLeft: 64 }}>
                         Powered by Google Gemini — Generate a complete, stunning website layout in seconds.
@@ -97,7 +96,7 @@ export default function AIGeneratorPage() {
                                 <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
                                     <LayoutTemplate size={20} />
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Architect Details</h3>
+                                <h3 style={{ fontWeight: 700, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Architect Details</h3>
                             </div>
 
                             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -121,7 +120,7 @@ export default function AIGeneratorPage() {
                                 </div>
 
                                 <div>
-                                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
                                         Describe Your Concept *
                                     </label>
                                     <textarea value={form.businessType} onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
@@ -131,7 +130,7 @@ export default function AIGeneratorPage() {
 
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                                     <div style={{ position: "relative" }}>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Tone</label>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Tone</label>
                                         <select value={form.tone} onChange={(e) => setForm((p) => ({ ...p, tone: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -139,7 +138,7 @@ export default function AIGeneratorPage() {
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
                                     <div style={{ position: "relative" }}>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Audience</label>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Audience</label>
                                         <select value={form.targetAudience} onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -159,7 +158,7 @@ export default function AIGeneratorPage() {
 
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                                     <div>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Primary Color</label>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Primary Color</label>
                                         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-input)", border: "1px solid var(--border-color)", borderRadius: 14, padding: "8px" }}>
                                             <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden", position: "relative", flexShrink: 0 }}>
                                                 <input type="color" value={form.primaryColor} onChange={(e) => setForm((p) => ({ ...p, primaryColor: e.target.value }))}
@@ -170,7 +169,7 @@ export default function AIGeneratorPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Secondary Color</label>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Secondary Color</label>
                                         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-input)", border: "1px solid var(--border-color)", borderRadius: 14, padding: "8px" }}>
                                             <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden", position: "relative", flexShrink: 0 }}>
                                                 <input type="color" value={form.secondaryColor} onChange={(e) => setForm((p) => ({ ...p, secondaryColor: e.target.value }))}
@@ -184,7 +183,7 @@ export default function AIGeneratorPage() {
 
                                 {websites.length > 0 && (
                                     <div style={{ position: "relative" }}>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Apply Directly (Optional)</label>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Apply Directly (Optional)</label>
                                         <select value={form.websiteId} onChange={(e) => setForm((p) => ({ ...p, websiteId: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                                             <option value="">— Preview Sandbox Only —</option>
@@ -199,8 +198,8 @@ export default function AIGeneratorPage() {
                         {/* Feature Selection */}
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 32 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-                                <h3 style={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Required Blocks</h3>
-                                <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 100, color: "var(--color-primary)" }}>
+                                <h3 style={{ fontWeight: 700, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Required Blocks</h3>
+                                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 100, color: "var(--color-primary)" }}>
                                     {form.features.length} selected
                                 </span>
                             </div>
@@ -210,10 +209,10 @@ export default function AIGeneratorPage() {
                                     return (
                                         <button key={f} type="button" onClick={() => toggleFeature(f)} style={{
                                             display: "flex", alignItems: "center", gap: 7,
-                                            padding: "9px 18px", borderRadius: 100, fontSize: 14, fontWeight: 700,
+                                            padding: "9px 18px", borderRadius: 100, fontSize: 14, fontWeight: 600,
                                             background: sel ? "var(--color-primary)" : "var(--bg-input)",
                                             border: sel ? "1px solid transparent" : "1px solid var(--border-color)",
-                                            color: sel ? "white" : "var(--text-secondary)",
+                                            color: sel ? "#000" : "var(--text-secondary)",
                                             cursor: "pointer", transition: "all 0.15s ease",
                                             boxShadow: sel ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
                                         }}>
@@ -228,11 +227,11 @@ export default function AIGeneratorPage() {
                         {/* Generate Button */}
                         <button type="submit" disabled={loading} style={{
                             width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                            padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 800, border: "none",
-                            background: loading ? "var(--bg-input)" : "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            color: loading ? "var(--text-muted)" : "white",
+                            padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 700, border: "none",
+                            background: loading ? "var(--bg-input)" : "var(--color-primary)",
+                            color: loading ? "var(--text-muted)" : "#000",
                             cursor: loading ? "not-allowed" : "pointer",
-                            boxShadow: loading ? "none" : "0 8px 20px rgba(99,102,241,0.4)",
+                            boxShadow: "none",
                         }}>
                             {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking Layout...</> : <><Sparkles size={20} strokeWidth={2.5} /> Generate Website Layout</>}
                         </button>
@@ -249,7 +248,7 @@ export default function AIGeneratorPage() {
                                 <div style={{ padding: 28, borderRadius: "50%", background: "rgba(255,255,255,0.04)", marginBottom: 24, color: "rgba(255,255,255,0.15)" }}>
                                     <Wand2 size={56} strokeWidth={1.5} />
                                 </div>
-                                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Awaiting Instructions</h2>
+                                <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>Awaiting Instructions</h2>
                                 <p style={{ fontSize: 16, color: "var(--text-muted)", maxWidth: 340, lineHeight: 1.5 }}>
                                     Describe your concept, select blocks, and watch our AI generate your layout.
                                 </p>
@@ -265,13 +264,13 @@ export default function AIGeneratorPage() {
                                 <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at center, var(--color-primary) 0%, transparent 60%)", opacity: 0.15 }} />
                                 <div style={{
                                     width: 80, height: 80, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                                    background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                                    boxShadow: "0 0 40px var(--color-primary)", marginBottom: 28,
+                                    background: "var(--color-primary)",
+                                    marginBottom: 28,
                                     animation: "pulse-glow 2s ease-in-out infinite", position: "relative", zIndex: 1,
                                 }}>
-                                    <Sparkles size={36} color="white" className="animate-spin" style={{ animationDuration: "3s" }} />
+                                    <Sparkles size={36} color="#000" className="animate-spin" style={{ animationDuration: "3s" }} />
                                 </div>
-                                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: "var(--text-primary)", position: "relative", zIndex: 1 }}>Engineering Layout...</h2>
+                                <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: "var(--text-primary)", position: "relative", zIndex: 1 }}>Engineering Layout...</h2>
                                 <p style={{ fontSize: 15, color: "var(--text-secondary)", position: "relative", zIndex: 1 }}>Gemini AI is structuring your pages.</p>
                             </div>
                         )}
@@ -292,8 +291,8 @@ export default function AIGeneratorPage() {
                                             <CheckCircle size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h3 style={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Generation Successful</h3>
-                                            <p style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>{result.layout?.pages?.length} Pages Designed</p>
+                                            <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Generation Successful</h3>
+                                            <p style={{ fontSize: 13, color: "#10b981", fontWeight: 500 }}>{result.layout?.pages?.length} Pages Designed</p>
                                         </div>
                                     </div>
                                     {result.savedToWebsite && (
@@ -307,9 +306,9 @@ export default function AIGeneratorPage() {
                                 <div style={{ display: "flex", gap: 8, marginBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, overflowX: "auto", flexShrink: 0 }}>
                                     {result.layout?.pages?.map((page, i) => (
                                         <button key={i} onClick={() => setActivePageIdx(i)} style={{
-                                            padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
+                                            padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
                                             background: activePageIdx === i ? "var(--color-primary)" : "var(--bg-input)",
-                                            color: activePageIdx === i ? "white" : "var(--text-secondary)",
+                                            color: activePageIdx === i ? "#000" : "var(--text-secondary)",
                                             transition: "all 0.2s"
                                         }}>
                                             {page.title}
@@ -324,7 +323,7 @@ export default function AIGeneratorPage() {
                                             {result.layout?.pages[activePageIdx]?.sections.map((section, j) => {
                                                 const Component = SECTION_MAP[section.type];
                                                 if (!Component) return null;
-                                                return <Component key={j} props={{ ...section.props, accentColor: form.primaryColor, secondaryColor: form.secondaryColor }} branding={{ font: tenant?.branding?.font || "Inter" }} />;
+                                                return <Component key={j} props={{ ...section.props, accentColor: form.primaryColor, secondaryColor: form.secondaryColor }} branding={{ font: tenant?.branding?.font || "Montserrat" }} />;
                                             })}
                                         </div>
                                     </div>

@@ -8,7 +8,7 @@ import { useState } from "react";
  * Includes per-component color and font customization.
  */
 
-const FONT_OPTIONS = ["Google Sans", "Inter", "Roboto", "Outfit", "Playfair Display", "Montserrat", "Poppins", "DM Sans"];
+const FONT_OPTIONS = ["Montserrat", "Google Sans", "Inter", "Roboto", "Outfit", "Playfair Display", "Poppins", "DM Sans"];
 
 export default function SectionEditor({ section, onChange }) {
     const { type, props } = section;

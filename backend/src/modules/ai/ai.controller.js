@@ -4,6 +4,7 @@ import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
 import Website from "../website/website.model.js";
 import Tenant from "../tenant/tenant.model.js";
+import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
 import FirebaseAgent from "../../agents/firebaseAgent.js";
 
@@ -203,10 +204,29 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
             }
 
             // Auto-publish website if requested
-            if (autoPublish && website.status !== "published") {
-                website.status = "published";
-                website.publishedAt = new Date();
-                await website.save();
+            if (autoPublish) {
+                if (website.status !== "published") {
+                    website.status = "published";
+                    website.publishedAt = new Date();
+                    await website.save();
+                }
+
+                // Create a deployment snapshot
+                const dbPages = await Page.find({ websiteId: website._id, tenantId: req.tenantId }).lean();
+                const lastDeploy = await Deployment.findOne({ websiteId: website._id, tenantId: req.tenantId })
+                    .sort({ version: -1 })
+                    .lean();
+                const version = lastDeploy ? lastDeploy.version + 1 : 1;
+
+                await Deployment.create({
+                    tenantId: req.tenantId,
+                    websiteId: website._id,
+                    deployedBy: req.user._id,
+                    version,
+                    snapshot: dbPages,
+                    status: "success",
+                });
+
                 console.log(`📢 [AI] Auto-published website: ${website._id}`);
             }
 

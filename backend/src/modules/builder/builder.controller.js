@@ -114,7 +114,7 @@ export const updateSections = async (req, res) => {
         return res.status(400).json({ success: false, message: "sections must be an array" });
     }
 
-    const validTypes = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer"];
+    const validTypes = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer", "Button", "Image", "Spacer"];
     for (const section of sections) {
         if (!validTypes.includes(section.type)) {
             return res.status(400).json({ success: false, message: `Invalid section type: ${section.type}` });
