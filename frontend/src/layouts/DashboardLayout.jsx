@@ -4,14 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice.js";
 import {
     LayoutDashboard, Globe, Wand2, Settings, LogOut,
-    Menu, X, ChevronRight, Zap,
+    Menu, X, ChevronRight, Zap, SidebarClose, SidebarOpen
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    { label: "Websites", icon: Globe, path: "/websites" },
-    { label: "AI Generator", icon: Wand2, path: "/ai" },
+    { label: "Projects", icon: Globe, path: "/websites" },
+    { label: "AI Playground", icon: Wand2, path: "/ai" },
     { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
@@ -29,123 +29,141 @@ export default function DashboardLayout({ children }) {
     };
 
     return (
-        <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
+        <div className="flex h-screen overflow-hidden text-white" style={{ background: "var(--bg-base)" }}>
             {/* Sidebar */}
             <aside
-                className="flex flex-col transition-all duration-300 ease-in-out"
+                className="flex flex-col transition-all duration-300 ease-in-out relative z-20"
                 style={{
-                    width: sidebarOpen ? "260px" : "72px",
-                    minWidth: sidebarOpen ? "260px" : "72px",
-                    background: "var(--bg-surface)",
+                    width: sidebarOpen ? "280px" : "88px",
+                    minWidth: sidebarOpen ? "280px" : "88px",
+                    background: "var(--bg-card)",
                     borderRight: "1px solid var(--border-color)",
                     overflow: "hidden",
+                    boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.2)" : "none",
                 }}
             >
-                {/* Logo */}
+                {/* Logo Area */}
                 <div
-                    className="flex items-center gap-3 px-4 py-5"
-                    style={{ borderBottom: "1px solid var(--border-color)" }}
+                    className="flex items-center gap-3 px-6 py-8"
                 >
                     <div
-                        className="flex items-center justify-center rounded-xl flex-shrink-0"
+                        className="flex items-center justify-center rounded-[14px] flex-shrink-0 relative overflow-hidden group"
                         style={{
-                            width: "40px", height: "40px",
+                            width: "44px", height: "44px",
                             background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            boxShadow: "var(--shadow-glow)",
+                            boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
                         }}
                     >
-                        <Zap size={20} color="white" />
+                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Zap size={22} color="white" strokeWidth={2.5} />
                     </div>
-                    {sidebarOpen && (
-                        <span className="font-bold text-lg text-white tracking-tight animate-fade-in">
+
+                    <div className={`flex-1 transition-opacity duration-300 min-w-0 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                        <span className="font-extrabold text-2xl text-white tracking-tight animate-fade-in block leading-none">
                             SitePilot
                         </span>
-                    )}
+                    </div>
+
                     <button
-                        className="ml-auto p-1 rounded-lg hover:bg-white/5 transition-colors"
+                        className="p-2 rounded-[12px] hover:bg-white/10 transition-colors ml-auto absolute right-4 top-8"
                         style={{ color: "var(--text-secondary)" }}
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                     >
-                        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+                        {sidebarOpen ? <SidebarClose size={20} /> : <SidebarOpen size={20} />}
                     </button>
                 </div>
 
-                {/* Tenant badge */}
+                {/* Tenant Context */}
                 {sidebarOpen && tenant && (
-                    <div
-                        className="mx-3 mt-3 px-3 py-2 rounded-lg"
-                        style={{ background: "var(--bg-input)", border: "1px solid var(--border-color)" }}
-                    >
-                        <p style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Workspace</p>
-                        <p className="font-semibold text-sm mt-0.5 truncate" style={{ color: "var(--text-primary)" }}>{tenant.name}</p>
+                    <div className="px-6 mb-6 animate-fade-in">
+                        <div
+                            className="px-4 py-3 rounded-[16px] flex flex-col items-start"
+                            style={{ background: "var(--bg-input)", border: "1px solid var(--border-color)" }}
+                        >
+                            <span style={{ fontSize: "11px", color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: "800" }}>Workspace</span>
+                            <span className="font-bold text-[15px] mt-0.5 truncate w-full tracking-tight" style={{ color: "var(--text-primary)" }}>{tenant.name}</span>
+                        </div>
                     </div>
                 )}
 
-                {/* Nav Items */}
-                <nav className="flex-1 px-2 py-4 space-y-1">
+                {/* Navigation */}
+                <nav className={`flex-1 overflow-y-auto custom-scrollbar px-4 pt-2 space-y-2 ${!sidebarOpen ? 'mt-8' : ''}`}>
                     {navItems.map(({ label, icon: Icon, path }) => {
                         const active = location.pathname.startsWith(path);
                         return (
                             <Link
                                 key={path}
                                 to={path}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${active ? '' : 'hover:bg-white/5'}`}
+                                className={`flex items-center gap-4 px-4 py-3.5 rounded-[16px] transition-all duration-200 group relative border border-transparent`}
                                 style={{
                                     background: active ? "var(--bg-input)" : "transparent",
                                     color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                                    borderColor: active ? "var(--border-color)" : "transparent"
                                 }}
                                 title={!sidebarOpen ? label : ""}
                             >
-                                <Icon size={18} className="flex-shrink-0" />
-                                {sidebarOpen && (
-                                    <span className="text-sm font-medium animate-fade-in">{label}</span>
+                                {active && (
+                                    <div
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-r-md"
+                                        style={{ background: "var(--color-primary)" }}
+                                    />
                                 )}
-                                {sidebarOpen && active && (
-                                    <ChevronRight size={14} className="ml-auto" />
-                                )}
+                                <div className={`flex items-center justify-center ${active ? 'text-indigo-400' : 'group-hover:text-white transition-colors'}`}>
+                                    <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                                </div>
+                                <div className={`flex-1 transition-all duration-300 min-w-0 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                                    <span className={`text-[15px] ${active ? 'font-bold' : 'font-semibold'} animate-fade-in truncate block`}>{label}</span>
+                                </div>
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* User info */}
+                {/* User Profile */}
                 <div
-                    className="p-3 mt-auto"
+                    className="p-5"
                     style={{ borderTop: "1px solid var(--border-color)" }}
                 >
-                    <div className="flex items-center gap-3">
+                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'} bg-white/5 p-2 rounded-[16px] border border-white/5`}>
                         <div
-                            className="flex items-center justify-center rounded-full flex-shrink-0 text-sm font-bold"
+                            className="flex items-center justify-center rounded-[12px] flex-shrink-0 text-[15px] font-bold ring-2 ring-white/10 relative"
                             style={{
-                                width: "36px", height: "36px",
+                                width: "42px", height: "42px",
                                 background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                                 color: "white",
                             }}
                         >
                             {user?.name?.[0]?.toUpperCase()}
+                            <div className="absolute right-[-4px] bottom-[-4px] w-3 h-3 bg-emerald-500 rounded-full border-2 border-black" />
                         </div>
-                        {sidebarOpen && (
-                            <div className="flex-1 min-w-0 animate-fade-in">
-                                <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{user?.name}</p>
-                                <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{user?.role}</p>
-                            </div>
-                        )}
-                        {sidebarOpen && (
+
+                        <div className={`flex-1 min-w-0 transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                            <p className="text-[14px] font-bold truncate tracking-wide" style={{ color: "var(--text-primary)" }}>{user?.name}</p>
+                            <p className="text-[12px] font-medium tracking-wider truncate uppercase opacity-60" style={{ color: "var(--color-primary)" }}>{user?.role}</p>
+                        </div>
+
+                        <div className={`${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
                             <button
                                 onClick={handleLogout}
-                                className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                                className="p-2.5 rounded-[12px] hover:bg-red-500/20 hover:text-red-400 transition-colors"
                                 style={{ color: "var(--text-muted)" }}
-                                title="Logout"
+                                title="Sign Out"
                             >
-                                <LogOut size={16} />
+                                <LogOut size={18} strokeWidth={2.5} />
                             </button>
-                        )}
+                        </div>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-auto" style={{ background: "var(--bg-base)" }}>
+            {/* Main Content Area */}
+            <main
+                className="flex-1 overflow-auto custom-scrollbar relative"
+                style={{
+                    background: "var(--bg-base)",
+                    backgroundImage: "radial-gradient(ellipse at top right, rgba(99,102,241,0.05) 0%, transparent 60%)"
+                }}
+            >
                 {children}
             </main>
         </div>
