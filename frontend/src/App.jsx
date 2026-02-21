@@ -3,6 +3,7 @@ import { Provider } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import store from "./store/store.js";
 
+import PublicLayout from "./layouts/PublicLayout.jsx";
 import ProtectedLayout from "./layouts/ProtectedLayout.jsx";
 import LoginPage from "./features/auth/LoginPage.jsx";
 import RegisterPage from "./features/auth/RegisterPage.jsx";
@@ -12,6 +13,7 @@ import BuilderPage from "./features/builder/BuilderPage.jsx";
 import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
 import SettingsPage from "./features/settings/SettingsPage.jsx";
 import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
+import HomePage from "./features/home/HomePage.jsx";
 
 export default function App() {
   return (
@@ -32,11 +34,14 @@ export default function App() {
           }}
         />
         <Routes>
-          {/* Public auth routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Public pages — share Navbar + Footer via PublicLayout */}
+          <Route element={<PublicLayout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
 
-          {/* Public site rendering */}
+          {/* Public site rendering (no shared layout) */}
           <Route path="/site/:tenantSlug" element={<PublicSiteRenderer />} />
           <Route path="/site/:tenantSlug/:pageSlug" element={<PublicSiteRenderer />} />
 

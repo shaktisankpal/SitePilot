@@ -40,8 +40,8 @@ export default function LoginPage() {
 
     return (
         <div style={{
-            minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 20, background: "radial-gradient(ellipse at 80% 50%, rgba(139,92,246,0.12) 0%, var(--bg-base) 50%, rgba(99,102,241,0.08) 100%)",
+            minHeight: "calc(100vh - 68px)", display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "60px 20px 20px", background: "radial-gradient(ellipse at 80% 50%, rgba(139,92,246,0.12) 0%, var(--bg-base) 50%, rgba(99,102,241,0.08) 100%)",
             position: "relative", overflow: "hidden",
         }}>
             {/* Decorative blobs */}
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
             {/* Card */}
             <div className="animate-fade-in" style={{
-                width: "100%", maxWidth: 480, padding: "48px 44px",
+                width: "100%", maxWidth: 480, padding: "48px 48px",
                 borderRadius: 28, position: "relative", overflow: "hidden",
                 background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
                 backdropFilter: "blur(40px)", boxShadow: "0 32px 64px rgba(0,0,0,0.5)",

@@ -53,8 +53,8 @@ export default function RegisterPage() {
 
     return (
         <div style={{
-            minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 20, background: "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.12) 0%, var(--bg-base) 50%, rgba(139,92,246,0.08) 100%)",
+            minHeight: "calc(100vh - 68px)", display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "60px 20px 20px", background: "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.12) 0%, var(--bg-base) 50%, rgba(139,92,246,0.08) 100%)",
             position: "relative", overflow: "hidden",
         }}>
             {/* Decorative blobs */}
