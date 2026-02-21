@@ -114,10 +114,22 @@ const builderSlice = createSlice({
         },
         setActiveEditors: (state, action) => { state.activeEditors = action.payload; },
         applyRemoteUpdate: (state, action) => {
-            // Conflict resolution: apply remote update only if not currently editing that section
-            if (state.currentPage && !state.selectedSectionId) {
+            if (state.currentPage) {
                 if (!state.currentPage.layoutConfig) state.currentPage.layoutConfig = { sections: [] };
-                state.currentPage.layoutConfig.sections = action.payload.sections;
+
+                if (!state.selectedSectionId) {
+                    state.currentPage.layoutConfig.sections = action.payload.sections;
+                } else {
+                    // We are currently editing a section. So we merge the remote sections
+                    // but we keep our local version of the section we are currently editing.
+                    const mySection = state.currentPage.layoutConfig.sections.find(s => s.id === state.selectedSectionId);
+
+                    const mergedSections = action.payload.sections.map(s => {
+                        return (s.id === state.selectedSectionId && mySection) ? mySection : s;
+                    });
+
+                    state.currentPage.layoutConfig.sections = mergedSections;
+                }
             }
         },
     },
