@@ -21,6 +21,8 @@ import builderRoutes from "./modules/builder/builder.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
 import domainRoutes from "./modules/domain/domain.routes.js";
 import analyticsRoutes from "./modules/analytics/analytics.routes.js";
+import publishRoutes from "./agents/routes/publish.js";
+import formsRoutes from "./modules/forms/forms.routes.js";
 
 // Public routes
 import {
@@ -97,6 +99,7 @@ app.get("/health", (req, res) => {
 app.get("/api/public/resolve", resolveHostname);
 app.get("/api/public/sites/:tenantSlug", getPublicSite);
 app.get("/api/public/sites/:tenantSlug/pages/:slug", getPublicPage);
+app.use("/api/public/forms", formsRoutes);
 
 // Protected API routes
 app.use("/api/auth", authRoutes);
@@ -106,6 +109,8 @@ app.use("/api/builder/websites/:websiteId/pages", builderRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/domains", domainRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/publish", publishRoutes);
+app.use("/api/forms", formsRoutes);
 
 // Error handling
 app.use(notFound);

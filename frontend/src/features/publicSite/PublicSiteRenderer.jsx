@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../services/api.js";
 
 // ─── Section renderers ────────────────────────────────────────────────────────
@@ -171,12 +171,78 @@ const CTASection = ({ props, branding }) => {
     );
 };
 
-const ContactFormSection = ({ props, branding }) => {
+const ContactFormSection = ({ props, branding, websiteId }) => {
+    const fields = props.fields || ["name", "email", "message"];
+    const initialFormData = fields.reduce((acc, field) => ({ ...acc, [field]: "" }), {});
+    
+    const [formData, setFormData] = useState(initialFormData);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState(null);
+
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const secondary = props.secondaryColor || branding?.secondaryColor || "#8b5cf6";
     const bg = props.bgColor || "transparent";
     const textColor = props.textColor || "#f0f0ff";
     const font = props.fontFamily || branding?.font;
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setError(null);
+
+        if (!websiteId) {
+            setError("Website ID not found. Please refresh the page.");
+            setSubmitting(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/public/forms/submit/${websiteId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                setSubmitted(true);
+                setFormData(initialFormData);
+            } else {
+                setError(result.message || "Submission failed");
+            }
+        } catch (err) {
+            setError("Failed to submit form. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (submitted) {
+        return (
+            <section id="contact" style={{
+                padding: "80px 32px", maxWidth: "640px", margin: "0 auto",
+                background: bg,
+                fontFamily: font ? `"${font}", sans-serif` : undefined,
+            }}>
+                <div style={{
+                    textAlign: "center", padding: "60px 40px", borderRadius: "16px",
+                    background: `linear-gradient(135deg, ${accent}15, ${secondary}15)`,
+                    border: `1px solid ${accent}30`,
+                }}>
+                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>✓</div>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "700", color: textColor, marginBottom: "12px" }}>
+                        Your details have been confirmed!
+                    </h3>
+                    <p style={{ color: textColor, opacity: 0.7 }}>
+                        We'll get back to you soon.
+                    </p>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section id="contact" style={{
             padding: "80px 32px", maxWidth: "640px", margin: "0 auto",
@@ -184,26 +250,65 @@ const ContactFormSection = ({ props, branding }) => {
             fontFamily: font ? `"${font}", sans-serif` : undefined,
         }}>
             {props.heading && <h2 style={{ fontSize: "2rem", fontWeight: "700", color: textColor, marginBottom: "32px", textAlign: "center" }}>{props.heading}</h2>}
-            <form onSubmit={(e) => { e.preventDefault(); alert("Message sent! (demo)"); }}
-                style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-                {(props.fields || ["name", "email", "message"]).map((field) => (
-                    field === "message" ? (
-                        <textarea key={field} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} rows={5}
-                            style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: textColor, fontSize: "14px", outline: "none", resize: "none" }}
+            
+            {error && (
+                <div style={{
+                    padding: "12px 16px", borderRadius: "8px", marginBottom: "16px",
+                    background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)",
+                    color: "#ef4444", fontSize: "14px",
+                }}>
+                    {error}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {fields.map((field) => {
+                    const fieldName = field.toLowerCase();
+                    const isTextarea = fieldName.includes("message") || fieldName.includes("comment") || fieldName.includes("details");
+                    const inputType = fieldName.includes("email") ? "email" : fieldName.includes("phone") ? "tel" : "text";
+                    
+                    return isTextarea ? (
+                        <textarea
+                            key={fieldName}
+                            name={fieldName}
+                            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                            rows={5}
+                            value={formData[fieldName] || ""}
+                            onChange={(e) => setFormData({ ...formData, [fieldName]: e.target.value })}
+                            style={{
+                                padding: "14px", borderRadius: "12px",
+                                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                                color: textColor, fontSize: "14px", outline: "none", resize: "none",
+                            }}
                         />
                     ) : (
-                        <input key={field} type={field === "email" ? "email" : "text"} placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                            style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: textColor, fontSize: "14px", outline: "none" }}
+                        <input
+                            key={fieldName}
+                            type={inputType}
+                            name={fieldName}
+                            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                            value={formData[fieldName] || ""}
+                            onChange={(e) => setFormData({ ...formData, [fieldName]: e.target.value })}
+                            style={{
+                                padding: "14px", borderRadius: "12px",
+                                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                                color: textColor, fontSize: "14px", outline: "none",
+                            }}
                         />
-                    )
-                ))}
-                <button type="submit" style={{
-                    padding: "14px", borderRadius: "12px",
-                    background: `linear-gradient(135deg, ${accent}, ${secondary})`,
-                    color: "white", fontWeight: "600", fontSize: "15px", border: "none", cursor: "pointer",
-                }}>
-                    Send Message
+                    );
+                })}
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                        padding: "14px", borderRadius: "12px",
+                        background: submitting ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${accent}, ${secondary})`,
+                        color: "white", fontWeight: "600", fontSize: "15px", border: "none",
+                        cursor: submitting ? "not-allowed" : "pointer",
+                        opacity: submitting ? 0.6 : 1,
+                    }}
+                >
+                    {submitting ? "Sending..." : "Send Message"}
                 </button>
             </form>
         </section>
@@ -244,6 +349,7 @@ export const SECTION_MAP = {
 // ─── Main Public Site Renderer ────────────────────────────────────────────────
 export default function PublicSiteRenderer() {
     const { tenantSlug, pageSlug } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [siteData, setSiteData] = useState(null);
     const [currentPage, setCurrentPage] = useState(null);
@@ -252,15 +358,31 @@ export default function PublicSiteRenderer() {
 
     useEffect(() => {
         const slug = tenantSlug || window.location.hostname.split(".")[0];
-        api.get(`/public/sites/${slug}`)
+        const websiteId = searchParams.get("websiteId");
+        const url = websiteId ? `/public/sites/${slug}?websiteId=${websiteId}` : `/public/sites/${slug}`;
+        
+        console.log("🔍 Fetching site from:", url);
+        console.log("   Tenant slug:", slug);
+        console.log("   Website ID param:", websiteId);
+        
+        api.get(url)
             .then((res) => {
+                console.log("✅ API Response:", res.data);
+                console.log("   Pages count:", res.data.pages?.length);
+                console.log("   Website object:", res.data.website);
+                console.log("   Website._id:", res.data.website?._id);
+                console.log("   Type of _id:", typeof res.data.website?._id);
+                
                 setSiteData(res.data);
                 const home = res.data.pages.find((p) => p.isHomePage) || res.data.pages[0];
                 setCurrentPage(home);
             })
-            .catch((err) => setError(err.response?.data?.message || "Site not found"))
+            .catch((err) => {
+                console.error("❌ API Error:", err.response?.data || err.message);
+                setError(err.response?.data?.message || "Site not found");
+            })
             .finally(() => setLoading(false));
-    }, [tenantSlug]);
+    }, [tenantSlug, searchParams]);
 
     useEffect(() => {
         if (!siteData || !pageSlug) return;
@@ -299,6 +421,15 @@ export default function PublicSiteRenderer() {
 
     const branding = siteData?.tenant?.branding;
     const sections = currentPage?.layoutConfig?.sections || [];
+    
+    // Get websiteId from URL query param (most reliable) or fallback to page data
+    const websiteIdFromUrl = searchParams.get("websiteId");
+    const websiteId = websiteIdFromUrl || 
+                      siteData?.website?._id || 
+                      currentPage?.websiteId || 
+                      siteData?.pages?.[0]?.websiteId;
+
+    console.log("✅ Website ID:", websiteId, "(from URL:", websiteIdFromUrl, ")");
 
     return (
         <div style={{ minHeight: "100vh", background: "#0f0f1a", fontFamily: `"${branding?.font || "Google Sans"}", "DM Sans", sans-serif`, color: "#f0f0ff" }}>
@@ -331,7 +462,7 @@ export default function PublicSiteRenderer() {
                 .map((section) => {
                     const Component = SECTION_MAP[section.type];
                     if (!Component) return null;
-                    return <Component key={section.id} props={section.props || {}} branding={branding} />;
+                    return <Component key={section.id} props={section.props || {}} branding={branding} websiteId={websiteId} />;
                 })}
 
             {sections.length === 0 && (

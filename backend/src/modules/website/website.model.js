@@ -9,6 +9,7 @@ const WebsiteSchema = new mongoose.Schema(
             index: true,
         },
         name: { type: String, required: true, trim: true },
+        slug: { type: String, trim: true, index: true },
         description: { type: String, default: "" },
         status: {
             type: String,

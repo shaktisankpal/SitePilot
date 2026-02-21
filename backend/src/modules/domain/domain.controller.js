@@ -173,22 +173,33 @@ export const getPublicPage = async (req, res) => {
 };
 
 /**
- * GET /api/public/sites/:tenantSlug
+ * GET /api/public/sites/:tenantSlug?websiteId=xxx
  * Full published site for public rendering
  * Supports lookup by tenant slug OR custom domain name
+ * Optional websiteId query param to fetch specific website
  */
 export const getPublicSite = async (req, res) => {
     const slugOrDomain = req.params.tenantSlug;
+    const { websiteId } = req.query;
 
     // 1. Try direct tenant slug lookup
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
     let website = null;
 
     if (tenant) {
-        // Found by tenant slug — get the latest published website
-        website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-            .sort({ publishedAt: -1 })
-            .lean();
+        // If websiteId is provided, fetch that specific website
+        if (websiteId) {
+            website = await Website.findOne({
+                _id: websiteId,
+                tenantId: tenant._id,
+                status: "published",
+            }).lean();
+        } else {
+            // Found by tenant slug — get the latest published website
+            website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+                .sort({ publishedAt: -1 })
+                .lean();
+        }
     } else {
         // 2. Try custom domain lookup
         const domainDoc = await Domain.findOne({
@@ -198,8 +209,15 @@ export const getPublicSite = async (req, res) => {
         if (domainDoc) {
             tenant = await Tenant.findOne({ _id: domainDoc.tenantId, isActive: true }).lean();
             if (tenant) {
-                // If domain is linked to a specific website, use that
-                if (domainDoc.websiteId) {
+                // If websiteId is provided, use that
+                if (websiteId) {
+                    website = await Website.findOne({
+                        _id: websiteId,
+                        tenantId: tenant._id,
+                        status: "published",
+                    }).lean();
+                } else if (domainDoc.websiteId) {
+                    // If domain is linked to a specific website, use that
                     website = await Website.findOne({
                         _id: domainDoc.websiteId,
                         tenantId: tenant._id,
@@ -224,13 +242,15 @@ export const getPublicSite = async (req, res) => {
         websiteId: website._id,
         status: "published",
     })
-        .select("title slug isHomePage layoutConfig")
+        .select("title slug isHomePage layoutConfig websiteId")
         .lean();
+
+    console.log(`📄 [Public API] Returning ${pages.length} pages for website ${website._id}`);
 
     res.json({
         success: true,
         tenant: { name: tenant.name, slug: tenant.slug, branding: tenant.branding },
-        website: { name: website.name },
+        website: { _id: website._id.toString(), name: website.name },
         pages,
     });
 };

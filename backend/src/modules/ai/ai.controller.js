@@ -5,6 +5,7 @@ import Page from "../builder/page.model.js";
 import Website from "../website/website.model.js";
 import Tenant from "../tenant/tenant.model.js";
 import { v4 as uuidv4 } from "uuid";
+import FirebaseAgent from "../../agents/firebaseAgent.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -43,16 +44,19 @@ const inputSchema = Joi.object({
     targetAudience: Joi.string().min(2).max(200).required(),
     features: Joi.array().items(Joi.string()).min(1).required(),
     websiteId: Joi.string().allow("").optional(),
-    primaryColor: Joi.string().allow("").optional(),
-    secondaryColor: Joi.string().allow("").optional(),
 });
 
 /**
  * POST /api/ai/generate-layout
  */
 export const generateLayout = async (req, res) => {
+    console.log("📥 [AI] Received request:", { body: req.body });
+    
     const { error, value } = inputSchema.validate(req.body);
-    if (error) return res.status(400).json({ success: false, message: error.details[0].message });
+    if (error) {
+        console.error("❌ [AI] Validation error:", error.details[0].message);
+        return res.status(400).json({ success: false, message: error.details[0].message });
+    }
 
     const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor } = value;
 
@@ -103,9 +107,12 @@ Allowed section types ONLY: Hero, Text, Gallery, CTA, ContactForm, Navbar, Foote
 - Text section must have: heading, description
 - Gallery section must have: heading, items (array of image descriptions)
 - CTA section must have: heading, subheading, ctaText, ctaLink
-- ContactForm section must have: heading, fields (array: name, email, message)
+- ContactForm section must have: heading, fields (array of field names like ["name", "email", "phone", "city", "message"])
 - Navbar must have: brand, links (array of strings)
 - Footer must have: text (copyright text)
+
+IMPORTANT: ContactForm fields array should contain simple field names as strings. Common fields: name, email, phone, city, message, company, address, subject.
+The backend will automatically accept ANY fields you specify - be creative based on the business type!
 
 Generate at least 3 pages: Home, About, Contact. Add more relevant pages based on the business type.
 `.trim();
@@ -146,6 +153,8 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
 
         // If websiteId provided, save pages to DB
         if (website) {
+            const autoPublish = req.query.autoPublish === "true" || req.body.autoPublish === true;
+            
             for (const pageData of validated.pages) {
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
@@ -167,7 +176,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
                 if (existing) {
                     existing.layoutConfig.sections = sectionsWithIds;
                     existing.title = pageData.title;
-                    existing.status = "draft";
+                    existing.status = autoPublish ? "published" : "draft";
                     await existing.save();
                 } else {
                     await Page.create({
@@ -177,8 +186,52 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
                         slug: pageData.slug.toLowerCase(),
                         isHomePage: pageData.slug.toLowerCase() === "home",
                         layoutConfig: { sections: sectionsWithIds },
+                        status: autoPublish ? "published" : "draft",
                         createdBy: req.user._id,
                     });
+                }
+            }
+
+            // Auto-publish website if requested
+            if (autoPublish && website.status !== "published") {
+                website.status = "published";
+                website.publishedAt = new Date();
+                await website.save();
+                console.log(`📢 [AI] Auto-published website: ${website._id}`);
+            }
+
+            // 🔥 AUTO-TRIGGER FIREBASE AGENT for form backend setup
+            if (autoPublish) {
+                console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
+                
+                const firebaseAgent = new FirebaseAgent();
+                const deploymentContext = {
+                    tenantId: req.tenantId.toString(),
+                    siteId: website._id.toString(),
+                    websiteData: {
+                        name: website.name,
+                        description: website.description,
+                    },
+                    pages: validated.pages.map(p => ({
+                        ...p,
+                        layoutConfig: { sections: p.sections },
+                    })),
+                    assets: [],
+                };
+
+                try {
+                    const firebaseResult = await firebaseAgent.execute(deploymentContext);
+                    if (firebaseResult.success) {
+                        console.log(`✅ [AI] Firebase backend auto-configured!`);
+                        if (firebaseResult.hasContactForm) {
+                            console.log(`📝 [AI] Form submission backend is LIVE!`);
+                        }
+                    } else {
+                        console.error(`⚠️ [AI] Firebase setup failed:`, firebaseResult.error);
+                    }
+                } catch (firebaseError) {
+                    console.error(`❌ [AI] Firebase agent error:`, firebaseError.message);
+                    // Don't fail the whole AI generation if Firebase fails
                 }
             }
         }
