@@ -37,10 +37,19 @@ export const deleteWebsite = createAsyncThunk("website/delete", async (id, { rej
     }
 });
 
-export const publishWebsite = createAsyncThunk("website/publish", async (id, { rejectWithValue }) => {
+export const publishWebsite = createAsyncThunk("website/publish", async ({ id, domainId }, { rejectWithValue }) => {
     try {
-        const res = await api.post(`/websites/${id}/publish`);
+        const res = await api.post(`/websites/${id}/publish`, { domainId: domainId || undefined });
         return res.data.website;
+    } catch (err) {
+        return rejectWithValue(err.response?.data?.message);
+    }
+});
+
+export const fetchDomains = createAsyncThunk("website/fetchDomains", async (_, { rejectWithValue }) => {
+    try {
+        const res = await api.get("/domains");
+        return res.data.domains;
     } catch (err) {
         return rejectWithValue(err.response?.data?.message);
     }
@@ -51,6 +60,7 @@ const websiteSlice = createSlice({
     initialState: {
         websites: [],
         currentWebsite: null,
+        domains: [],
         loading: false,
         error: null,
     },
@@ -72,7 +82,8 @@ const websiteSlice = createSlice({
                 const idx = state.websites.findIndex((w) => w._id === action.payload._id);
                 if (idx !== -1) state.websites[idx] = action.payload;
                 if (state.currentWebsite?._id === action.payload._id) state.currentWebsite = action.payload;
-            });
+            })
+            .addCase(fetchDomains.fulfilled, (state, action) => { state.domains = action.payload; });
     },
 });
 

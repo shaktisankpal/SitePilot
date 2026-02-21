@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import Page from "../modules/builder/page.model.js";
+import ChatMessage from "../modules/builder/chatMessage.model.js";
 
 // Track active editors per page: Map<pageId, Map<socketId, { userId, userName, color }>>
 const activeEditors = new Map();
@@ -42,12 +43,14 @@ export const initializeSockets = (io) => {
             socket.join(roomKey);
             socket.currentRoom = roomKey;
             socket.currentPageId = pageId;
+            socket.currentUserName = userName || "Anonymous";
 
             if (!activeEditors.has(pageId)) {
                 activeEditors.set(pageId, new Map());
             }
 
             const color = getNextColor();
+            socket.currentColor = color;
             activeEditors.get(pageId).set(socket.id, {
                 userId: socket.userId,
                 userName: userName || "Anonymous",
@@ -131,6 +134,70 @@ export const initializeSockets = (io) => {
                 sectionId,
                 typing: false,
             });
+        });
+
+        // ─── CHAT MESSAGES ────────────────────────────────────────────────
+        /**
+         * chat:send — user sends a chat message
+         */
+        socket.on("chat:send", async ({ pageId, message }) => {
+            if (!pageId || !message?.trim()) return;
+
+            const roomKey = `${socket.tenantId}:page:${pageId}`;
+            const userName = socket.currentUserName || "Anonymous";
+            const color = socket.currentColor || "#6366f1";
+
+            try {
+                // Look up websiteId from the page
+                const page = await Page.findById(pageId).select("websiteId").lean();
+
+                // Save to DB
+                const chatMsg = await ChatMessage.create({
+                    tenantId: socket.tenantId,
+                    websiteId: page?.websiteId || null,
+                    pageId,
+                    userId: socket.userId,
+                    userName,
+                    message: message.trim(),
+                    color,
+                });
+
+                // Broadcast to the entire room (including sender)
+                io.to(roomKey).emit("chat:message", {
+                    _id: chatMsg._id,
+                    pageId,
+                    userId: socket.userId,
+                    userName,
+                    message: chatMsg.message,
+                    color,
+                    createdAt: chatMsg.createdAt,
+                });
+            } catch (err) {
+                socket.emit("chat:error", { message: err.message });
+            }
+        });
+
+        /**
+         * chat:history — fetch recent messages for this page
+         */
+        socket.on("chat:history", async ({ pageId, limit }) => {
+            if (!pageId) return;
+            try {
+                const messages = await ChatMessage.find({
+                    pageId,
+                    tenantId: socket.tenantId,
+                })
+                    .sort({ createdAt: -1 })
+                    .limit(limit || 50)
+                    .lean();
+
+                socket.emit("chat:history", {
+                    pageId,
+                    messages: messages.reverse(), // oldest first
+                });
+            } catch (err) {
+                socket.emit("chat:error", { message: err.message });
+            }
         });
 
         /**

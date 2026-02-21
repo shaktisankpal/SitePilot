@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -7,16 +7,18 @@ import {
     setSelectedSection, setCurrentPage, updateLocalSections, updateSectionProps,
     setActiveEditors, applyRemoteUpdate,
 } from "../../store/slices/builderSlice.js";
-import { publishWebsite } from "../../store/slices/websiteSlice.js";
 import { getSocket, connectSocket } from "../../services/socket.js";
 import toast from "react-hot-toast";
 import {
     ArrowLeft, Plus, Trash2, GripVertical, Rocket, Save,
-    Users, Pencil, FileText, Eye, Loader2, LayoutGrid, Globe
+    Users, Pencil, FileText, Eye, Loader2, LayoutGrid, Globe, History, GitCommitHorizontal
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import SectionEditor from "./SectionEditor.jsx";
 import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
+import ChatPanel from "./ChatPanel.jsx";
+import VersionPanel from "./VersionPanel.jsx";
+import PublishModal from "./PublishModal.jsx";
 
 const SECTION_TYPES = ["Hero", "Navbar", "Footer", "Text", "Gallery", "CTA", "ContactForm"];
 
@@ -33,6 +35,8 @@ export default function BuilderPage() {
     const { pages, currentPage, selectedSectionId, saving, activeEditors } = useSelector((s) => s.builder);
 
     const autoSaveRef = useRef(null);
+    const [showVersionPanel, setShowVersionPanel] = useState(false);
+    const [showPublishModal, setShowPublishModal] = useState(false);
 
     useEffect(() => {
         const socket = connectSocket(token);
@@ -120,10 +124,7 @@ export default function BuilderPage() {
         const res = await dispatch(saveDraft({ websiteId, pageId: currentPage._id, layoutConfig: currentPage.layoutConfig }));
         if (saveDraft.fulfilled.match(res)) toast.success("Draft saved ✓"); else toast.error("Save failed");
     };
-    const handlePublish = async () => {
-        const res = await dispatch(publishWebsite(websiteId));
-        if (publishWebsite.fulfilled.match(res)) toast.success("Website published! 🚀"); else toast.error("Publish failed");
-    };
+    // Publish is now handled via PublishModal
 
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
     const canEdit = ["OWNER", "ADMIN", "EDITOR", "DEVELOPER"].includes(user?.role);
@@ -329,6 +330,16 @@ export default function BuilderPage() {
                                 </div>
                             </div>
                         )}
+                        {/* Version History button */}
+                        <button onClick={() => setShowVersionPanel(!showVersionPanel)} style={{
+                            display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+                            borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                            background: showVersionPanel ? "rgba(99,102,241,0.12)" : "var(--bg-input)",
+                            border: showVersionPanel ? "1px solid rgba(99,102,241,0.3)" : "1px solid var(--border-color)",
+                            color: showVersionPanel ? "#818cf8" : "var(--text-primary)",
+                        }}>
+                            <History size={14} /> History
+                        </button>
                         {canEdit && (
                             <button onClick={handleSaveDraft} disabled={saving} style={{
                                 display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
@@ -339,7 +350,7 @@ export default function BuilderPage() {
                             </button>
                         )}
                         {canPublish && (
-                            <button onClick={handlePublish} style={{
+                            <button onClick={() => setShowPublishModal(true)} style={{
                                 display: "flex", alignItems: "center", gap: 8, padding: "8px 18px",
                                 borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
                                 background: "linear-gradient(135deg, #10b981, #34d399)", color: "white", border: "none",
@@ -425,6 +436,14 @@ export default function BuilderPage() {
                 </div>
             </div>
 
+            {/* ====== VERSION HISTORY — Inline Panel ====== */}
+            <VersionPanel
+                websiteId={websiteId}
+                pageId={pageId}
+                open={showVersionPanel}
+                onClose={() => setShowVersionPanel(false)}
+            />
+
             {/* ====== 4. RIGHT — Add Section ====== */}
             {canEdit && (
                 <div style={{
@@ -468,6 +487,16 @@ export default function BuilderPage() {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* ====== Floating Overlays ====== */}
+            {pageId && <ChatPanel pageId={pageId} />}
+
+            {showPublishModal && (
+                <PublishModal
+                    websiteId={websiteId}
+                    onClose={() => setShowPublishModal(false)}
+                />
             )}
         </div>
     );

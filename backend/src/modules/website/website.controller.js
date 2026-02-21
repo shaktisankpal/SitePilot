@@ -137,6 +137,8 @@ export const publishWebsite = async (req, res) => {
     const website = await Website.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!website) return res.status(404).json({ success: false, message: "Website not found" });
 
+    const { domainId } = req.body || {};
+
     const pages = await Page.find({ websiteId: website._id, tenantId: req.tenantId }).lean();
 
     // Get last deployment version number
@@ -162,6 +164,20 @@ export const publishWebsite = async (req, res) => {
 
     website.status = "published";
     website.publishedAt = new Date();
+
+    // If a domain was selected, link it to this website
+    let linkedDomain = null;
+    if (domainId) {
+        const Domain = (await import("../domain/domain.model.js")).default;
+        const domain = await Domain.findOne({ _id: domainId, tenantId: req.tenantId, verified: true });
+        if (domain) {
+            domain.websiteId = website._id;
+            await domain.save();
+            website.defaultDomain = domain.domain;
+            linkedDomain = domain.domain;
+        }
+    }
+
     await website.save();
 
     await logActivity({
@@ -170,11 +186,11 @@ export const publishWebsite = async (req, res) => {
         action: "WEBSITE_PUBLISHED",
         resource: "Website",
         resourceId: website._id,
-        details: { version },
+        details: { version, domain: linkedDomain },
         ip: req.ip,
     });
 
-    res.json({ success: true, message: "Website published", version, website });
+    res.json({ success: true, message: "Website published", version, website, linkedDomain });
 };
 
 /**

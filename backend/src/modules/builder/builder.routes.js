@@ -7,6 +7,9 @@ import {
     updateSections,
     updateSectionProps,
     saveDraft,
+    commitPage,
+    getCommits,
+    rollbackToCommit,
 } from "./builder.controller.js";
 import { authChain, requireRole } from "../../middleware/auth.middleware.js";
 
@@ -20,5 +23,10 @@ router.delete("/:pageId", authChain, requireRole("OWNER", "ADMIN"), deletePage);
 router.put("/:pageId/sections", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), updateSections);
 router.patch("/:pageId/sections/:sectionId", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), updateSectionProps);
 router.post("/:pageId/save-draft", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), saveDraft);
+
+// Version control routes
+router.post("/:pageId/commit", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), commitPage);
+router.get("/:pageId/commits", authChain, getCommits);
+router.post("/:pageId/rollback/:commitId", authChain, requireRole("OWNER", "ADMIN"), rollbackToCommit);
 
 export default router;

@@ -111,7 +111,7 @@ export default function WebsitesPage() {
     };
 
     const handlePublish = async (id) => {
-        const res = await dispatch(publishWebsite(id));
+        const res = await dispatch(publishWebsite({ id }));
         if (publishWebsite.fulfilled.match(res)) toast.success("Project deployed! 🚀");
         else toast.error(res.payload || "Deployment failed");
     };

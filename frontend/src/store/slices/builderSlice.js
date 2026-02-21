@@ -55,6 +55,34 @@ export const saveDraft = createAsyncThunk("builder/saveDraft", async ({ websiteI
     }
 });
 
+// ─── Version Control ────────────────────────────────────────────────
+export const commitPage = createAsyncThunk("builder/commitPage", async ({ websiteId, pageId, message }, { rejectWithValue }) => {
+    try {
+        const res = await api.post(`/builder/websites/${websiteId}/pages/${pageId}/commit`, { message });
+        return res.data.commit;
+    } catch (err) {
+        return rejectWithValue(err.response?.data?.message);
+    }
+});
+
+export const fetchCommits = createAsyncThunk("builder/fetchCommits", async ({ websiteId, pageId }, { rejectWithValue }) => {
+    try {
+        const res = await api.get(`/builder/websites/${websiteId}/pages/${pageId}/commits`);
+        return res.data.commits;
+    } catch (err) {
+        return rejectWithValue(err.response?.data?.message);
+    }
+});
+
+export const rollbackToCommit = createAsyncThunk("builder/rollbackToCommit", async ({ websiteId, pageId, commitId }, { rejectWithValue }) => {
+    try {
+        const res = await api.post(`/builder/websites/${websiteId}/pages/${pageId}/rollback/${commitId}`);
+        return res.data.page;
+    } catch (err) {
+        return rejectWithValue(err.response?.data?.message);
+    }
+});
+
 const builderSlice = createSlice({
     name: "builder",
     initialState: {
@@ -65,18 +93,21 @@ const builderSlice = createSlice({
         saving: false,
         error: null,
         activeEditors: [],
+        commits: [],
+        commitsLoading: false,
     },
     reducers: {
         setCurrentPage: (state, action) => { state.currentPage = action.payload; },
         setSelectedSection: (state, action) => { state.selectedSectionId = action.payload; },
         updateLocalSections: (state, action) => {
             if (state.currentPage) {
+                if (!state.currentPage.layoutConfig) state.currentPage.layoutConfig = { sections: [] };
                 state.currentPage.layoutConfig.sections = action.payload;
             }
         },
         updateSectionProps: (state, action) => {
             const { sectionId, props } = action.payload;
-            if (state.currentPage) {
+            if (state.currentPage?.layoutConfig?.sections) {
                 const section = state.currentPage.layoutConfig.sections.find((s) => s.id === sectionId);
                 if (section) section.props = { ...section.props, ...props };
             }
@@ -85,6 +116,7 @@ const builderSlice = createSlice({
         applyRemoteUpdate: (state, action) => {
             // Conflict resolution: apply remote update only if not currently editing that section
             if (state.currentPage && !state.selectedSectionId) {
+                if (!state.currentPage.layoutConfig) state.currentPage.layoutConfig = { sections: [] };
                 state.currentPage.layoutConfig.sections = action.payload.sections;
             }
         },
@@ -104,7 +136,13 @@ const builderSlice = createSlice({
             .addCase(updateSections.rejected, (state) => { state.saving = false; })
             .addCase(saveDraft.pending, (state) => { state.saving = true; })
             .addCase(saveDraft.fulfilled, (state, action) => { state.saving = false; state.currentPage = action.payload; })
-            .addCase(saveDraft.rejected, (state) => { state.saving = false; });
+            .addCase(saveDraft.rejected, (state) => { state.saving = false; })
+            // Version control
+            .addCase(commitPage.fulfilled, (state, action) => { state.commits.unshift(action.payload); })
+            .addCase(fetchCommits.pending, (state) => { state.commitsLoading = true; })
+            .addCase(fetchCommits.fulfilled, (state, action) => { state.commitsLoading = false; state.commits = action.payload; })
+            .addCase(fetchCommits.rejected, (state) => { state.commitsLoading = false; })
+            .addCase(rollbackToCommit.fulfilled, (state, action) => { state.currentPage = action.payload; });
     },
 });
 

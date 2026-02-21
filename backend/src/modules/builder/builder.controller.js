@@ -1,5 +1,6 @@
 import Page from "./page.model.js";
 import Website from "../website/website.model.js";
+import Commit from "./commit.model.js";
 import { logActivity } from "../../middleware/logger.middleware.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -181,4 +182,116 @@ export const saveDraft = async (req, res) => {
     if (!page) return res.status(404).json({ success: false, message: "Page not found" });
 
     res.json({ success: true, page });
+};
+
+/**
+ * POST /api/builder/websites/:websiteId/pages/:pageId/commit
+ * Create a version snapshot (commit)
+ */
+export const commitPage = async (req, res) => {
+    const { message } = req.body;
+    if (!message?.trim()) {
+        return res.status(400).json({ success: false, message: "Commit message is required" });
+    }
+
+    const page = await Page.findOne({
+        _id: req.params.pageId,
+        websiteId: req.params.websiteId,
+        ...req.tenantFilter,
+    }).lean();
+
+    if (!page) return res.status(404).json({ success: false, message: "Page not found" });
+
+    // Get next version number
+    const lastCommit = await Commit.findOne({ pageId: page._id })
+        .sort({ version: -1 })
+        .lean();
+    const version = lastCommit ? lastCommit.version + 1 : 1;
+
+    const commit = await Commit.create({
+        tenantId: req.tenantId,
+        websiteId: page.websiteId,
+        pageId: page._id,
+        version,
+        message: message.trim(),
+        snapshot: {
+            sections: page.layoutConfig?.sections || [],
+        },
+        committedBy: req.user._id,
+        committedByName: req.user.name || "Unknown",
+    });
+
+    // Also update the page version field
+    await Page.findByIdAndUpdate(page._id, { $set: { version } });
+
+    await logActivity({
+        tenantId: req.tenantId,
+        userId: req.user._id,
+        action: "PAGE_COMMITTED",
+        resource: "Page",
+        resourceId: page._id,
+        details: { version, message: message.trim() },
+        ip: req.ip,
+    });
+
+    res.status(201).json({ success: true, commit });
+};
+
+/**
+ * GET /api/builder/websites/:websiteId/pages/:pageId/commits
+ * Get all commits (version history) for a page
+ */
+export const getCommits = async (req, res) => {
+    const page = await Page.findOne({
+        _id: req.params.pageId,
+        websiteId: req.params.websiteId,
+        ...req.tenantFilter,
+    }).lean();
+
+    if (!page) return res.status(404).json({ success: false, message: "Page not found" });
+
+    const commits = await Commit.find({ pageId: page._id })
+        .sort({ version: -1 })
+        .lean();
+
+    res.json({ success: true, commits });
+};
+
+/**
+ * POST /api/builder/websites/:websiteId/pages/:pageId/rollback/:commitId
+ * Rollback a page to a specific commit's snapshot
+ */
+export const rollbackToCommit = async (req, res) => {
+    const commit = await Commit.findOne({
+        _id: req.params.commitId,
+        pageId: req.params.pageId,
+        tenantId: req.tenantId,
+    }).lean();
+
+    if (!commit) return res.status(404).json({ success: false, message: "Commit not found" });
+
+    const page = await Page.findOneAndUpdate(
+        { _id: req.params.pageId, websiteId: req.params.websiteId, ...req.tenantFilter },
+        {
+            $set: {
+                "layoutConfig.sections": commit.snapshot.sections,
+                status: "draft",
+            },
+        },
+        { new: true }
+    );
+
+    if (!page) return res.status(404).json({ success: false, message: "Page not found" });
+
+    await logActivity({
+        tenantId: req.tenantId,
+        userId: req.user._id,
+        action: "PAGE_ROLLED_BACK",
+        resource: "Page",
+        resourceId: page._id,
+        details: { toVersion: commit.version, commitMessage: commit.message },
+        ip: req.ip,
+    });
+
+    res.json({ success: true, page, restoredFromVersion: commit.version });
 };
