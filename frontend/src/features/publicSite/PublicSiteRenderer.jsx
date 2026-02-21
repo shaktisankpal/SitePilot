@@ -141,12 +141,16 @@ const HeroSection = ({ props, branding }) => {
 
     if (variant === "Centered Image Bg") {
         return (
-            <section style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "120px 32px", minHeight: "80vh", background: "#000", overflow: "hidden", fontFamily: baseFont, textAlign: "center" }}>
-                <BackgroundLayer props={{ ...props, backgroundImage: props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80", bgDim: props.bgDim !== undefined ? props.bgDim : 60, bgBlur: props.bgBlur !== undefined ? props.bgBlur : 0 }} />
-                <div style={{ position: "relative", zIndex: 2, maxWidth: "800px" }}>
-                    <h1 style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", fontWeight: "900", color: "#fff", marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.05", textShadow: "0 4px 24px rgba(0,0,0,0.5)" }}>{props.heading || "Revolutionary Design"}</h1>
-                    {props.subheading && <p style={{ fontSize: "1.25rem", color: "rgba(255,255,255,0.8)", marginBottom: "40px", lineHeight: "1.6" }}>{props.subheading}</p>}
-                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-block", padding: "18px 48px", borderRadius: "8px", background: accent, color: "white", fontWeight: "700", fontSize: "16px", textDecoration: "none", boxShadow: `0 8px 32px ${accent}60` }}>{props.ctaText}</a>}
+            <section style={{ position: "relative", padding: "20px", background: bg, fontFamily: baseFont }}>
+                <div style={{ position: "relative", width: "100%", height: "700px", borderRadius: "3rem", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "flex-start", padding: "0 6%", boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.1)" }}>
+                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80"})`, backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)", zIndex: 1 }} />
+                    <div style={{ position: "relative", zIndex: 2, maxWidth: "600px", background: "rgba(255, 255, 255, 0.1)", backdropFilter: "blur(20px)", padding: "48px", borderRadius: "2rem", border: "1px solid rgba(255,255,255,0.2)" }}>
+                        <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "50px", background: `${accent}`, color: isDark ? "#000" : "#fff", fontWeight: "800", fontSize: "12px", marginBottom: "24px", textTransform: "uppercase", letterSpacing: "1px" }}>Welcome</div>
+                        <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "900", color: "#fff", marginBottom: "20px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading || "Make your dream a reality"}</h1>
+                        {props.subheading && <p style={{ fontSize: "1.2rem", color: "rgba(255,255,255,0.9)", marginBottom: "40px", lineHeight: "1.6", fontWeight: "500" }}>{props.subheading}</p>}
+                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", alignItems: "center", padding: "18px 40px", borderRadius: "50px", background: "#fff", color: "#000", fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "transform 0.3s", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>{props.ctaText} <div style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff" }}>→</div></a>}
+                    </div>
                 </div>
             </section>
         );
@@ -154,17 +158,26 @@ const HeroSection = ({ props, branding }) => {
 
     if (variant === "Split Text Right") {
         return (
-            <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
+            <section style={{ position: "relative", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont, overflow: "hidden" }}>
                 <BackgroundLayer props={props} />
+                <div style={{ position: "absolute", top: "20%", left: "10%", width: "400px", height: "400px", background: accent, borderRadius: "50%", filter: "blur(120px)", opacity: 0.3 }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
-                    <div style={{ position: "relative" }}>
-                        <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "auto", borderRadius: "32px", boxShadow: `0 24px 48px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)"}`, objectFit: "cover", aspectRatio: "4/5" }} />
+                    <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+                        <div style={{ width: "450px", height: "450px", borderRadius: "50%", border: `12px solid ${isDark ? "#2D2D2D" : "#fff"}`, overflow: "hidden", boxShadow: `0 30px 60px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)"}`, position: "relative", zIndex: 2 }}>
+                            <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </div>
+                        <div style={{ position: "absolute", bottom: "10%", right: "-5%", background: isDark ? "#1A1A1A" : "#fff", padding: "16px 24px", borderRadius: "50px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", zIndex: 3, display: "flex", alignItems: "center", gap: 12, border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "transparent"}` }}>
+                            <div style={{ width: 40, height: 40, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff", fontWeight: "bold" }}>15+</div>
+                            <div>
+                                <h4 style={{ fontSize: "14px", fontWeight: "800", color: textColor, margin: 0 }}>Years Exp.</h4>
+                            </div>
+                        </div>
                     </div>
                     <div>
-                        <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "8px", background: `${accent}15`, color: accent, fontWeight: "700", fontSize: "12px", marginBottom: "24px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Featured Update</div>
-                        <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "800", lineHeight: "1.1", marginBottom: "24px", color: textColor }}>{props.heading || "Revolutionary Design"}</h1>
-                        {props.subheading && <p style={{ fontSize: "1.25rem", color: textColor, marginBottom: "40px", lineHeight: "1.6", opacity: 0.7 }}>{props.subheading}</p>}
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "16px 36px", borderRadius: "8px", fontSize: "16px", fontWeight: "700", textDecoration: "none", background: textColor, color: bg, boxShadow: `0 8px 24px rgba(0,0,0,0.2)` }}>{props.ctaText}</a>}
+                        <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "8px", background: `${accent}20`, color: accent, fontWeight: "800", fontSize: "12px", marginBottom: "24px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Trusted Services</div>
+                        <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "900", lineHeight: "1.1", marginBottom: "24px", color: textColor }}>{props.heading || "Serve The Taste"}</h1>
+                        {props.subheading && <p style={{ fontSize: "1.2rem", color: textColor, marginBottom: "40px", lineHeight: "1.7", opacity: 0.7 }}>{props.subheading}</p>}
+                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "18px 40px", borderRadius: "50px", fontSize: "16px", fontWeight: "800", textDecoration: "none", background: accent, color: isDark ? "#000" : "#fff", transition: "transform 0.3s", boxShadow: `0 10px 20px ${accent}40` }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
                     </div>
                 </div>
             </section>
@@ -173,18 +186,33 @@ const HeroSection = ({ props, branding }) => {
 
     // Default: Split Text Left
     return (
-        <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont }}>
+        <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont, overflow: "hidden" }}>
             <BackgroundLayer props={props} />
             <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
                 <div style={{ zIndex: 2 }}>
-                    <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "50px", background: `${accent}15`, color: accent, fontWeight: "700", fontSize: "12px", marginBottom: "24px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Top Tier Design</div>
-                    <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "800", lineHeight: "1.1", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em" }}>{props.heading || "Revolutionary Design"}</h1>
+                    <div style={{ display: "inline-flex", alignItems: "center", padding: "6px 16px", borderRadius: "50px", background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, color: textColor, fontWeight: "600", fontSize: "13px", marginBottom: "24px", boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.5)" : "0 4px 12px rgba(0,0,0,0.05)" }}>
+                        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: accent, marginRight: 8 }} />
+                        Next-Gen Experience
+                    </div>
+                    <h1 style={{ fontSize: "clamp(3.5rem, 5.5vw, 5rem)", fontWeight: "900", lineHeight: "1.05", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em" }}>{props.heading || "Modern Design"}</h1>
                     {props.subheading && <p style={{ fontSize: "1.25rem", color: textColor, marginBottom: "40px", lineHeight: "1.6", opacity: 0.7, maxWidth: "500px" }}>{props.subheading}</p>}
-                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "16px 36px", borderRadius: "50px", fontSize: "16px", fontWeight: "700", textDecoration: "none", background: accent, color: "white", boxShadow: `0 8px 24px ${accent}40` }}>{props.ctaText}</a>}
+                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "16px 32px", borderRadius: "12px", fontSize: "16px", fontWeight: "700", textDecoration: "none", background: textColor, color: bg, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
+                        <button style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "50px", height: "50px", borderRadius: "50%", border: `1px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, background: "transparent", color: textColor, cursor: "pointer", transition: "background 0.3s" }} onMouseEnter={e => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }} onMouseLeave={e => { e.currentTarget.style.background = "transparent" }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                        </button>
+                    </div>
                 </div>
                 <div style={{ position: "relative" }}>
                     <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "120%", height: "120%", background: `radial-gradient(circle, ${accent}30 0%, transparent 70%)`, zIndex: 0, filter: "blur(40px)" }} />
-                    <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "auto", borderRadius: "32px", position: "relative", zIndex: 1, boxShadow: `0 24px 48px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)"}`, objectFit: "cover", aspectRatio: "4/5" }} />
+                    <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "auto", borderRadius: "2rem", position: "relative", zIndex: 1, boxShadow: `0 30px 60px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.15)"}`, objectFit: "cover", aspectRatio: "4/5" }} />
+                    <div style={{ position: "absolute", bottom: "40px", left: "-40px", zIndex: 3, background: isDark ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(10px)", padding: "16px", borderRadius: "16px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "flex", gap: "12px", alignItems: "center" }}>
+                        <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: `${accent}20`, display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontWeight: "bold", fontSize: "16px" }}>99+</div>
+                        <div>
+                            <p style={{ margin: 0, fontSize: "12px", color: textColor, opacity: 0.6, fontWeight: "600", textTransform: "uppercase" }}>Experts</p>
+                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "800", color: textColor }}>Ready to Help</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -198,26 +226,40 @@ const TextSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const variant = props.variant || "Centered Standard";
     const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
 
     if (variant === "Left Aligned Big") {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
                 <BackgroundLayer props={props} />
+                <div style={{ position: "absolute", top: "10%", right: "-5%", width: "500px", height: "500px", background: `radial-gradient(circle, ${accent}20 0%, transparent 70%)`, filter: "blur(60px)", zIndex: 0 }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "flex-start" }}>
-                    {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "900", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
-                    {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.8 }}>{props.description}</p>}
+                    <div>
+                        <div style={{ display: "inline-flex", alignItems: "center", padding: "8px 20px", borderRadius: "50px", background: `${accent}15`, color: accent, fontWeight: "800", fontSize: "12px", marginBottom: "24px", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: accent, marginRight: 8, boxShadow: `0 0 10px ${accent}` }} />
+                            About Us
+                        </div>
+                        {props.heading && <h2 style={{ fontSize: "clamp(3rem, 5vw, 4rem)", fontWeight: "900", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.05", marginBottom: "32px" }}>{props.heading}</h2>}
+                    </div>
+                    <div style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff", padding: "40px", borderRadius: "32px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.3)" : "0 20px 40px rgba(0,0,0,0.05)", position: "relative" }}>
+                        <div style={{ position: "absolute", top: -20, right: 40, width: 60, height: 60, borderRadius: "50%", background: accent, color: isDark ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", boxShadow: `0 10px 20px ${accent}60` }}>”</div>
+                        {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.8, fontWeight: "500" }}>{props.description}</p>}
+                    </div>
                 </div>
             </section>
         );
     }
     if (variant === "Card Based") {
         return (
-            <section style={{ position: "relative", padding: "80px 32px", background: "transparent", fontFamily: baseFont }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: "transparent", fontFamily: baseFont }}>
                 <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "900px", margin: "0 auto", background: bg, padding: "60px", borderRadius: "32px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", textAlign: "center" }}>
-                    <div style={{ width: "48px", height: "4px", background: accent, margin: "0 auto 24px", borderRadius: "2px" }} />
-                    {props.heading && <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "24px", letterSpacing: "-0.02em" }}>{props.heading}</h2>}
-                    {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>{props.description}</p>}
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1000px", margin: "0 auto" }}>
+                    <div style={{ position: "absolute", inset: 0, background: accent, borderRadius: "40px", transform: "rotate(-2deg)", zIndex: 0, opacity: 0.8 }} />
+                    <div style={{ position: "relative", background: isDark ? "#111" : "#fff", padding: "80px 60px", borderRadius: "40px", boxShadow: "0 30px 60px rgba(0,0,0,0.1)", textAlign: "center", zIndex: 1, border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}>
+                        <div style={{ width: "64px", height: "6px", background: accent, margin: "0 auto 32px", borderRadius: "3px" }} />
+                        {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "900", color: textColor, marginBottom: "32px", letterSpacing: "-0.02em", lineHeight: "1.2" }}>{props.heading}</h2>}
+                        {props.description && <p style={{ fontSize: "1.2rem", lineHeight: "1.8", color: textColor, opacity: 0.75, maxWidth: "700px", margin: "0 auto" }}>{props.description}</p>}
+                    </div>
                 </div>
             </section>
         );
@@ -227,36 +269,60 @@ const TextSection = ({ props, branding }) => {
         <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
             <BackgroundLayer props={props} />
             <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
-                {props.heading && <h2 style={{ fontSize: "2.8rem", fontWeight: "800", marginBottom: "24px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
-                {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>{props.description}</p>}
+                <div style={{ display: "inline-block", width: "80px", height: "80px", borderRadius: "24px", background: `${accent}15`, color: accent, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px", transform: "rotate(10deg)" }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z" /></svg>
+                </div>
+                {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "900", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
+                {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.7, maxWidth: "600px", margin: "0 auto" }}>{props.description}</p>}
             </div>
         </section>
     );
 };
 
 const GallerySection = ({ props, branding }) => {
-    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const bg = props.bgColor || "#ffffff";
-    const textColor = props.textColor || "#111827";
+    const accent = props.accentColor || branding?.primaryColor || "#FDC55E";
+    const bg = props.bgColor || "#FFF9F0";
+    const textColor = props.textColor || "#191919";
     const font = props.fontFamily || branding?.font;
     const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
     const variant = props.variant || "Bento Grid";
     const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+
+    const getItemProps = (item) => {
+        if (typeof item === 'object' && item !== null) {
+            return {
+                title: item.title || "Untitled",
+                description: item.description || "Exceptional quality and design.",
+                image: item.image || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=80"
+            };
+        }
+        return { title: item, description: "Exceptional quality and design.", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=80" };
+    };
 
     if (variant === "Horizontal Flex") {
         return (
             <section style={{ position: "relative", padding: "80px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
                 <BackgroundLayer props={props} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
-                    {props.heading && <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "40px" }}>{props.heading}</h2>}
-                    <div style={{ display: "flex", gap: "24px", overflowX: "auto", paddingBottom: "24px" }}>
-                        {(props.items || []).map((item, i) => (
-                            <div key={i} style={{ minWidth: "300px", background: isDark ? "rgba(255,255,255,0.05)" : "#f9fafb", padding: "32px", borderRadius: "24px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}>
-                                <div style={{ fontSize: "2rem", marginBottom: "16px" }}>✨</div>
-                                <h3 style={{ fontSize: "1.25rem", fontWeight: "700", color: textColor, marginBottom: "8px" }}>{item}</h3>
-                                <p style={{ color: textColor, opacity: 0.6 }}>Modern solutions for today's complex challenges.</p>
-                            </div>
-                        ))}
+                    {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", color: textColor, marginBottom: "40px" }}>{props.heading}</h2>}
+                    <div style={{ display: "flex", gap: "32px", overflowX: "auto", paddingBottom: "40px", scrollSnapType: "x mandatory" }}>
+                        {(props.items || []).map((item, i) => {
+                            const { title, description, image } = getItemProps(item);
+                            return (
+                                <div key={i} style={{ scrollSnapAlign: "center", minWidth: "320px", width: "320px", background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff", padding: "24px", borderRadius: "32px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 10px 40px -10px rgba(0,0,0,0.5)" : "0 10px 40px -10px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", transition: "transform 0.3s", cursor: "pointer" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-8px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                                    <img src={image} alt={title} style={{ width: "160px", height: "160px", objectFit: "cover", borderRadius: "50%", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", marginBottom: "16px", marginTop: "-48px", background: isDark ? "#2D2D2D" : "#fff", border: `8px solid ${isDark ? "rgba(255,255,255,0.05)" : "#ffffff"}` }} />
+                                    <h3 style={{ fontSize: "1.5rem", fontWeight: "700", color: textColor, marginBottom: "8px" }}>{title}</h3>
+                                    <div style={{ display: "flex", color: accent, marginBottom: "16px", gap: "4px" }}>
+                                        {[1, 2, 3, 4, 5].map(s => <span key={s} style={{ fontSize: "14px" }}>★</span>)}
+                                    </div>
+                                    <p style={{ color: textColor, opacity: 0.6, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "24px" }}>{description}</p>
+                                    <div style={{ marginTop: "auto", width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "16px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}>
+                                        <span style={{ fontWeight: "800", fontSize: "1.2rem", color: textColor }}>$18.00</span>
+                                        <button style={{ padding: "8px 16px", borderRadius: "50px", border: `1px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, background: "transparent", color: textColor, fontWeight: "700", fontSize: "0.8rem", cursor: "pointer" }} onMouseEnter={e => { e.currentTarget.style.background = accent; e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = isDark ? "#000" : "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"; e.currentTarget.style.color = textColor; }}>Add</button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -270,12 +336,21 @@ const GallerySection = ({ props, branding }) => {
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
                     {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", color: textColor, marginBottom: "48px", textAlign: "center" }}>{props.heading}</h2>}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "32px" }}>
-                        {(props.items || []).map((item, i) => (
-                            <div key={i} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", padding: "40px 32px", borderRadius: "16px", borderTop: `4px solid ${accent}`, boxShadow: `0 12px 24px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.05)"}` }}>
-                                <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: textColor, marginBottom: "12px" }}>{item}</h3>
-                                <p style={{ color: textColor, opacity: 0.7, lineHeight: "1.6" }}>Delivering unmatched durability and visual aesthetics across the board.</p>
-                            </div>
-                        ))}
+                        {(props.items || []).map((item, i) => {
+                            const { title, description, image } = getItemProps(item);
+                            return (
+                                <div key={i} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", borderRadius: "24px", overflow: "hidden", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "transparent"}`, boxShadow: `0 12px 32px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.05)"}`, transition: "transform 0.3s, box-shadow 0.3s", cursor: "pointer" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-8px)"; e.currentTarget.style.boxShadow = `0 20px 40px ${isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.1)"}`; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 12px 32px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.05)"}`; }}>
+                                    <div style={{ width: "100%", height: "240px", overflow: "hidden" }}>
+                                        <img src={image} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
+                                    </div>
+                                    <div style={{ padding: "32px", position: "relative" }}>
+                                        <div style={{ position: "absolute", top: "-24px", right: "32px", width: "48px", height: "48px", background: accent, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff", fontWeight: "bold", fontSize: "20px", boxShadow: `0 8px 16px ${accent}60` }}>+</div>
+                                        <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: textColor, marginBottom: "12px" }}>{title}</h3>
+                                        <p style={{ color: textColor, opacity: 0.7, lineHeight: "1.6" }}>{description}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -290,16 +365,21 @@ const GallerySection = ({ props, branding }) => {
                 {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", marginBottom: "48px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gridAutoRows: "280px", gap: "24px" }}>
                     {(props.items || []).map((item, i) => {
+                        const { title, description, image } = getItemProps(item);
                         const getGridStyles = (idx) => {
                             if (idx % 5 === 0) return { gridColumn: "span 2", gridRow: "span 2" };
                             if (idx % 3 === 0) return { gridColumn: "span 2", gridRow: "span 1" };
                             return { gridColumn: "span 1", gridRow: "span 1" };
                         };
                         return (
-                            <div key={i} style={{ ...getGridStyles(i), borderRadius: "32px", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", position: "relative", overflow: "hidden", background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: `0 12px 32px ${isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)"}` }}>
-                                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: `radial-gradient(circle at top right, ${accent}15, transparent 70%)` }} />
-                                <h3 style={{ color: textColor, fontSize: "1.5rem", fontWeight: "700", position: "relative", zIndex: 1 }}>{item}</h3>
-                                <p style={{ color: textColor, opacity: 0.6, fontSize: "1rem", marginTop: "8px", position: "relative", zIndex: 1 }}>Exceptional quality and design.</p>
+                            <div key={i} style={{ ...getGridStyles(i), borderRadius: "32px", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", position: "relative", overflow: "hidden", background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: `0 12px 32px ${isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)"}`, transition: "transform 0.3s", cursor: "pointer" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                                <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center", transition: "transform 0.5s", zIndex: 0 }} />
+                                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)", zIndex: 1 }} />
+                                <div style={{ position: "relative", zIndex: 2 }}>
+                                    <div style={{ display: "inline-block", padding: "6px 16px", borderRadius: "50px", background: `${accent}`, color: isDark ? "#000" : "#fff", fontWeight: "700", fontSize: "0.75rem", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Featured</div>
+                                    <h3 style={{ color: "#ffffff", fontSize: "2rem", fontWeight: "800", lineHeight: "1.1" }}>{title}</h3>
+                                    <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1rem", marginTop: "12px", lineHeight: "1.5" }}>{description}</p>
+                                </div>
                             </div>
                         );
                     })}
@@ -322,9 +402,12 @@ const CTASection = ({ props, branding }) => {
         return (
             <section style={{ position: "relative", padding: "60px 32px", background: bg, fontFamily: baseFont }}>
                 <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "800px", margin: "0 auto", padding: "24px 40px", borderRadius: "100px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "20px", boxShadow: `0 20px 40px ${accent}40` }}>
-                    <h2 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#fff", margin: 0 }}>{props.heading || "Ready to dive in?"}</h2>
-                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "12px 32px", borderRadius: "50px", background: "#fff", color: accent, fontWeight: "800", fontSize: "14px", textDecoration: "none" }}>{props.ctaText}</a>}
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "1000px", margin: "0 auto", padding: "32px 48px", borderRadius: "100px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px", boxShadow: `0 30px 60px ${accent}60`, border: `1px solid rgba(255,255,255,0.2)` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                        <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>🚀</div>
+                        <h2 style={{ fontSize: "2rem", fontWeight: "800", color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
+                    </div>
+                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 40px", borderRadius: "50px", background: "#fff", color: accent, fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "transform 0.3s", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>{props.ctaText} →</a>}
                 </div>
             </section>
         );
@@ -333,13 +416,23 @@ const CTASection = ({ props, branding }) => {
     if (variant === "Split Screen CTA") {
         return (
             <section style={{ padding: "0", background: bg, fontFamily: baseFont }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                    <div style={{ padding: "120px 80px", background: accent, color: "#fff" }}>
-                        {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "900", marginBottom: "20px", lineHeight: "1.1" }}>{props.heading}</h2>}
-                        {props.subheading && <p style={{ fontSize: "1.25rem", opacity: 0.8 }}>{props.subheading}</p>}
+                <div style={{ display: "flex", flexWrap: "wrap", minHeight: "600px" }}>
+                    <div style={{ flex: "1 1 50%", padding: "100px 80px", background: accent, color: "#fff", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                        <div style={{ position: "absolute", top: "-50%", left: "-20%", width: "100%", height: "200%", background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)", zIndex: 0 }} />
+                        <div style={{ position: "relative", zIndex: 1 }}>
+                            {props.heading && <h2 style={{ fontSize: "clamp(3rem, 4vw, 4rem)", fontWeight: "900", marginBottom: "24px", lineHeight: "1.1", letterSpacing: "-0.02em" }}>{props.heading}</h2>}
+                            {props.subheading && <p style={{ fontSize: "1.25rem", opacity: 0.9, lineHeight: "1.6" }}>{props.subheading}</p>}
+                        </div>
                     </div>
-                    <div style={{ padding: "120px 80px", display: "flex", alignItems: "center", justifyContent: "center", background: isDark ? "rgba(0,0,0,0.2)" : "#f9fafb" }}>
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "24px 64px", borderRadius: "12px", background: textColor, color: bg, fontWeight: "800", fontSize: "20px", textDecoration: "none", boxShadow: `0 12px 24px rgba(0,0,0,0.15)` }}>{props.ctaText}</a>}
+                    <div style={{ flex: "1 1 50%", padding: "100px 80px", display: "flex", alignItems: "center", justifyContent: "center", background: isDark ? "#111" : "#f9fafb", position: "relative" }}>
+                        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at center, ${accent}15 0%, transparent 60%)` }} />
+                        <div style={{ position: "relative", zIndex: 1, background: isDark ? "rgba(255,255,255,0.05)" : "#fff", padding: "60px", borderRadius: "32px", boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.05)", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", width: "100%", maxWidth: "400px" }}>
+                            <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: `${accent}20`, margin: "0 auto 32px", display: "flex", alignItems: "center", justifyContent: "center", color: accent }}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                            </div>
+                            {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", justifyContent: "center", width: "100%", padding: "20px", borderRadius: "16px", background: textColor, color: bg, fontWeight: "800", fontSize: "18px", textDecoration: "none", boxShadow: `0 12px 24px rgba(0,0,0,0.15)`, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
+                            <p style={{ marginTop: "24px", fontSize: "14px", color: textColor, opacity: 0.5, fontWeight: "600" }}>No credit card required.</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -348,14 +441,18 @@ const CTASection = ({ props, branding }) => {
 
     // Default: Centered Large
     return (
-        <section style={{ position: "relative", padding: "80px 32px", background: bg, fontFamily: baseFont }}>
+        <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
             <BackgroundLayer props={props} />
-            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 48px", borderRadius: "40px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", zIndex: 1 }}>
-                <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at center, ${accent}20 0%, transparent 70%)` }} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
-                    {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "800", color: textColor, marginBottom: "20px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
-                    {props.subheading && <p style={{ color: textColor, opacity: 0.7, fontSize: "1.25rem", marginBottom: "40px", lineHeight: "1.6" }}>{props.subheading}</p>}
-                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "18px 48px", borderRadius: "50px", background: accent, color: "white", fontWeight: "700", fontSize: "16px", textDecoration: "none", boxShadow: `0 12px 24px ${accent}40`, transition: "transform 0.2s" }}>{props.ctaText}</a>}
+            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "100px 48px", borderRadius: "48px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", zIndex: 1, boxShadow: isDark ? "0 40px 80px rgba(0,0,0,0.4)" : "0 40px 80px rgba(0,0,0,0.05)" }}>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "1000px", height: "1000px", background: `radial-gradient(circle at center, ${accent}30 0%, transparent 60%)`, filter: "blur(60px)", zIndex: 0 }} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "700px", margin: "0 auto" }}>
+                    <div style={{ display: "inline-block", padding: "8px 24px", borderRadius: "50px", border: `1px solid ${accent}40`, color: accent, fontWeight: "800", fontSize: "14px", marginBottom: "32px", textTransform: "uppercase", letterSpacing: "1px", background: `${accent}10` }}>Join The Vanguard</div>
+                    {props.heading && <h2 style={{ fontSize: "clamp(3.5rem, 5vw, 4.5rem)", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
+                    {props.subheading && <p style={{ color: textColor, opacity: 0.8, fontSize: "1.25rem", marginBottom: "48px", lineHeight: "1.6", fontWeight: "500" }}>{props.subheading}</p>}
+                    <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "20px 48px", borderRadius: "50px", background: accent, color: isDark ? "#000" : "#fff", fontWeight: "800", fontSize: "16px", textDecoration: "none", boxShadow: `0 20px 40px ${accent}60`, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
+                        <a href="#" style={{ display: "inline-flex", padding: "20px 48px", borderRadius: "50px", background: "transparent", border: `2px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, color: textColor, fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }} onMouseLeave={e => { e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"; e.currentTarget.style.color = textColor }}>Learn More</a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -418,10 +515,14 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     if (variant === "Centered Card") {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
                 <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", padding: "60px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
-                    <h2 style={{ fontSize: "2.5rem", fontWeight: "800", color: textColor, marginBottom: "40px", textAlign: "center", letterSpacing: "-0.02em" }}>{props.heading || "Contact Us"}</h2>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "800px", height: "800px", background: `radial-gradient(circle, ${accent}20 0%, transparent 60%)`, filter: "blur(60px)", zIndex: 0 }} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto", background: isDark ? "rgba(30,30,30,0.4)" : "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)", padding: "64px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 40px 80px rgba(0,0,0,0.5)" : "0 40px 80px rgba(0,0,0,0.05)" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "20px", background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px", color: accent }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                    </div>
+                    <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: textColor, marginBottom: "40px", textAlign: "center", letterSpacing: "-0.02em" }}>{props.heading || "Contact Us"}</h2>
                     {error && <div style={{ padding: "16px", borderRadius: "16px", marginBottom: "24px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "600" }}>{error}</div>}
                     {renderForm()}
                 </div>
@@ -431,14 +532,15 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     // Default: Left Text Right Form
     return (
-        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
+        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
             <BackgroundLayer props={props} />
             <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center", position: "relative", zIndex: 1 }}>
                 <div>
-                    <h2 style={{ fontSize: "3.5rem", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em" }}>{props.heading || "Let's Talk"}</h2>
+                    <div style={{ display: "inline-block", padding: "8px 24px", borderRadius: "50px", border: `1px solid ${accent}40`, color: accent, fontWeight: "800", fontSize: "14px", marginBottom: "32px", textTransform: "uppercase", letterSpacing: "1px", background: `${accent}10` }}>Get In Touch</div>
+                    <h2 style={{ fontSize: "clamp(3.5rem, 5vw, 4.5rem)", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading || "Let's Talk"}</h2>
                     <p style={{ fontSize: "1.25rem", color: textColor, opacity: 0.7, lineHeight: "1.6" }}>We'd love to hear from you. Fill out the form and our team will respond within 24 hours.</p>
                 </div>
-                <div style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#f9fafb", padding: "40px", borderRadius: "32px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
+                <div style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", padding: "48px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.3)" : "0 20px 40px rgba(0,0,0,0.05)" }}>
                     {error && <div style={{ padding: "16px", borderRadius: "16px", marginBottom: "24px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "600" }}>{error}</div>}
                     {renderForm()}
                 </div>

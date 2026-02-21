@@ -85,6 +85,70 @@ export default function SectionEditor({ section, onChange }) {
         </div>
     );
 
+    const renderCardsField = (label, key) => (
+        <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            {(props[key] || []).map((item, i) => {
+                const isObj = typeof item === 'object' && item !== null;
+                const title = isObj ? item.title : item;
+                const description = isObj ? item.description : "";
+                const image = isObj ? item.image : "";
+
+                const updateItem = (field, val) => {
+                    const arr = [...(props[key] || [])];
+                    if (!isObj) arr[i] = { title: arr[i], description: "", image: "" };
+                    arr[i] = { ...arr[i], [field]: val };
+                    onChange({ [key]: arr });
+                };
+
+                return (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, padding: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8 }}>
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <input value={title} onChange={e => updateItem('title', e.target.value)} style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="Title" />
+                            <button onClick={() => handleRemoveArrayItem(key, i)} style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", cursor: "pointer", padding: "0 8px", fontSize: "14px", border: "none", borderRadius: 4 }}>×</button>
+                        </div>
+                        <input value={description} onChange={e => updateItem('description', e.target.value)} style={{ ...inputStyle, marginTop: 0 }} placeholder="Description" />
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <input value={image} onChange={e => updateItem('image', e.target.value)} style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="Image URL" />
+                            <button onClick={() => {
+                                const fileInput = document.createElement("input");
+                                fileInput.type = "file";
+                                fileInput.accept = "image/*";
+                                fileInput.onchange = async (e) => {
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+                                    setUploading(true);
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append("image", file);
+                                        const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
+                                        if (res.data.success) {
+                                            const fullUrl = res.data.url.startsWith("http") ? res.data.url : `http://localhost:5000${res.data.url}`;
+                                            updateItem('image', fullUrl);
+                                        }
+                                    } finally {
+                                        setUploading(false);
+                                    }
+                                };
+                                fileInput.click();
+                            }} style={{ background: "var(--color-primary)", color: "var(--bg-card)", border: "none", borderRadius: 4, padding: "0 8px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{uploading ? <Loader2 size={12} className="animate-spin" /> : "Upload"}</button>
+                        </div>
+                    </div>
+                );
+            })}
+            <button
+                onClick={() => {
+                    const arr = [...(props[key] || [])];
+                    arr.push({ title: "New Card", description: "Card description", image: "" });
+                    onChange({ [key]: arr });
+                }}
+                style={{ marginTop: "6px", fontSize: "12px", color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            >
+                + Add Card
+            </button>
+        </div>
+    );
+
     const handleImageUpload = async (key, file) => {
         if (!file) return;
         setUploading(true);
@@ -333,7 +397,7 @@ export default function SectionEditor({ section, onChange }) {
             case "Gallery":
                 return <>
                     {renderField("Heading", "heading", "text", "Our Gallery")}
-                    {renderArrayField("Image URLs or Descriptions", "items")}
+                    {renderCardsField("Cards / Gallery Items", "items")}
                     {renderImageField("Background Image", "backgroundImage")}
                 </>;
 
