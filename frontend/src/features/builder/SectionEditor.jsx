@@ -1,7 +1,13 @@
+import { ChevronDown } from "lucide-react";
+
 /**
  * SectionEditor
  * Renders an inline form to edit props of a given section type.
+ * Includes per-component color and font customization.
  */
+
+const FONT_OPTIONS = ["Google Sans", "Inter", "Roboto", "Outfit", "Playfair Display", "Montserrat", "Poppins", "DM Sans"];
+
 export default function SectionEditor({ section, onChange }) {
     const { type, props } = section;
 
@@ -56,7 +62,7 @@ export default function SectionEditor({ section, onChange }) {
         <div key={key}>
             <label style={labelStyle}>{label}</label>
             {(props[key] || []).map((item, i) => (
-                <div key={i} className="flex gap-1 mt-1">
+                <div key={i} style={{ display: "flex", gap: 4, marginTop: 4 }}>
                     <input
                         value={item} onChange={(e) => handleArrayChange(key, i, e.target.value)}
                         style={{ ...inputStyle, marginTop: 0, flex: 1 }}
@@ -73,6 +79,79 @@ export default function SectionEditor({ section, onChange }) {
             >
                 + Add item
             </button>
+        </div>
+    );
+
+    const renderColorField = (label, key, defaultVal = "#6366f1") => (
+        <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                <div style={{
+                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                    background: props[key] || defaultVal,
+                    position: "relative", overflow: "hidden", cursor: "pointer",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    boxShadow: `0 2px 8px ${props[key] || defaultVal}40`,
+                }}>
+                    <input type="color" value={props[key] || defaultVal}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        style={{ position: "absolute", inset: -8, width: 60, height: 60, cursor: "pointer", opacity: 0 }}
+                    />
+                </div>
+                <input
+                    value={props[key] || defaultVal}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    placeholder={defaultVal}
+                    style={{ ...inputStyle, marginTop: 0, flex: 1, fontFamily: "monospace", fontSize: 12 }}
+                />
+            </div>
+        </div>
+    );
+
+    const renderFontField = () => (
+        <div key="fontFamily">
+            <label style={labelStyle}>Font Family</label>
+            <div style={{ position: "relative", marginTop: 4 }}>
+                <select
+                    value={props.fontFamily || "Google Sans"}
+                    onChange={(e) => handleChange("fontFamily", e.target.value)}
+                    style={{
+                        ...inputStyle, marginTop: 0, appearance: "none", cursor: "pointer",
+                        fontFamily: props.fontFamily || "Google Sans",
+                        paddingRight: 28,
+                    }}
+                >
+                    {FONT_OPTIONS.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                    ))}
+                </select>
+                <div style={{
+                    position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                    pointerEvents: "none", opacity: 0.4,
+                }}>
+                    <ChevronDown size={12} />
+                </div>
+            </div>
+        </div>
+    );
+
+    /** Styling section common to all section types */
+    const renderStyleControls = () => (
+        <div style={{
+            marginTop: 16, paddingTop: 14,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}>
+            <p style={{
+                fontSize: "10px", fontWeight: 800, textTransform: "uppercase",
+                letterSpacing: "0.1em", color: "rgba(255,255,255,0.25)",
+                marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
+            }}>
+                🎨 Style Controls
+            </p>
+            {renderColorField("Background", "bgColor", "#0a0a14")}
+            {renderColorField("Text Color", "textColor", "#f0f0ff")}
+            {renderColorField("Accent Color", "accentColor", "#6366f1")}
+            {renderFontField()}
         </div>
     );
 
@@ -130,11 +209,12 @@ export default function SectionEditor({ section, onChange }) {
     };
 
     return (
-        <div className="pt-2">
+        <div style={{ paddingTop: 8 }}>
             <p style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
                 Editing: {type}
             </p>
             {renderByType()}
+            {renderStyleControls()}
         </div>
     );
 }

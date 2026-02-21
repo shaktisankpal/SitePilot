@@ -140,7 +140,7 @@ export default function SettingsPage() {
                 {/* ============ BRANDING TAB ============ */}
                 {activeTab === "branding" && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-                        {/* Brand Identity Card */}
+                        {/* Workspace Info Card */}
                         <div style={{
                             background: "var(--bg-card)", border: "1px solid var(--border-color)",
                             borderRadius: 24, padding: 36, display: "flex", flexDirection: "column", justifyContent: "space-between",
@@ -150,89 +150,54 @@ export default function SettingsPage() {
                                     <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
                                         <Palette size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Brand Identity</h3>
+                                    <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Workspace Identity</h3>
                                 </div>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                                    {/* Primary Color */}
+                                    {/* Workspace Name (read-only) */}
                                     <div style={{ paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Primary Color</label>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                                            <div style={{
-                                                width: 64, height: 64, borderRadius: 16, flexShrink: 0, cursor: "pointer",
-                                                background: branding.primaryColor || "#6366f1", position: "relative", overflow: "hidden",
-                                                border: "2px solid rgba(255,255,255,0.1)", boxShadow: `0 4px 16px ${branding.primaryColor || "#6366f1"}40`,
-                                            }}>
-                                                <input type="color" value={branding.primaryColor || "#6366f1"}
-                                                    onChange={(e) => setBranding((p) => ({ ...p, primaryColor: e.target.value }))}
-                                                    style={{ position: "absolute", inset: -10, width: 120, height: 120, cursor: "pointer", opacity: 0 }}
-                                                />
-                                            </div>
-                                            <input value={branding.primaryColor || "#6366f1"}
-                                                onChange={(e) => setBranding((p) => ({ ...p, primaryColor: e.target.value }))}
-                                                placeholder="#6366f1"
-                                                style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, letterSpacing: 1 }}
-                                            />
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Workspace Name</label>
+                                        <div style={{
+                                            padding: "14px 18px", borderRadius: 14, background: "var(--bg-input)",
+                                            border: "1px solid var(--border-color)", color: "var(--text-primary)",
+                                            fontSize: 16, fontWeight: 700,
+                                        }}>
+                                            {tenant?.name || "My Workspace"}
                                         </div>
                                     </div>
 
-                                    {/* Secondary Color */}
+                                    {/* Workspace Slug (read-only) */}
                                     <div style={{ paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Secondary Color</label>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                                            <div style={{
-                                                width: 64, height: 64, borderRadius: 16, flexShrink: 0, cursor: "pointer",
-                                                background: branding.secondaryColor || "#8b5cf6", position: "relative", overflow: "hidden",
-                                                border: "2px solid rgba(255,255,255,0.1)", boxShadow: `0 4px 16px ${branding.secondaryColor || "#8b5cf6"}40`,
-                                            }}>
-                                                <input type="color" value={branding.secondaryColor || "#8b5cf6"}
-                                                    onChange={(e) => setBranding((p) => ({ ...p, secondaryColor: e.target.value }))}
-                                                    style={{ position: "absolute", inset: -10, width: 120, height: 120, cursor: "pointer", opacity: 0 }}
-                                                />
-                                            </div>
-                                            <input value={branding.secondaryColor || "#8b5cf6"}
-                                                onChange={(e) => setBranding((p) => ({ ...p, secondaryColor: e.target.value }))}
-                                                placeholder="#8b5cf6"
-                                                style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, letterSpacing: 1 }}
-                                            />
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Workspace Slug</label>
+                                        <div style={{
+                                            padding: "14px 18px", borderRadius: 14, background: "var(--bg-input)",
+                                            border: "1px solid var(--border-color)", color: "var(--text-secondary)",
+                                            fontSize: 15, fontFamily: "'JetBrains Mono', monospace",
+                                        }}>
+                                            {tenant?.slug || "—"}
                                         </div>
                                     </div>
 
-                                    {/* Font Family */}
-                                    <div>
-                                        <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Font Family</label>
-                                        <div style={{ position: "relative" }}>
-                                            <select value={branding.font || "Google Sans"}
-                                                onChange={(e) => setBranding((p) => ({ ...p, font: e.target.value }))}
-                                                style={{ ...inputStyle, appearance: "none", cursor: "pointer", fontFamily: branding.font || "Google Sans" }}
-                                            >
-                                                {["Google Sans", "Inter", "Roboto", "Outfit", "Playfair Display", "Montserrat", "Poppins"].map((f) => (
-                                                    <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
-                                                ))}
-                                            </select>
-                                            <div style={{ position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", opacity: 0.4 }}>
-                                                <ChevronDown size={16} />
-                                            </div>
+                                    {/* Info about component-level styling */}
+                                    <div style={{
+                                        padding: "20px 24px", borderRadius: 16,
+                                        background: "rgba(99,102,241,0.06)",
+                                        border: "1px solid rgba(99,102,241,0.2)",
+                                    }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                                            <LayoutTemplate size={18} style={{ color: "#818cf8" }} />
+                                            <span style={{ fontSize: 14, fontWeight: 700, color: "#818cf8" }}>Per-Component Styling</span>
                                         </div>
+                                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+                                            Colors, fonts, and styling are now configured per-component directly in the <strong style={{ color: "var(--text-primary)" }}>Website Builder</strong>.
+                                            Select any section in the builder to customize its background color, text color, accent color, and font.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-
-                            {isOwner && (
-                                <button onClick={handleSaveBranding} disabled={saving} style={{
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                                    width: "100%", marginTop: 36, padding: "18px 0", borderRadius: 16,
-                                    fontSize: 16, fontWeight: 800, cursor: "pointer",
-                                    background: "var(--text-primary)", color: "var(--bg-base)", border: "none",
-                                    opacity: saving ? 0.7 : 1, boxShadow: "0 8px 24px rgba(255,255,255,0.12)",
-                                    transition: "all 0.2s ease",
-                                }}>
-                                    <Save size={20} /> {saving ? "Applying Changes..." : "Save Identity"}
-                                </button>
-                            )}
                         </div>
 
-                        {/* Live Preview Card */}
+                        {/* Current Branding Preview */}
                         <div style={{
                             background: "var(--bg-card)", border: "1px solid var(--border-color)",
                             borderRadius: 24, padding: 36, display: "flex", flexDirection: "column",
@@ -241,7 +206,7 @@ export default function SettingsPage() {
                                 <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.05)", color: "white" }}>
                                     <LayoutTemplate size={22} strokeWidth={2.5} />
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Live Preview</h3>
+                                <h3 style={{ fontWeight: 800, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Current Theme</h3>
                             </div>
 
                             <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", flex: 1 }}>

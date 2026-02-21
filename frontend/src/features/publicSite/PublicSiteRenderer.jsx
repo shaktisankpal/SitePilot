@@ -4,167 +4,231 @@ import api from "../../services/api.js";
 
 // ─── Section renderers ────────────────────────────────────────────────────────
 
-const NavbarSection = ({ props }) => (
-    <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(15, 15, 26, 0.9)", backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        padding: "0 32px",
-    }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", margin: "0 auto", height: "64px" }}>
-            <span style={{ fontWeight: "700", fontSize: "20px", color: "var(--color-primary)" }}>
-                {props.brand || "Brand"}
-            </span>
-            <div style={{ display: "flex", gap: "28px" }}>
-                {(props.links || []).map((link, i) => (
-                    <a key={i} href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
-                        style={{ color: "#c0c0e0", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>
-                        {link}
-                    </a>
-                ))}
+const NavbarSection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const bg = props.bgColor || "rgba(15, 15, 26, 0.9)";
+    const textColor = props.textColor || "#c0c0e0";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <nav style={{
+            position: "sticky", top: 0, zIndex: 100,
+            background: bg, backdropFilter: "blur(20px)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            padding: "0 32px",
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", margin: "0 auto", height: "64px" }}>
+                <span style={{ fontWeight: "700", fontSize: "20px", color: accent }}>
+                    {props.brand || "Brand"}
+                </span>
+                <div style={{ display: "flex", gap: "28px" }}>
+                    {(props.links || []).map((link, i) => (
+                        <a key={i} href={`#${link.toLowerCase().replace(/\s/g, "-")}`}
+                            style={{ color: textColor, textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>
+                            {link}
+                        </a>
+                    ))}
+                </div>
             </div>
-        </div>
-    </nav>
-);
+        </nav>
+    );
+};
 
-const HeroSection = ({ props, branding }) => (
-    <section style={{
-        minHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center",
-        textAlign: "center", padding: "80px 32px",
-        background: props.backgroundImage
-            ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${props.backgroundImage}) center/cover`
-            : `radial-gradient(ellipse at 50% 0%, ${branding?.primaryColor || "#6366f1"}30 0%, transparent 70%)`,
-    }}>
-        <div style={{ maxWidth: "800px" }}>
-            <h1 style={{
-                fontSize: "clamp(2rem, 5vw, 4rem)", fontWeight: "900", lineHeight: "1.2",
-                marginBottom: "24px",
-                background: `linear-gradient(135deg, ${branding?.primaryColor || "#6366f1"}, ${branding?.secondaryColor || "#8b5cf6"}, #ec4899)`,
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            }}>
-                {props.heading || "Welcome"}
-            </h1>
-            {props.subheading && (
-                <p style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)", color: "#a0a0c0", marginBottom: "40px", lineHeight: "1.7" }}>
-                    {props.subheading}
+const HeroSection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const bg = props.bgColor;
+    const textColor = props.textColor || "#f0f0ff";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <section style={{
+            minHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center",
+            textAlign: "center", padding: "80px 32px",
+            background: bg
+                ? bg
+                : props.backgroundImage
+                    ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${props.backgroundImage}) center/cover`
+                    : `radial-gradient(ellipse at 50% 0%, ${accent}30 0%, transparent 70%)`,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            <div style={{ maxWidth: "800px" }}>
+                <h1 style={{
+                    fontSize: "clamp(2rem, 5vw, 4rem)", fontWeight: "900", lineHeight: "1.2",
+                    marginBottom: "24px",
+                    background: `linear-gradient(135deg, ${accent}, ${secondary}, #ec4899)`,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+                }}>
+                    {props.heading || "Welcome"}
+                </h1>
+                {props.subheading && (
+                    <p style={{ fontSize: "clamp(1rem, 2vw, 1.25rem)", color: textColor === "#f0f0ff" ? "#a0a0c0" : textColor, marginBottom: "40px", lineHeight: "1.7", opacity: 0.85 }}>
+                        {props.subheading}
+                    </p>
+                )}
+                {props.ctaText && (
+                    <a href={props.ctaLink || "#"}
+                        style={{
+                            display: "inline-flex", alignItems: "center", padding: "16px 40px",
+                            borderRadius: "12px", fontSize: "16px", fontWeight: "600", textDecoration: "none",
+                            background: `linear-gradient(135deg, ${accent}, ${secondary})`,
+                            color: "white", boxShadow: `0 8px 30px ${accent}40`,
+                        }}
+                    >
+                        {props.ctaText} →
+                    </a>
+                )}
+            </div>
+        </section>
+    );
+};
+
+const TextSection = ({ props, branding }) => {
+    const bg = props.bgColor || "transparent";
+    const textColor = props.textColor || "#f0f0ff";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <section style={{
+            padding: "80px 32px", maxWidth: "800px", margin: "0 auto",
+            background: bg,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            {props.heading && (
+                <h2 style={{ fontSize: "2rem", fontWeight: "700", marginBottom: "20px", color: textColor }}>
+                    {props.heading}
+                </h2>
+            )}
+            {props.description && (
+                <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: textColor, opacity: 0.75 }}>
+                    {props.description}
                 </p>
             )}
-            {props.ctaText && (
-                <a href={props.ctaLink || "#"}
-                    style={{
-                        display: "inline-flex", alignItems: "center", padding: "16px 40px",
-                        borderRadius: "12px", fontSize: "16px", fontWeight: "600", textDecoration: "none",
-                        background: `linear-gradient(135deg, ${branding?.primaryColor || "#6366f1"}, ${branding?.secondaryColor || "#8b5cf6"})`,
-                        color: "white", boxShadow: `0 8px 30px ${branding?.primaryColor || "#6366f1"}40`,
-                    }}
-                >
-                    {props.ctaText} →
-                </a>
+        </section>
+    );
+};
+
+const GallerySection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const bg = props.bgColor || "transparent";
+    const textColor = props.textColor || "#f0f0ff";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <section style={{
+            padding: "80px 32px", maxWidth: "1200px", margin: "0 auto",
+            background: bg,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            {props.heading && (
+                <h2 style={{ fontSize: "2rem", fontWeight: "700", marginBottom: "40px", textAlign: "center", color: textColor }}>
+                    {props.heading}
+                </h2>
             )}
-        </div>
-    </section>
-);
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "20px" }}>
+                {(props.items || []).map((item, i) => (
+                    <div key={i} style={{
+                        height: "200px", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center",
+                        background: `linear-gradient(135deg, ${accent}20, ${secondary}20)`,
+                        border: `1px solid ${accent}30`,
+                        color: textColor, fontSize: "14px", fontWeight: "500", opacity: 0.75,
+                    }}>
+                        {item}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+};
 
-const TextSection = ({ props }) => (
-    <section style={{ padding: "80px 32px", maxWidth: "800px", margin: "0 auto" }}>
-        {props.heading && (
-            <h2 style={{ fontSize: "2rem", fontWeight: "700", marginBottom: "20px", color: "#f0f0ff" }}>
-                {props.heading}
-            </h2>
-        )}
-        {props.description && (
-            <p style={{ fontSize: "1.1rem", lineHeight: "1.8", color: "#a0a0c0" }}>
-                {props.description}
-            </p>
-        )}
-    </section>
-);
+const CTASection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const bg = props.bgColor || `linear-gradient(135deg, ${accent}15, ${secondary}15)`;
+    const textColor = props.textColor || "#f0f0ff";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <section style={{
+            padding: "80px 32px", textAlign: "center",
+            background: bg,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+                {props.heading && <h2 style={{ fontSize: "2.2rem", fontWeight: "800", color: textColor, marginBottom: "12px" }}>{props.heading}</h2>}
+                {props.subheading && <p style={{ color: textColor, opacity: 0.65, fontSize: "1.1rem", marginBottom: "32px" }}>{props.subheading}</p>}
+                {props.ctaText && (
+                    <a href={props.ctaLink || "#"}
+                        style={{
+                            display: "inline-flex", padding: "14px 36px", borderRadius: "12px",
+                            background: `linear-gradient(135deg, ${accent}, ${secondary})`,
+                            color: "white", fontWeight: "600", fontSize: "15px", textDecoration: "none",
+                            boxShadow: `0 6px 25px ${accent}40`,
+                        }}
+                    >
+                        {props.ctaText}
+                    </a>
+                )}
+            </div>
+        </section>
+    );
+};
 
-const GallerySection = ({ props, branding }) => (
-    <section style={{ padding: "80px 32px", maxWidth: "1200px", margin: "0 auto" }}>
-        {props.heading && (
-            <h2 style={{ fontSize: "2rem", fontWeight: "700", marginBottom: "40px", textAlign: "center", color: "#f0f0ff" }}>
-                {props.heading}
-            </h2>
-        )}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "20px" }}>
-            {(props.items || []).map((item, i) => (
-                <div key={i} style={{
-                    height: "200px", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center",
-                    background: `linear-gradient(135deg, ${branding?.primaryColor || "#6366f1"}20, ${branding?.secondaryColor || "#8b5cf6"}20)`,
-                    border: `1px solid ${branding?.primaryColor || "#6366f1"}30`,
-                    color: "#a0a0c0", fontSize: "14px", fontWeight: "500",
+const ContactFormSection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const secondary = branding?.secondaryColor || "#8b5cf6";
+    const bg = props.bgColor || "transparent";
+    const textColor = props.textColor || "#f0f0ff";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <section id="contact" style={{
+            padding: "80px 32px", maxWidth: "640px", margin: "0 auto",
+            background: bg,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            {props.heading && <h2 style={{ fontSize: "2rem", fontWeight: "700", color: textColor, marginBottom: "32px", textAlign: "center" }}>{props.heading}</h2>}
+            <form onSubmit={(e) => { e.preventDefault(); alert("Message sent! (demo)"); }}
+                style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+                {(props.fields || ["name", "email", "message"]).map((field) => (
+                    field === "message" ? (
+                        <textarea key={field} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} rows={5}
+                            style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: textColor, fontSize: "14px", outline: "none", resize: "none" }}
+                        />
+                    ) : (
+                        <input key={field} type={field === "email" ? "email" : "text"} placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                            style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: textColor, fontSize: "14px", outline: "none" }}
+                        />
+                    )
+                ))}
+                <button type="submit" style={{
+                    padding: "14px", borderRadius: "12px",
+                    background: `linear-gradient(135deg, ${accent}, ${secondary})`,
+                    color: "white", fontWeight: "600", fontSize: "15px", border: "none", cursor: "pointer",
                 }}>
-                    {item}
-                </div>
-            ))}
-        </div>
-    </section>
-);
+                    Send Message
+                </button>
+            </form>
+        </section>
+    );
+};
 
-const CTASection = ({ props, branding }) => (
-    <section style={{
-        padding: "80px 32px", textAlign: "center",
-        background: `linear-gradient(135deg, ${branding?.primaryColor || "#6366f1"}15, ${branding?.secondaryColor || "#8b5cf6"}15)`,
-    }}>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-            {props.heading && <h2 style={{ fontSize: "2.2rem", fontWeight: "800", color: "#f0f0ff", marginBottom: "12px" }}>{props.heading}</h2>}
-            {props.subheading && <p style={{ color: "#a0a0c0", fontSize: "1.1rem", marginBottom: "32px" }}>{props.subheading}</p>}
-            {props.ctaText && (
-                <a href={props.ctaLink || "#"}
-                    style={{
-                        display: "inline-flex", padding: "14px 36px", borderRadius: "12px",
-                        background: `linear-gradient(135deg, ${branding?.primaryColor || "#6366f1"}, ${branding?.secondaryColor || "#8b5cf6"})`,
-                        color: "white", fontWeight: "600", fontSize: "15px", textDecoration: "none",
-                        boxShadow: `0 6px 25px ${branding?.primaryColor || "#6366f1"}40`,
-                    }}
-                >
-                    {props.ctaText}
-                </a>
-            )}
-        </div>
-    </section>
-);
-
-const ContactFormSection = ({ props }) => (
-    <section id="contact" style={{ padding: "80px 32px", maxWidth: "640px", margin: "0 auto" }}>
-        {props.heading && <h2 style={{ fontSize: "2rem", fontWeight: "700", color: "#f0f0ff", marginBottom: "32px", textAlign: "center" }}>{props.heading}</h2>}
-        <form onSubmit={(e) => { e.preventDefault(); alert("Message sent! (demo)"); }}
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-        >
-            {(props.fields || ["name", "email", "message"]).map((field) => (
-                field === "message" ? (
-                    <textarea key={field} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} rows={5}
-                        style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0f0ff", fontSize: "14px", outline: "none", resize: "none" }}
-                    />
-                ) : (
-                    <input key={field} type={field === "email" ? "email" : "text"} placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                        style={{ padding: "14px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0f0ff", fontSize: "14px", outline: "none" }}
-                    />
-                )
-            ))}
-            <button type="submit" style={{
-                padding: "14px", borderRadius: "12px", background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                color: "white", fontWeight: "600", fontSize: "15px", border: "none", cursor: "pointer",
-            }}>
-                Send Message
-            </button>
-        </form>
-    </section>
-);
-
-const FooterSection = ({ props, branding }) => (
-    <footer style={{
-        padding: "32px", textAlign: "center", color: "#606090", fontSize: "14px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(0,0,0,0.3)",
-    }}>
-        {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
-        <span style={{ marginLeft: "16px", color: branding?.primaryColor || "#6366f1" }}>
-            Built with SitePilot
-        </span>
-    </footer>
-);
+const FooterSection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const bg = props.bgColor || "rgba(0,0,0,0.3)";
+    const textColor = props.textColor || "#606090";
+    const font = props.fontFamily || branding?.font;
+    return (
+        <footer style={{
+            padding: "32px", textAlign: "center", color: textColor, fontSize: "14px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            background: bg,
+            fontFamily: font ? `"${font}", sans-serif` : undefined,
+        }}>
+            {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
+            <span style={{ marginLeft: "16px", color: accent }}>
+                Built with SitePilot
+            </span>
+        </footer>
+    );
+};
 
 // Section registry
 export const SECTION_MAP = {

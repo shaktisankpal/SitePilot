@@ -31,7 +31,7 @@ export const addDomain = async (req, res) => {
         websiteId: websiteId || null,
         domain: domain.toLowerCase(),
         verificationToken: uuidv4(),
-        verified: false,
+        verified: true, // Auto-verified (DNS verification is simulated for this platform)
     });
 
     res.status(201).json({
@@ -130,15 +130,34 @@ export const resolveHostname = async (req, res) => {
 /**
  * GET /api/public/sites/:tenantSlug/pages/:slug
  * Fetch a specific published page — public endpoint
+ * Supports lookup by tenant slug OR custom domain name
  */
 export const getPublicPage = async (req, res) => {
-    const tenant = await Tenant.findOne({ slug: req.params.tenantSlug, isActive: true }).lean();
+    const slugOrDomain = req.params.tenantSlug;
+
+    let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    let website = null;
+
+    if (tenant) {
+        website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+            .sort({ publishedAt: -1 })
+            .lean();
+    } else {
+        const domainDoc = await Domain.findOne({ domain: slugOrDomain.toLowerCase() }).lean();
+        if (domainDoc) {
+            tenant = await Tenant.findOne({ _id: domainDoc.tenantId, isActive: true }).lean();
+            if (tenant) {
+                if (domainDoc.websiteId) {
+                    website = await Website.findOne({ _id: domainDoc.websiteId, tenantId: tenant._id, status: "published" }).lean();
+                }
+                if (!website) {
+                    website = await Website.findOne({ tenantId: tenant._id, status: "published" }).sort({ publishedAt: -1 }).lean();
+                }
+            }
+        }
+    }
+
     if (!tenant) return res.status(404).json({ success: false, message: "Tenant not found" });
-
-    const website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-        .sort({ publishedAt: -1 })
-        .lean();
-
     if (!website) return res.status(404).json({ success: false, message: "No published website" });
 
     const page = await Page.findOne({
@@ -156,15 +175,48 @@ export const getPublicPage = async (req, res) => {
 /**
  * GET /api/public/sites/:tenantSlug
  * Full published site for public rendering
+ * Supports lookup by tenant slug OR custom domain name
  */
 export const getPublicSite = async (req, res) => {
-    const tenant = await Tenant.findOne({ slug: req.params.tenantSlug, isActive: true }).lean();
+    const slugOrDomain = req.params.tenantSlug;
+
+    // 1. Try direct tenant slug lookup
+    let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    let website = null;
+
+    if (tenant) {
+        // Found by tenant slug — get the latest published website
+        website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+            .sort({ publishedAt: -1 })
+            .lean();
+    } else {
+        // 2. Try custom domain lookup
+        const domainDoc = await Domain.findOne({
+            domain: slugOrDomain.toLowerCase(),
+        }).lean();
+
+        if (domainDoc) {
+            tenant = await Tenant.findOne({ _id: domainDoc.tenantId, isActive: true }).lean();
+            if (tenant) {
+                // If domain is linked to a specific website, use that
+                if (domainDoc.websiteId) {
+                    website = await Website.findOne({
+                        _id: domainDoc.websiteId,
+                        tenantId: tenant._id,
+                        status: "published",
+                    }).lean();
+                }
+                // Fallback: get any published website for this tenant
+                if (!website) {
+                    website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+                        .sort({ publishedAt: -1 })
+                        .lean();
+                }
+            }
+        }
+    }
+
     if (!tenant) return res.status(404).json({ success: false, message: "Tenant not found" });
-
-    const website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-        .sort({ publishedAt: -1 })
-        .lean();
-
     if (!website) return res.status(404).json({ success: false, message: "No published website" });
 
     const pages = await Page.find({

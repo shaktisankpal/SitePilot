@@ -88,7 +88,7 @@ const CreateWebsiteModal = ({ onClose, onCreate }) => {
 export default function WebsitesPage() {
     const dispatch = useDispatch();
     const { websites, loading } = useSelector((s) => s.website);
-    const { user } = useSelector((s) => s.auth);
+    const { user, tenant } = useSelector((s) => s.auth);
     const [showCreate, setShowCreate] = useState(false);
 
     const canCreate = ["OWNER", "ADMIN"].includes(user?.role);
@@ -200,7 +200,7 @@ export default function WebsitesPage() {
                                             {site.status === "published" ? "Live" : "Draft"}
                                         </span>
                                         {site.status === "published" && (
-                                            <a href={`/site/${site.defaultDomain?.split(".")[0]}`} target="_blank" rel="noreferrer"
+                                            <a href={`/site/${site.defaultDomain || tenant?.slug || ""}`} target="_blank" rel="noreferrer"
                                                 style={{ padding: 6, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", display: "flex" }}>
                                                 <ExternalLink size={14} />
                                             </a>
