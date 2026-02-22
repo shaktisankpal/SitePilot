@@ -26,7 +26,8 @@ export default function App() {
     hostname === "sitepilot.com" ||
     hostname === "www.sitepilot.com" ||
     /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) ||
-    hostname.includes("ngrok");
+    hostname.includes("ngrok") ||
+    hostname.includes("onrender.com");
 
   if (!isSaasApp) {
     return (
