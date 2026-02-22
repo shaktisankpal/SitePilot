@@ -15,7 +15,6 @@ import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { initializeSockets } from "./sockets/collaboration.socket.js";
 import { registry, websitePageViewsTotal, websitePublishTotal, aiUsageTotal, tenantWebsitesTotal } from "./utils/metrics.js";
 
-// Routes
 import authRoutes from "./modules/auth/auth.routes.js";
 import tenantRoutes from "./modules/tenant/tenant.routes.js";
 import websiteRoutes from "./modules/website/website.routes.js";
