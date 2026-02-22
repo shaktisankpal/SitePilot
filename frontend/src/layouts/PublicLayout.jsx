@@ -42,11 +42,12 @@ export const PUBLIC_LAYOUT_STYLES = `
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: var(--color-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 18px rgba(249, 115, 22, 0.35); /* Orange glow */
     flex-shrink: 0;
   }
 `;

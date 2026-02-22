@@ -66,10 +66,12 @@ export default function DashboardLayout({ children }) {
                         <Link to="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                             <div style={{
                                 width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                background: "var(--color-primary)",
+                                background: "var(--bg-card)",
+                                border: "1px solid var(--border-color)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                             }}>
-                                <Zap size={16} color="#000" />
+                                <Zap size={16} color="var(--text-primary)" />
                             </div>
                             <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
                                 SitePilot

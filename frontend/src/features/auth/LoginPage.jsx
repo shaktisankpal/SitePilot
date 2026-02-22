@@ -44,10 +44,11 @@ export default function LoginPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
                     <div style={{
                         width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "#fff",
-                        border: "1px solid rgba(0,0,0,0.1)",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-color)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
                     }}>
-                        <Zap size={24} color="#000" />
+                        <Zap size={24} color="var(--text-primary)" />
                     </div>
                     <div>
                         <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>SitePilot</h1>
