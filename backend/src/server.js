@@ -7,6 +7,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 import connectDB from "./config/db.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
@@ -165,9 +166,9 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Serve frontend in production
-if (process.env.NODE_ENV === "production") {
-    const frontendDist = path.join(__dirname, "../../frontend/dist");
+// Serve frontend if built (even if NODE_ENV is occasionally set to development in Render)
+const frontendDist = path.join(__dirname, "../../frontend/dist");
+if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
     app.get(/^\/(?!api).*/, (req, res) => {
         res.sendFile(path.join(frontendDist, "index.html"));
