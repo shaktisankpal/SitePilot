@@ -38,10 +38,12 @@ export default function PublishModal({ websiteId, onClose }) {
         if (publishWebsite.fulfilled.match(res)) {
             const selectedDomain = verifiedDomains.find((d) => d._id === selectedDomainId);
             const defaultDomain = domains.find((d) => d.isDefault);
+            const website = websites.find(w => w._id === websiteId);
 
+            // Fetch the accurate domain name this was published to
             const targetDomainStr = selectedDomain
                 ? selectedDomain.domain
-                : (defaultDomain ? defaultDomain.domain : (website ? website.defaultDomain : tenant?.slug));
+                : (defaultDomain ? defaultDomain.domain : (website ? (website.slug || website.defaultDomain) : tenant?.slug));
 
             toast.success(
                 selectedDomain
@@ -50,6 +52,7 @@ export default function PublishModal({ websiteId, onClose }) {
             );
 
             if (targetDomainStr) {
+                // Ensure it opens seamlessly within the current dev server environment path
                 const url = `${window.location.origin}/site/${targetDomainStr}`;
                 window.open(url, "_blank");
             }
@@ -171,19 +174,24 @@ export default function PublishModal({ websiteId, onClose }) {
 
                             {verifiedDomains.map((domain) => {
                                 const isSelected = selectedDomainId === domain._id;
+                                const isUsedByOther = domain.websiteId && domain.websiteId !== websiteId;
+                                const usedSite = isUsedByOther ? websites.find(w => w._id === domain.websiteId) : null;
+
                                 return (
                                     <button
                                         key={domain._id}
-                                        onClick={() => setSelectedDomainId(domain._id)}
+                                        onClick={() => !isUsedByOther && setSelectedDomainId(domain._id)}
+                                        disabled={isUsedByOther}
                                         style={{
                                             display: "flex", alignItems: "center", gap: 12,
                                             padding: "14px 16px", borderRadius: 14,
-                                            background: isSelected ? "rgba(16,185,129,0.08)" : "rgba(255,255,255,0.02)",
+                                            background: isSelected ? "rgba(16,185,129,0.08)" : (isUsedByOther ? "rgba(255,255,255,0.01)" : "rgba(255,255,255,0.02)"),
                                             border: isSelected
                                                 ? "2px solid rgba(16,185,129,0.4)"
                                                 : "1px solid rgba(255,255,255,0.06)",
-                                            cursor: "pointer", textAlign: "left", width: "100%",
-                                            color: "var(--text-primary)",
+                                            cursor: isUsedByOther ? "not-allowed" : "pointer", textAlign: "left", width: "100%",
+                                            color: isUsedByOther ? "rgba(255,255,255,0.3)" : "var(--text-primary)",
+                                            opacity: isUsedByOther ? 0.6 : 1,
                                         }}
                                     >
                                         <div style={{
@@ -198,7 +206,7 @@ export default function PublishModal({ websiteId, onClose }) {
                                         <div style={{ flex: 1 }}>
                                             <p style={{ fontSize: 14, fontWeight: 700 }}>{domain.domain}</p>
                                             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
-                                                Verified ✓
+                                                {isUsedByOther ? `In use by ${usedSite ? usedSite.name : 'another project'}` : "Available ✓"}
                                             </p>
                                         </div>
                                         {isSelected && (

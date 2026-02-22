@@ -4,6 +4,7 @@ import Deployment from "../deployment/deployment.model.js";
 import { logActivity } from "../../middleware/logger.middleware.js";
 import { createWebsiteSchema, updateWebsiteSchema } from "./website.validation.js";
 import { websitePublishTotal, tenantWebsitesTotal } from "../../utils/metrics.js";
+import slugify from "slugify";
 
 /**
  * GET /api/websites
@@ -33,11 +34,15 @@ export const createWebsite = async (req, res) => {
     const { error, value } = createWebsiteSchema.validate(req.body);
     if (error) return res.status(400).json({ success: false, message: error.details[0].message });
 
+    const baseSlug = slugify(value.name, { lower: true, strict: true }) || "site";
+    const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+
     const website = await Website.create({
         ...value,
+        slug: uniqueSlug,
         tenantId: req.tenantId,
         createdBy: req.user._id,
-        defaultDomain: `${req.tenant.slug}.localhost`,
+        defaultDomain: `${uniqueSlug}.${req.tenant.slug}.localhost`,
     });
 
     // Auto-create a homepage

@@ -95,14 +95,25 @@ export const resolveHostname = async (req, res) => {
         }
     }
 
+    if (!tenant) {
+        // Fallback: Check if the hostname is actually a matching Website slug
+        const possibleWebsite = await Website.findOne({ slug: hostname.toLowerCase(), status: "published" }).lean();
+        if (possibleWebsite) {
+            tenant = await Tenant.findById(possibleWebsite.tenantId).lean();
+        }
+    }
+
     if (!tenant || !tenant.isActive) {
         return res.status(404).json({ success: false, message: "Tenant not found for this domain" });
     }
 
     // Find published website
-    const website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-        .sort({ publishedAt: -1 })
-        .lean();
+    let website = null;
+    if (domainDoc && domainDoc.websiteId) {
+        website = await Website.findOne({ _id: domainDoc.websiteId, tenantId: tenant._id, status: "published" }).lean();
+    } else {
+        website = await Website.findOne({ slug: hostname.toLowerCase(), status: "published" }).lean();
+    }
 
     if (!website) {
         return res.status(404).json({ success: false, message: "No published website found" });
@@ -136,6 +147,7 @@ export const resolveHostname = async (req, res) => {
  */
 export const getPublicPage = async (req, res) => {
     const slugOrDomain = req.params.tenantSlug;
+    const { websiteId, websiteSlug } = req.query;
 
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
     if (!tenant && slugOrDomain.includes('.localhost')) {
@@ -145,20 +157,37 @@ export const getPublicPage = async (req, res) => {
     let website = null;
 
     if (tenant) {
-        website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-            .sort({ publishedAt: -1 })
-            .lean();
+        if (websiteId) {
+            website = await Website.findOne({ _id: websiteId, tenantId: tenant._id, status: "published" }).lean();
+        }
+        if (!website && websiteSlug) {
+            website = await Website.findOne({ slug: websiteSlug, tenantId: tenant._id, status: "published" }).lean();
+        }
+        if (!website) {
+            website = await Website.findOne({ tenantId: tenant._id, status: "published" })
+                .sort({ publishedAt: -1 })
+                .lean();
+        }
     } else {
         const domainDoc = await Domain.findOne({ domain: slugOrDomain.toLowerCase() }).lean();
         if (domainDoc) {
             tenant = await Tenant.findOne({ _id: domainDoc.tenantId, isActive: true }).lean();
             if (tenant) {
-                if (domainDoc.websiteId) {
+                if (websiteId) {
+                    website = await Website.findOne({ _id: websiteId, tenantId: tenant._id, status: "published" }).lean();
+                }
+                if (!website && websiteSlug) {
+                    website = await Website.findOne({ slug: websiteSlug, tenantId: tenant._id, status: "published" }).lean();
+                }
+                if (!website && domainDoc.websiteId) {
                     website = await Website.findOne({ _id: domainDoc.websiteId, tenantId: tenant._id, status: "published" }).lean();
                 }
-                if (!website) {
-                    website = await Website.findOne({ tenantId: tenant._id, status: "published" }).sort({ publishedAt: -1 }).lean();
-                }
+            }
+        } else {
+            // 3. Fallback: Treat slugOrDomain directly as a website slug (when accessing via /site/:websiteSlug)
+            website = await Website.findOne({ slug: slugOrDomain, status: "published" }).lean();
+            if (website) {
+                tenant = await Tenant.findOne({ _id: website.tenantId, isActive: true }).lean();
             }
         }
     }
@@ -266,13 +295,15 @@ export const getPublicSite = async (req, res) => {
                         tenantId: tenant._id,
                         status: "published",
                     }).lean();
-                } else if (websiteSlug) {
+                }
+                if (!website && websiteSlug) {
                     website = await Website.findOne({
                         slug: websiteSlug,
                         tenantId: tenant._id,
                         status: "published",
                     }).lean();
-                } else if (domainDoc.websiteId) {
+                }
+                if (!website && domainDoc.websiteId) {
                     // If domain is linked to a specific website, use that
                     website = await Website.findOne({
                         _id: domainDoc.websiteId,
@@ -280,12 +311,13 @@ export const getPublicSite = async (req, res) => {
                         status: "published",
                     }).lean();
                 }
-                // Fallback: get any published website for this tenant
-                if (!website) {
-                    website = await Website.findOne({ tenantId: tenant._id, status: "published" })
-                        .sort({ publishedAt: -1 })
-                        .lean();
-                }
+            }
+        } else {
+            // 3. Fallback: Treat slugOrDomain directly as a website slug (when accessing via /site/:websiteSlug)
+            website = await Website.findOne({ slug: slugOrDomain, status: "published" }).lean();
+            if (website) {
+                console.log(`✅ [Public API] Found website by matching explicit website slug directly: ${slugOrDomain}`);
+                tenant = await Tenant.findOne({ _id: website.tenantId, isActive: true }).lean();
             }
         }
     }

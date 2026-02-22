@@ -10,6 +10,7 @@ import {
     LayoutTemplate
 } from "lucide-react";
 import { TEMPLATES } from "../../utils/templates.js";
+import PublishModal from "../builder/PublishModal.jsx";
 
 const inputStyle = {
     width: "100%", padding: "14px 18px", borderRadius: 14,
@@ -114,6 +115,7 @@ export default function WebsitesPage() {
     const { websites, loading } = useSelector((s) => s.website);
     const { user, tenant } = useSelector((s) => s.auth);
     const [showCreate, setShowCreate] = useState(false);
+    const [publishingSiteId, setPublishingSiteId] = useState(null);
 
     const canCreate = ["OWNER", "ADMIN"].includes(user?.role);
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
@@ -134,10 +136,8 @@ export default function WebsitesPage() {
         else toast.error("Delete failed");
     };
 
-    const handlePublish = async (id) => {
-        const res = await dispatch(publishWebsite({ id }));
-        if (publishWebsite.fulfilled.match(res)) toast.success("Project deployed! 🚀");
-        else toast.error(res.payload || "Deployment failed");
+    const handlePublishClick = (id) => {
+        setPublishingSiteId(id);
     };
 
     return (
@@ -223,7 +223,7 @@ export default function WebsitesPage() {
                                             {site.status === "published" ? "Live" : "Draft"}
                                         </span>
                                         {site.status === "published" && (
-                                            <a href={`/site/${site.defaultDomain || tenant?.slug}`} target="_blank" rel="noreferrer"
+                                            <a href={`/site/${site.defaultDomain || site.slug || tenant?.slug}`} target="_blank" rel="noreferrer"
                                                 style={{ padding: 6, borderRadius: "50%", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", display: "flex" }}>
                                                 <ExternalLink size={14} />
                                             </a>
@@ -257,20 +257,20 @@ export default function WebsitesPage() {
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                     <Link to={`/websites/${site._id}/builder`} style={{
                                         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                                        padding: "12px 0", borderRadius: 12, textDecoration: "none",
+                                        padding: "12px 0", borderRadius: 12, textDecoration: "none", whiteSpace: "nowrap",
                                         background: "rgba(99,102,241,0.12)", color: "var(--color-primary)",
                                         border: "1px solid rgba(99,102,241,0.25)", fontSize: 14, fontWeight: 700,
                                     }}>
                                         <Pencil size={15} strokeWidth={2.5} /> Edit
                                     </Link>
-                                    {canPublish && site.status !== "published" && (
-                                        <button onClick={() => handlePublish(site._id)} style={{
+                                    {canPublish && (
+                                        <button onClick={() => handlePublishClick(site._id)} style={{
                                             flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                                            padding: "12px 0", borderRadius: 12, cursor: "pointer",
+                                            padding: "12px 0", borderRadius: 12, cursor: "pointer", whiteSpace: "nowrap",
                                             background: "rgba(16,185,129,0.12)", color: "#10b981",
                                             border: "1px solid rgba(16,185,129,0.25)", fontSize: 14, fontWeight: 700,
                                         }}>
-                                            <Rocket size={15} strokeWidth={2.5} /> Deploy
+                                            <Rocket size={15} strokeWidth={2.5} /> {site.status === "published" ? "Update" : "Deploy"}
                                         </button>
                                     )}
                                     {canDelete && (
@@ -290,6 +290,7 @@ export default function WebsitesPage() {
             </div>
 
             {showCreate && <CreateWebsiteModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
+            {publishingSiteId && <PublishModal websiteId={publishingSiteId} onClose={() => setPublishingSiteId(null)} />}
         </DashboardLayout>
     );
 }
