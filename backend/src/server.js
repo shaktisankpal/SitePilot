@@ -12,6 +12,7 @@ import connectDB from "./config/db.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { initializeSockets } from "./sockets/collaboration.socket.js";
+import { registry, websitePageViewsTotal, websitePublishTotal, aiUsageTotal, tenantWebsitesTotal } from "./utils/metrics.js";
 
 // Routes
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -100,6 +101,48 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Health check
 app.get("/health", (req, res) => {
     res.json({ success: true, service: "SitePilot API", timestamp: new Date().toISOString() });
+});
+
+// Prometheus Metrics
+app.get("/metrics", async (req, res) => {
+    try {
+        res.set("Content-Type", registry.contentType);
+        res.end(await registry.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
+
+// Hackathon: Simulate Data for Demo
+app.post("/metrics/simulate", (req, res) => {
+    const tenants = ["tenant-A", "tenant-B", "tenant-C"];
+    const websites = ["web-1", "web-2", "web-3", "web-4", "web-5"];
+
+    // Simulate initial website creation
+    tenants.forEach(t => {
+        tenantWebsitesTotal.inc({ tenantId: t }, Math.floor(Math.random() * 5));
+    });
+
+    // Run interval to simulate continuous usage traffic
+    setInterval(() => {
+        const randomTenant = tenants[Math.floor(Math.random() * tenants.length)];
+        const randomWebsite = websites[Math.floor(Math.random() * websites.length)];
+
+        // 80% chance for a page view
+        if (Math.random() > 0.2) {
+            websitePageViewsTotal.inc({ tenantId: randomTenant, websiteId: randomWebsite });
+        }
+        // 10% chance for AI usage
+        if (Math.random() > 0.9) {
+            aiUsageTotal.inc({ tenantId: randomTenant, websiteId: randomWebsite });
+        }
+        // 2% chance for a publish event
+        if (Math.random() > 0.98) {
+            websitePublishTotal.inc({ tenantId: randomTenant, websiteId: randomWebsite });
+        }
+    }, 1000); // 1 tick per second
+
+    res.json({ success: true, message: "Started generating fake data traffic in the background for Grafana demo!" });
 });
 
 // Public API routes (no auth)

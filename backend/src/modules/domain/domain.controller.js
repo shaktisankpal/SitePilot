@@ -4,6 +4,7 @@ import Website from "../website/website.model.js";
 import Page from "../builder/page.model.js";
 import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
+import { websitePageViewsTotal } from "../../utils/metrics.js";
 
 /**
  * GET /api/domains
@@ -174,6 +175,12 @@ export const getPublicPage = async (req, res) => {
 
     if (!page) return res.status(404).json({ success: false, message: "Page not found" });
 
+    // Track page view
+    websitePageViewsTotal.inc({
+        tenantId: tenant.name || tenant._id.toString(),
+        websiteId: website.name || website._id.toString()
+    });
+
     res.json({ success: true, tenant: { branding: tenant.branding }, page });
 };
 
@@ -300,6 +307,12 @@ export const getPublicSite = async (req, res) => {
     const pages = deployment.snapshot;
 
     console.log(`📄 [Public API] Returning ${pages?.length || 0} pages for website ${website._id} (slug: ${website.slug || 'N/A'}, Version: ${deployment?.version || 'N/A'})`);
+
+    // Track page view for the whole site
+    websitePageViewsTotal.inc({
+        tenantId: tenant.name || tenant._id.toString(),
+        websiteId: website.name || website._id.toString()
+    });
 
     res.json({
         success: true,

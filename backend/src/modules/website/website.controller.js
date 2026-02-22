@@ -3,6 +3,7 @@ import Page from "../builder/page.model.js";
 import Deployment from "../deployment/deployment.model.js";
 import { logActivity } from "../../middleware/logger.middleware.js";
 import { createWebsiteSchema, updateWebsiteSchema } from "./website.validation.js";
+import { websitePublishTotal, tenantWebsitesTotal } from "../../utils/metrics.js";
 
 /**
  * GET /api/websites
@@ -90,6 +91,9 @@ export const createWebsite = async (req, res) => {
         details: { name: website.name },
         ip: req.ip,
     });
+
+    // Increment tenant websites counter
+    tenantWebsitesTotal.inc({ tenantId: req.tenant?.name || req.tenantId.toString() });
 
     res.status(201).json({ success: true, website });
 };
@@ -201,6 +205,12 @@ export const publishWebsite = async (req, res) => {
         resourceId: website._id,
         details: { version, domain: linkedDomain },
         ip: req.ip,
+    });
+
+    // Increment website publish counter
+    websitePublishTotal.inc({
+        tenantId: req.tenant?.name || req.tenantId.toString(),
+        websiteId: website.name || website._id.toString()
     });
 
     res.json({ success: true, message: "Website published", version, website, linkedDomain });

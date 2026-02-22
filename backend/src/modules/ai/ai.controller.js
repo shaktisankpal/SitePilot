@@ -7,6 +7,7 @@ import Tenant from "../tenant/tenant.model.js";
 import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
 import FirebaseAgent from "../../agents/firebaseAgent.js";
+import { aiUsageTotal } from "../../utils/metrics.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -286,6 +287,12 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
     if (!success) {
         return res.status(502).json({ success: false, message: errorMessage });
     }
+
+    // Increment AI usage metric
+    aiUsageTotal.inc({
+        tenantId: req.tenant?.name || req.tenantId.toString(),
+        websiteId: website ? website.name : "none"
+    });
 
     res.json({ success: true, layout: aiResponse, savedToWebsite: !!websiteId });
 };
