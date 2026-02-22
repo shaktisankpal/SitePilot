@@ -61,6 +61,9 @@ app.use(
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://checkout.razorpay.com"],
+                "frame-src": ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+                "connect-src": ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com", "https://api.razorpay.com", "*"],
                 "img-src": ["'self'", "data:", "blob:", "*"],
                 "media-src": ["'self'", "data:", "blob:", "*"],
             },
