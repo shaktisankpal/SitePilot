@@ -3,9 +3,9 @@ import { useSelector } from "react-redux";
 import api from "../../services/api";
 import SubscriptionCheckout from "./SubscriptionCheckout";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { 
-    CreditCard, Check, X, Sparkles, Crown, Zap, Rocket, Clock, CheckCircle2, 
-    AlertCircle, Trash2, History, ArrowUpCircle, ArrowDownCircle, RefreshCw 
+import {
+    CreditCard, Check, X, Sparkles, Crown, Zap, Rocket, Clock, CheckCircle2,
+    AlertCircle, Trash2, History, ArrowUpCircle, ArrowDownCircle, RefreshCw
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -52,15 +52,15 @@ const PlanCard = ({ plan, currentPlan, onSelect, loading }) => {
                 display: "flex",
                 flexDirection: "column",
                 minHeight: 520,
-                transform: isPro ? "scale(1.05)" : "scale(1)",
+                transform: "translateY(0)",
             }}
             onMouseEnter={(e) => {
                 if (!isActive) e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
-                e.currentTarget.style.transform = isPro ? "scale(1.05) translateY(-4px)" : "translateY(-4px)";
+                e.currentTarget.style.transform = "translateY(-4px)";
             }}
             onMouseLeave={(e) => {
                 if (!isActive) e.currentTarget.style.borderColor = "var(--border-color)";
-                e.currentTarget.style.transform = isPro ? "scale(1.05)" : "scale(1)";
+                e.currentTarget.style.transform = "translateY(0)";
             }}
         >
             {/* Glow effect */}
@@ -80,52 +80,51 @@ const PlanCard = ({ plan, currentPlan, onSelect, loading }) => {
                 />
             )}
 
-            {/* Popular badge */}
-            {isPro && (
-                <div
-                    style={{
-                        position: "absolute",
-                        top: 20,
-                        right: 20,
-                        background: `linear-gradient(135deg, ${color}, #f472b6)`,
-                        color: "white",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        padding: "6px 14px",
-                        borderRadius: 100,
-                        boxShadow: `0 4px 12px ${color}40`,
-                    }}
-                >
-                    Popular
-                </div>
-            )}
+            {/* Top Right Badges */}
+            <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 8 }}>
+                {/* Active badge */}
+                {isActive && (
+                    <div
+                        style={{
+                            background: `${color}20`,
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            padding: "6px 14px",
+                            borderRadius: 100,
+                            border: `1px solid ${color}40`,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                        }}
+                    >
+                        <CheckCircle2 size={12} /> Active
+                    </div>
+                )}
 
-            {/* Active badge */}
-            {isActive && (
-                <div
-                    style={{
-                        position: "absolute",
-                        top: 20,
-                        right: 20,
-                        background: `${color}20`,
-                        color: color,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        padding: "6px 14px",
-                        borderRadius: 100,
-                        border: `1px solid ${color}40`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                    }}
-                >
-                    <CheckCircle2 size={12} /> Active
-                </div>
-            )}
+                {/* Popular badge */}
+                {isPro && (
+                    <div
+                        style={{
+                            background: `linear-gradient(135deg, ${color}, #f472b6)`,
+                            color: "white",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            padding: "6px 14px",
+                            borderRadius: 100,
+                            boxShadow: `0 4px 12px ${color}40`,
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        Popular
+                    </div>
+                )}
+            </div>
 
             {/* Icon */}
             <div
@@ -235,8 +234,8 @@ const PlanCard = ({ plan, currentPlan, onSelect, loading }) => {
                     background: isActive
                         ? "var(--bg-input)"
                         : isFree
-                        ? "var(--bg-input)"
-                        : `linear-gradient(135deg, ${color}, ${color}dd)`,
+                            ? "var(--bg-input)"
+                            : `linear-gradient(135deg, ${color}, ${color}dd)`,
                     color: isActive ? "var(--text-muted)" : isFree ? "var(--text-primary)" : "white",
                     transition: "all 0.2s ease",
                     opacity: loading ? 0.6 : 1,
@@ -354,6 +353,7 @@ const SubscriptionPage = () => {
     const handlePaymentSuccess = () => {
         setSelectedPlan(null);
         fetchPlansAndSubscription();
+        window.dispatchEvent(new Event("planUpdated"));
     };
 
     const handleCancelSubscription = async () => {
@@ -366,6 +366,7 @@ const SubscriptionPage = () => {
             await api.post("/payment/cancel");
             toast.success("Subscription cancelled successfully");
             fetchPlansAndSubscription();
+            window.dispatchEvent(new Event("planUpdated"));
         } catch (error) {
             console.error("Cancel error:", error);
             toast.error(error.response?.data?.message || "Failed to cancel subscription");
@@ -578,24 +579,7 @@ const SubscriptionPage = () => {
                     </div>
                 )}
 
-                {/* Test Mode Notice */}
-                <div
-                    style={{
-                        marginTop: 48,
-                        padding: "24px 28px",
-                        borderRadius: 20,
-                        background: "rgba(251,191,36,0.08)",
-                        border: "1px solid rgba(251,191,36,0.2)",
-                        textAlign: "center",
-                    }}
-                >
-                    <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 8 }}>
-                        <span style={{ fontWeight: 700, color: "#fbbf24" }}>🧪 Test Mode Active</span>
-                    </p>
-                    <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                        Use test card <span style={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>4111 1111 1111 1111</span> | CVV: <span style={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>123</span> | Expiry: Any future date
-                    </p>
-                </div>
+
 
                 {/* Subscription History */}
                 {subscriptionHistory.length > 0 && (

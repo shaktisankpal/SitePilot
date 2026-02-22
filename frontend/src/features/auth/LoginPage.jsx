@@ -59,18 +59,6 @@ export default function LoginPage() {
                 <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)", marginBottom: 8 }}>Welcome back</h2>
                 <p style={{ fontSize: 15, color: "var(--text-secondary)", marginBottom: 32 }}>Sign in to continue to your dashboard</p>
 
-                {/* Demo hint */}
-                <div style={{
-                    padding: "12px 16px", borderRadius: 8, marginBottom: 24,
-                    background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)",
-                    display: "flex", alignItems: "center", gap: 12,
-                }}>
-                    <Sparkles size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-                    <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                        <strong>Demo:</strong> alice@acme.com / acme / password123
-                    </p>
-                </div>
-
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                     <div>

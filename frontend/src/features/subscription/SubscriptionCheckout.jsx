@@ -232,36 +232,6 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                     </div>
                 </div>
 
-                {/* Test mode notice */}
-                <div
-                    style={{
-                        background: "rgba(251,191,36,0.08)",
-                        border: "1px solid rgba(251,191,36,0.2)",
-                        borderRadius: 14,
-                        padding: 16,
-                        marginBottom: 24,
-                    }}
-                >
-                    <p
-                        style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#fbbf24",
-                            marginBottom: 8,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        🧪 Test Mode Active
-                    </p>
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }}>
-                        Use test card: <span style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>4111 1111 1111 1111</span>
-                    </p>
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                        CVV: <span style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>123</span> | Expiry: Any future date
-                    </p>
-                </div>
 
                 {/* Payment button */}
                 <button

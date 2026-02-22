@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice.js";
 import {
     LayoutDashboard, Globe, Wand2, Settings, LogOut,
-    Menu, X, Zap, CreditCard,
+    Menu, X, Zap, CreditCard, Crown, Sparkles, Rocket
 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../services/api.js";
 
 const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -21,6 +22,22 @@ export default function DashboardLayout({ children }) {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { user, tenant } = useSelector((s) => s.auth);
+    const [planType, setPlanType] = useState(null);
+
+    useEffect(() => {
+        const fetchPlan = async () => {
+            try {
+                const res = await api.get("/payment/subscription");
+                setPlanType(res.data.data?.subscription?.planType || "FREE");
+            } catch {
+                setPlanType("FREE");
+            }
+        };
+        if (user) fetchPlan();
+
+        window.addEventListener("planUpdated", fetchPlan);
+        return () => window.removeEventListener("planUpdated", fetchPlan);
+    }, [user]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -67,6 +84,27 @@ export default function DashboardLayout({ children }) {
                                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{tenant.name}</span>
                                 </div>
                             </>
+                        )}
+
+                        {planType && (
+                            <Link to="/subscription" style={{ textDecoration: "none" }}>
+                                <div style={{
+                                    display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 100,
+                                    background: planType === "PRO" ? "rgba(236, 72, 153, 0.15)" :
+                                        planType === "ENTERPRISE" ? "rgba(245, 158, 11, 0.15)" :
+                                            planType === "BASIC" ? "rgba(99, 102, 241, 0.15)" : "rgba(255,255,255,0.05)",
+                                    border: `1px solid ${planType === "PRO" ? "rgba(236, 72, 153, 0.3)" :
+                                        planType === "ENTERPRISE" ? "rgba(245, 158, 11, 0.3)" :
+                                            planType === "BASIC" ? "rgba(99, 102, 241, 0.3)" : "var(--border-color)"}`,
+                                    color: planType === "PRO" ? "#ec4899" :
+                                        planType === "ENTERPRISE" ? "#f59e0b" :
+                                            planType === "BASIC" ? "#818cf8" : "var(--text-secondary)",
+                                    fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
+                                }}>
+                                    {planType === "PRO" ? <Crown size={12} /> : planType === "ENTERPRISE" ? <Rocket size={12} /> : <Sparkles size={12} />}
+                                    {planType}
+                                </div>
+                            </Link>
                         )}
                     </div>
 

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchWebsites, createWebsite, deleteWebsite, publishWebsite } from "../../store/slices/websiteSlice.js";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import toast from "react-hot-toast";
 import {
     Globe, Plus, Pencil, Trash2, Rocket, ExternalLink,
     CheckCircle, Clock, X, Loader2, Link as LinkIcon, FolderDot,
-    LayoutTemplate
+    LayoutTemplate, Zap, ArrowRight
 } from "lucide-react";
 import { TEMPLATES } from "../../utils/templates.js";
 import PublishModal from "../builder/PublishModal.jsx";
@@ -17,6 +17,47 @@ const inputStyle = {
     background: "var(--bg-input)", border: "1px solid var(--border-color)",
     color: "var(--text-primary)", fontSize: 15, outline: "none",
     transition: "all 0.2s ease", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.15)",
+};
+
+const UpgradeModal = ({ message, onClose }) => {
+    const navigate = useNavigate();
+
+    return (
+        <div style={{
+            position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)",
+        }}>
+            <div style={{
+                width: "100%", maxWidth: 460, padding: "32px", borderRadius: 24,
+                background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 24px 48px rgba(0,0,0,0.5)", position: "relative",
+            }}>
+                <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, padding: 6, borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                    <X size={18} />
+                </button>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(245, 158, 11, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+                    <Zap size={28} style={{ color: "#f59e0b" }} strokeWidth={2.5} />
+                </div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 12 }}>Plan Limit Reached</h2>
+                <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 32 }}>
+                    {message || "You've reached the maximum number of active projects allowed on your current plan. Upgrade to build more sites without limits."}
+                </p>
+                <div style={{ display: "flex", gap: 12 }}>
+                    <button onClick={onClose} style={{
+                        flex: 1, padding: "14px", borderRadius: 14, background: "var(--bg-input)",
+                        border: "1px solid var(--border-color)", color: "var(--text-primary)", cursor: "pointer", fontSize: 15, fontWeight: 700,
+                    }}>Cancel</button>
+                    <button onClick={() => navigate("/subscription")} style={{
+                        flex: 1.5, padding: "14px", borderRadius: 14, background: "linear-gradient(135deg, #f59e0b, #ea580c)",
+                        border: "none", color: "white", cursor: "pointer", fontSize: 15, fontWeight: 800,
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}>
+                        Upgrade Plan <ArrowRight size={18} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const CreateWebsiteModal = ({ onClose, onCreate }) => {
@@ -116,6 +157,8 @@ export default function WebsitesPage() {
     const { user, tenant } = useSelector((s) => s.auth);
     const [showCreate, setShowCreate] = useState(false);
     const [publishingSiteId, setPublishingSiteId] = useState(null);
+    const [showUpgrade, setShowUpgrade] = useState(false);
+    const [upgradeMessage, setUpgradeMessage] = useState("");
 
     const canCreate = ["OWNER", "ADMIN"].includes(user?.role);
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
@@ -125,8 +168,19 @@ export default function WebsitesPage() {
 
     const handleCreate = async (data) => {
         const res = await dispatch(createWebsite(data));
-        if (createWebsite.fulfilled.match(res)) toast.success("Project created! 🎉");
-        else toast.error(res.payload || "Failed to create project");
+        if (createWebsite.fulfilled.match(res)) {
+            toast.success("Project created! 🎉");
+            setShowCreate(false);
+        } else {
+            const errorMsg = res.payload || "Failed to create project";
+            if (errorMsg.toLowerCase().includes("limit") || errorMsg.toLowerCase().includes("upgrade")) {
+                setUpgradeMessage(errorMsg);
+                setShowUpgrade(true);
+                setShowCreate(false); // Close the creation modal
+            } else {
+                toast.error(errorMsg);
+            }
+        }
     };
 
     const handleDelete = async (id, name) => {
@@ -291,6 +345,7 @@ export default function WebsitesPage() {
 
             {showCreate && <CreateWebsiteModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
             {publishingSiteId && <PublishModal websiteId={publishingSiteId} onClose={() => setPublishingSiteId(null)} />}
+            {showUpgrade && <UpgradeModal message={upgradeMessage} onClose={() => setShowUpgrade(false)} />}
         </DashboardLayout>
     );
 }

@@ -91,10 +91,6 @@ export default function RegisterPage() {
                             placeholder="acmecorp" required maxLength={20}
                             style={{ width: "100%", fontFamily: "'JetBrains Mono', monospace" }}
                         />
-                        <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                            <Rocket size={12} />
-                            Your site will be at: <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{formData.tenantSlug || "yourworkspace"}</span>.localhost:3000
-                        </p>
                     </div>
 
                     <div>
