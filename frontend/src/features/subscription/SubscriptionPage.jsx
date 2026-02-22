@@ -345,6 +345,9 @@ const SubscriptionPage = () => {
 
     const handleSelectPlan = (plan) => {
         if (plan.price === 0) {
+            if (currentSubscription?.subscription?.planType !== "FREE") {
+                handleCancelSubscription();
+            }
             return;
         }
         setSelectedPlan(plan);

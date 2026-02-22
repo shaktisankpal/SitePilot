@@ -24,7 +24,7 @@ export const createOrder = async (req, res) => {
         console.log("🔍 Looking up plan:", planType);
         const plan = await subscriptionService.getPlanByName(planType);
         console.log("📋 Plan found:", plan ? `${plan.name} - ₹${plan.price}` : "NOT FOUND");
-        
+
         if (!plan) {
             console.error(`❌ Plan not found: ${planType}`);
             return res.status(404).json({
@@ -44,7 +44,7 @@ export const createOrder = async (req, res) => {
         console.log("🔍 Checking for active subscription...");
         const activeSubscription = await subscriptionService.getActiveSubscription(tenantId);
         console.log("📊 Active subscription:", activeSubscription ? `${activeSubscription.planType} - ${activeSubscription.status}` : "NONE");
-        
+
         if (activeSubscription && activeSubscription.planType === planType && activeSubscription.status === "ACTIVE") {
             return res.status(400).json({
                 success: false,
@@ -249,8 +249,16 @@ export const getCurrentSubscription = async (req, res) => {
     try {
         const tenantId = req.user?.tenantId || req.tenantId;
 
-        const subscription = await subscriptionService.getActiveSubscription(tenantId);
+        let subscription = await subscriptionService.getActiveSubscription(tenantId);
         const features = await subscriptionService.getTenantFeatures(tenantId);
+
+        if (!subscription) {
+            subscription = {
+                planType: "FREE",
+                status: "ACTIVE",
+                features: features
+            };
+        }
 
         res.status(200).json({
             success: true,
@@ -298,7 +306,7 @@ export const cancelSubscription = async (req, res) => {
         const tenantId = req.user?.tenantId || req.tenantId;
 
         const subscription = await subscriptionService.getActiveSubscription(tenantId);
-        
+
         if (!subscription) {
             return res.status(404).json({
                 success: false,
