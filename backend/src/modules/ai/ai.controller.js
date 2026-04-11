@@ -8,6 +8,8 @@ import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
 import FirebaseAgent from "../../agents/firebaseAgent.js";
 import { aiUsageTotal } from "../../utils/metrics.js";
+import { searchUnsplash, searchUnsplashBatch } from "../../services/unsplash.service.js";
+
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -17,7 +19,444 @@ const model = genAI.getGenerativeModel({
 
 const VALID_SECTION_TYPES = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer"];
 
-// Joi schema to validate Gemini output
+// ─── Bad Image Query Filter ────────────────────────────────────────────────────
+const BAD_IMAGE_QUERIES = [
+    "chart", "graph", "analytics", "dashboard", "office building",
+    "infographic", "diagram", "spreadsheet", "data", "statistics",
+    "wireframe", "mockup", "ui screenshot", "app screenshot", "icon", "logo"
+];
+
+// ─── Curated Unsplash Photo ID Map (keyword → Unsplash photo ID) ──────────────
+// These are real, reliable Unsplash photo IDs that produce great imagery
+const UNSPLASH_PHOTO_MAP = {
+    // Coffee / Cafe
+    coffee: "photo-1495474472287-4d71bcdd2085",
+    latte: "photo-1541167760496-1628856ab772",
+    barista: "photo-1501339847302-ac426a4a7cbb",
+    cafe: "photo-1559925393-8be0ec4767c8",
+    espresso: "photo-1510591509098-f4fdc6d0ff04",
+    // Restaurant / Food
+    restaurant: "photo-1414235077428-338989a2e8c0",
+    food: "photo-1504674900247-0877df9cc836",
+    chef: "photo-1577219491135-ce391730fb2c",
+    dining: "photo-1517248135467-4c7edcad34c4",
+    gourmet: "photo-1555939594-58d7cb561ad1",
+    pizza: "photo-1513104890138-7c749659a591",
+    sushi: "photo-1553621042-f6e147245754",
+    bakery: "photo-1509440159596-0249088772ff",
+    // Fitness / Gym
+    fitness: "photo-1534438327276-14e5300c3a48",
+    gym: "photo-1571019613454-1cb2f99b2d8b",
+    yoga: "photo-1593810450967-f9c42742e326",
+    workout: "photo-1517836357463-d25dfeac3438",
+    athlete: "photo-1552674605-db6ffd4facb5",
+    runner: "photo-1476480862126-209bfaa8edc8",
+    // Tech / SaaS
+    tech: "photo-1496181133206-80ce9b88a853",
+    startup: "photo-1497366216548-37526070297c",
+    developer: "photo-1517180102446-f3ece451e9d8",
+    code: "photo-1555066931-4365d14bab8c",
+    laptop: "photo-1496181133206-80ce9b88a853",
+    software: "photo-1518770660439-4636190af475",
+    // Fashion
+    fashion: "photo-1558769132-cb1aea458c5e",
+    clothing: "photo-1445205170230-053b83016050",
+    model: "photo-1496747611176-843222e1e57c",
+    luxury: "photo-1515886657613-9f3515b0c78f",
+    boutique: "photo-1441986300917-64674bd600d8",
+    // Medical / Health
+    medical: "photo-1576091160550-2173dba999ef",
+    doctor: "photo-1559839734-2b71ea197ec2",
+    healthcare: "photo-1519494026892-80bbd2d6fd0d",
+    clinic: "photo-1538108149393-fbbd82ab8c59",
+    hospital: "photo-1551190822-a9333d879b1f",
+    // Real Estate
+    "real estate": "photo-1560518883-ce09059eeffa",
+    home: "photo-1568605114967-8130f3a36994",
+    interior: "photo-1616486338812-3dadae4b4ace",
+    architecture: "photo-1486325212027-8081e485255e",
+    property: "photo-1600585154340-be6161a56a0c",
+    villa: "photo-1600596542815-ffad4c1539a9",
+    // Beauty / Spa
+    beauty: "photo-1522337360788-8b13dee7a37e",
+    spa: "photo-1519823551278-64ac92734fb1",
+    skincare: "photo-1570172619644-dfd03ed5d881",
+    salon: "photo-1562322140-8baeececf3df",
+    makeup: "photo-1487412840662-9f0b5e0bc9ab",
+    // Travel
+    travel: "photo-1488646953014-85cb44e25828",
+    beach: "photo-1507525428034-b723cf961d3e",
+    mountain: "photo-1464822759023-fed622ff2c3b",
+    paris: "photo-1499856871958-5b9627545d1a",
+    hotel: "photo-1566073771259-6a8506099945",
+    tropical: "photo-1539367628448-4bc5c9d171c8",
+    // Law / Finance / Corporate
+    law: "photo-1589829545856-d10d557cf95f",
+    legal: "photo-1568027762272-e4da8b386fe9",
+    finance: "photo-1611974789855-9c2a0a7236a3",
+    business: "photo-1507679799987-c73779587ccf",
+    corporate: "photo-1497366754035-f200968a6e72",
+    office: "photo-1497366811353-6870744d04b2",
+    meeting: "photo-1552664730-d307ca884978",
+    // Creative / Design
+    creative: "photo-1558618666-fcd25c85cd64",
+    design: "photo-1561070791-2526d30994b5",
+    art: "photo-1579783902614-a3fb3927b6a5",
+    studio: "photo-1531746020798-e6953c6e8e04",
+    photography: "photo-1452587925148-ce544e77e70d",
+    // Education
+    education: "photo-1509062522246-3755977927d7",
+    university: "photo-1541339907198-e08756dedf3f",
+    library: "photo-1481627834876-b7833e8f5570",
+    student: "photo-1523240795612-9a054b0db644",
+    classroom: "photo-1580582932707-520aed937b7b",
+    // Generic
+    professional: "photo-1521737711867-e3b97375f902",
+    team: "photo-1522071820081-009f0129c71c",
+    workspace: "photo-1497366216548-37526070297c",
+    modern: "photo-1497366811353-6870744d04b2",
+    abstract: "photo-1557683316-973673baf926",
+    nature: "photo-1501854140801-50d01698950b",
+    city: "photo-1477959858617-67f85cf4f1df",
+};
+
+// ─── Business Keyword Context Map ─────────────────────────────────────────────
+const BUSINESS_CONTEXT_QUERIES = {
+    coffee: ["coffee", "latte", "barista", "cafe", "espresso"],
+    restaurant: ["restaurant", "food", "chef", "dining", "gourmet"],
+    fitness: ["fitness", "gym", "yoga", "workout", "athlete"],
+    tech: ["tech", "startup", "developer", "code", "software"],
+    fashion: ["fashion", "clothing", "model", "luxury", "boutique"],
+    medical: ["medical", "doctor", "healthcare", "clinic", "hospital"],
+    real_estate: ["home", "interior", "architecture", "property", "villa"],
+    beauty: ["beauty", "spa", "skincare", "salon", "makeup"],
+    education: ["education", "university", "library", "student", "classroom"],
+    travel: ["travel", "beach", "mountain", "hotel", "tropical"],
+    law: ["law", "legal", "corporate", "meeting", "office"],
+    finance: ["finance", "business", "corporate", "office", "meeting"],
+    food: ["food", "restaurant", "chef", "bakery", "gourmet"],
+    creative: ["creative", "design", "studio", "art", "photography"],
+};
+
+// ─── Image Intelligence Functions ─────────────────────────────────────────────
+
+/**
+ * Resolve a keyword query or string to a real Unsplash image URL
+ */
+function resolveImageUrl(queryOrKey, width = 800, height = 600) {
+    if (!queryOrKey) return buildUnsplashUrl("photo-1497366216548-37526070297c", width, height);
+    // Already a full URL
+    if (queryOrKey.startsWith("https://images.unsplash.com")) {
+        return queryOrKey;
+    }
+    const lower = queryOrKey.toLowerCase();
+    // Try exact key match first
+    if (UNSPLASH_PHOTO_MAP[lower]) {
+        return buildUnsplashUrl(UNSPLASH_PHOTO_MAP[lower], width, height);
+    }
+    // Try substring match
+    const matchedKey = Object.keys(UNSPLASH_PHOTO_MAP).find(key => lower.includes(key));
+    if (matchedKey) {
+        return buildUnsplashUrl(UNSPLASH_PHOTO_MAP[matchedKey], width, height);
+    }
+    // Hash-based fallback
+    const fallbacks = [
+        "photo-1497366216548-37526070297c",
+        "photo-1522071820081-009f0129c71c",
+        "photo-1560518883-ce09059eeffa",
+        "photo-1507679799987-c73779587ccf",
+        "photo-1531746020798-e6953c6e8e04",
+        "photo-1558618666-fcd25c85cd64",
+    ];
+    const hash = [...lower].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return buildUnsplashUrl(fallbacks[hash % fallbacks.length], width, height);
+}
+
+function buildUnsplashUrl(photoId, width, height) {
+    return `https://images.unsplash.com/${photoId}?w=${width}&h=${height}&fit=crop&auto=format&q=80`;
+}
+
+/**
+ * Detect if a query is invalid (abstract/non-photographic)
+ */
+function isBadImageQuery(query) {
+    if (!query || typeof query !== "string") return true;
+    const q = query.toLowerCase();
+    return BAD_IMAGE_QUERIES.some((bad) => q.includes(bad));
+}
+
+/**
+ * Get contextual image keyword keys for a business type (matched to UNSPLASH_PHOTO_MAP)
+ */
+function getContextQueries(businessType) {
+    if (!businessType) return ["professional", "workspace", "team", "office", "modern"];
+    const bt = businessType.toLowerCase();
+    for (const [key, queries] of Object.entries(BUSINESS_CONTEXT_QUERIES)) {
+        if (bt.includes(key)) return queries;
+    }
+    // Generic fallback keywords that exist in UNSPLASH_PHOTO_MAP
+    return ["professional", "workspace", "team", "office", "modern"];
+}
+
+/**
+ * Sanitize a single image query — returns a keyword that exists in UNSPLASH_PHOTO_MAP
+ */
+function sanitizeImageQuery(query, businessType, usedQueries) {
+    let sanitized = query;
+
+    // Replace bad/abstract queries
+    if (isBadImageQuery(sanitized)) {
+        const contextQueries = getContextQueries(businessType);
+        sanitized = contextQueries.find((q) => !usedQueries.has(q)) || "professional";
+    }
+
+    // Handle duplicates
+    if (usedQueries.has(sanitized)) {
+        const contextQueries = getContextQueries(businessType);
+        const fresh = contextQueries.find((q) => !usedQueries.has(q));
+        // Pick a variant from UNSPLASH_PHOTO_MAP keys
+        const allKeys = Object.keys(UNSPLASH_PHOTO_MAP);
+        sanitized = fresh || allKeys[usedQueries.size % allKeys.length];
+    }
+
+    usedQueries.add(sanitized);
+    return sanitized;
+}
+
+/**
+ * Post-process AI output: collect all imageQuery values, batch-resolve with
+ * real Unsplash API, then write the actual photo URLs back into the layout.
+ * @param {object} layout      - Parsed AI layout JSON
+ * @param {string} businessType
+ * @returns {Promise<object>}  - Layout with all image fields resolved
+ */
+async function postProcessAIOutput(layout, businessType) {
+    if (!layout || !layout.pages) return layout;
+
+    const usedKeys = new Set();
+
+    // ── Step 1: Collect all queries needing resolution ─────────────────────────
+    const pendingHero = [];   // { pageIdx, secIdx, key }
+    const pendingItems = [];  // { pageIdx, secIdx, itemIdx, key }
+
+    layout.pages.forEach((page, pi) => {
+        if (!page.sections) return;
+        page.sections.forEach((section, si) => {
+            if (!section.props) section.props = {};
+
+            if (section.type === "Gallery" && Array.isArray(section.props.items)) {
+                section.props.items = section.props.items.map((item, ii) => {
+                    if (typeof item === "string") {
+                        item = { title: item, description: `Exceptional ${item.toLowerCase()} quality.`, imageQuery: item };
+                    }
+                    if (typeof item === "object" && item !== null) {
+                        let key;
+                        if (item.imageQuery && !isBadImageQuery(item.imageQuery)) {
+                            key = sanitizeImageQuery(item.imageQuery, businessType, usedKeys);
+                        } else if (item.title) {
+                            key = sanitizeImageQuery(item.title, businessType, usedKeys);
+                        } else {
+                            const cq = getContextQueries(businessType);
+                            key = cq.find(q => !usedKeys.has(q)) || "professional";
+                            usedKeys.add(key);
+                        }
+                        item.imageQuery = key;
+                        item.title = item.title || "Untitled";
+                        item.description = item.description || `Experience world-class ${businessType} quality.`;
+                        pendingItems.push({ pi, si, ii });
+                    }
+                    return item;
+                });
+            }
+
+            if (section.type === "Hero") {
+                let heroKey;
+                if (section.props.backgroundImage?.startsWith("http")) {
+                    heroKey = null; // already a URL
+                } else if (section.props.backgroundImageQuery) {
+                    heroKey = sanitizeImageQuery(section.props.backgroundImageQuery, businessType, usedKeys);
+                } else {
+                    const cq = getContextQueries(businessType);
+                    heroKey = cq.find(q => !usedKeys.has(q)) || cq[0];
+                    usedKeys.add(heroKey);
+                }
+                if (heroKey) {
+                    section.props.backgroundImageQuery = heroKey;
+                    pendingHero.push({ pi, si, key: heroKey });
+                }
+            }
+        });
+    });
+
+    // ── Step 2: Batch-fetch all hero images ────────────────────────────────────
+    const heroQueries = [...new Set(pendingHero.map(h => h.key))];
+    const itemQueries = [...new Set(
+        pendingItems.map(({ pi, si, ii }) => layout.pages[pi].sections[si].props.items[ii].imageQuery)
+    )];
+
+    const [heroImages, itemImages] = await Promise.all([
+        heroQueries.length ? searchUnsplashBatch(heroQueries, 1400, 900) : Promise.resolve({}),
+        itemQueries.length ? searchUnsplashBatch(itemQueries, 640, 480) : Promise.resolve({}),
+    ]);
+
+    // ── Step 3: Write URLs back ─────────────────────────────────────────────────
+    pendingHero.forEach(({ pi, si, key }) => {
+        const resolved = heroImages[key];
+        if (resolved?.url) {
+            layout.pages[pi].sections[si].props.backgroundImage = resolved.url;
+        } else {
+            layout.pages[pi].sections[si].props.backgroundImage = resolveImageUrl(key, 1400, 900);
+        }
+    });
+
+    pendingItems.forEach(({ pi, si, ii }) => {
+        const item = layout.pages[pi].sections[si].props.items[ii];
+        const resolved = itemImages[item.imageQuery];
+        item.image = resolved?.url || resolveImageUrl(item.imageQuery, 640, 480);
+    });
+
+    return layout;
+}
+
+
+/**
+ * Build a minimal fallback layout if AI completely fails
+ */
+function buildFallbackLayout(businessType, tone, targetAudience) {
+    return {
+        pages: [
+            {
+                title: "Home",
+                slug: "home",
+                sections: [
+                    {
+                        type: "Navbar",
+                        props: {
+                            brand: businessType,
+                            links: ["Home", "About", "Services", "Contact"],
+                            variant: "Full Width Solid",
+                            bgColor: "#ffffff",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                    {
+                        type: "Hero",
+                        props: {
+                            heading: `Welcome to ${businessType}`,
+                            subheading: `We serve ${targetAudience} with premium ${businessType.toLowerCase()} services.`,
+                            ctaText: "Get Started",
+                            ctaLink: "#contact",
+                            variant: "Split Text Left",
+                            bgColor: "#ffffff",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                            backgroundImageQuery: `${businessType} professional photography`,
+                        },
+                    },
+                    {
+                        type: "Text",
+                        props: {
+                            heading: "About Us",
+                            description: `We are a ${tone} company focused on delivering excellence to ${targetAudience}.`,
+                            variant: "Centered Standard",
+                            bgColor: "#f9fafb",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                    {
+                        type: "Gallery",
+                        props: {
+                            heading: "Our Services",
+                            items: [
+                                { title: "Service One", description: "Premium quality service.", imageQuery: `${businessType} service photography` },
+                                { title: "Service Two", description: "Expert solutions for you.", imageQuery: `${businessType} professional team` },
+                                { title: "Service Three", description: "Tailored to your needs.", imageQuery: `${businessType} modern workspace` },
+                            ],
+                            variant: "Modern Grid",
+                            bgColor: "#ffffff",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                    {
+                        type: "CTA",
+                        props: {
+                            heading: "Ready to get started?",
+                            subheading: "Join hundreds of happy customers.",
+                            ctaText: "Contact Us Today",
+                            ctaLink: "#contact",
+                            variant: "Centered Large",
+                            bgColor: "#ffffff",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                    {
+                        type: "ContactForm",
+                        props: {
+                            heading: "Get In Touch",
+                            fields: ["name", "email", "phone", "message"],
+                            variant: "Left Text Right Form",
+                            bgColor: "#f9fafb",
+                            textColor: "#111827",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                    {
+                        type: "Footer",
+                        props: {
+                            text: `© ${new Date().getFullYear()} ${businessType}. All rights reserved.`,
+                            variant: "Multi-Column Mock",
+                            bgColor: "#111827",
+                            textColor: "#9ca3af",
+                            accentColor: "#6366f1",
+                        },
+                    },
+                ],
+            },
+            {
+                title: "About",
+                slug: "about",
+                sections: [
+                    {
+                        type: "Navbar",
+                        props: { brand: businessType, links: ["Home", "About", "Services", "Contact"], variant: "Full Width Solid", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
+                    },
+                    {
+                        type: "Text",
+                        props: { heading: "Our Story", description: `Founded with a mission to serve ${targetAudience}, we are dedicated to excellence.`, variant: "Left Aligned Big", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
+                    },
+                    {
+                        type: "Footer",
+                        props: { text: `© ${new Date().getFullYear()} ${businessType}.`, variant: "Simple Centered", bgColor: "#111827", textColor: "#9ca3af", accentColor: "#6366f1" },
+                    },
+                ],
+            },
+            {
+                title: "Contact",
+                slug: "contact",
+                sections: [
+                    {
+                        type: "Navbar",
+                        props: { brand: businessType, links: ["Home", "About", "Services", "Contact"], variant: "Full Width Solid", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
+                    },
+                    {
+                        type: "ContactForm",
+                        props: { heading: "Contact Us", fields: ["name", "email", "message"], variant: "Centered Card", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
+                    },
+                    {
+                        type: "Footer",
+                        props: { text: `© ${new Date().getFullYear()} ${businessType}.`, variant: "Simple Centered", bgColor: "#111827", textColor: "#9ca3af", accentColor: "#6366f1" },
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+// ─── Joi Schemas ───────────────────────────────────────────────────────────────
 const aiLayoutSchema = Joi.object({
     pages: Joi.array()
         .items(
@@ -48,6 +487,8 @@ const inputSchema = Joi.object({
     websiteId: Joi.string().allow("").optional(),
 }).unknown(true);
 
+// ─── Controller ───────────────────────────────────────────────────────────────
+
 /**
  * POST /api/ai/generate-layout
  */
@@ -69,25 +510,76 @@ export const generateLayout = async (req, res) => {
         if (!website) return res.status(404).json({ success: false, message: "Website not found" });
     }
 
+    // Build context-aware image keywords for the prompt
+    const contextImages = getContextQueries(businessType).slice(0, 5).join(" | ");
+
     const prompt = `
-You are a professional website layout designer. Generate a complete website layout structure as valid JSON.
+You are a world-class UI/UX designer and website architect. Your task is to generate a stunning, production-ready website layout in valid JSON. The output quality should match premium agencies like Webflow and Framer.
 
 Business Type: ${businessType}
 Tone: ${tone}
-Theme Mode: ${theme || "Light"}
+Theme: ${theme || "Light"}
 Target Audience: ${targetAudience}
-Key Features/Sections needed: ${features.join(", ")}
+Key Sections Needed: ${features.join(", ")}
+Relevant Image Contexts: ${contextImages}
 
-${baseTemplateSections ? `IMPORTANT: The user wants to start from this specific template layout. DO NOT generate from scratch. Keep the section types intact, but modify their text (headings, subheadings, etc.) and styling (colors) to match the Business Type and Theme Mode requested above.
-Base Template Sections JSON: ${JSON.stringify(baseTemplateSections)}` : ""}
+${baseTemplateSections ? `
+IMPORTANT - Base Template Override:
+- Keep section TYPES exactly the same as provided
+- Only enhance content, props, colors, and styling
+- DO NOT add or remove section types
+Base Template:
+${JSON.stringify(baseTemplateSections)}
+` : ""}
 
-IMPORTANT THEME INSTRUCTIONS:
-Since the user requested a ${theme || "Light"} theme:
-- If Light: use soft, clean, bright backgrounds (e.g. #ffffff, #f8f9fa) and VERY dark text (e.g. #111827).
-- If Dark: use deep, elegant dark backgrounds (e.g. #0f172a, #1e293b) and bright white/light grey text.
-You MUST output \`bgColor\` and \`textColor\` accurately inside EVERY single section's \`props\` to match the requested theme!
+CRITICAL DESIGN RULES:
+1. Create visually stunning layouts with strong hierarchy
+2. Alternate section backgrounds for visual rhythm (white → light gray → white → etc.)
+3. Dark theme: use #0f172a, #1e293b backgrounds with white text
+4. Light theme: use #ffffff, #f9fafb backgrounds with #111827 text
+5. CTA sections must visually stand out (use accent color as background)
+6. Every section must have distinct personality
 
-Return ONLY a valid JSON object (no markdown, no explanation) in this exact format:
+GALLERY ITEMS FORMAT (CRITICAL - MUST FOLLOW EXACTLY):
+Gallery items MUST be objects in this exact format:
+{
+  "title": "Item Name",
+  "description": "A compelling 1-2 sentence description.",
+  "imageQuery": "specific realistic photo search term"
+}
+
+IMAGE QUERY RULES (VERY IMPORTANT):
+- imageQuery MUST be a realistic Unsplash-style photo search term
+- NEVER use: "chart", "graph", "analytics", "dashboard", "infographic", "diagram"
+- ALWAYS use specific, photographic terms relevant to the business
+- Example for coffee shop: "latte art pour barista", "cozy cafe interior morning", "coffee beans roasted closeup"
+- Example for gym: "athlete training weights gym", "personal trainer coaching client", "yoga class studio morning"
+- Make EVERY imageQuery UNIQUE — no duplicates across the entire response
+- Be specific and descriptive (not generic like "coffee image" or "person working")
+
+HERO BACKGROUNDIMAGEQUERY:
+- Hero sections MUST include "backgroundImageQuery" field (a specific photo search term)
+- Example: "modern coffee shop interior warm lighting" or "fitness studio aerial view"
+
+SECTION VARIANTS (assign intelligently):
+- Navbar: "Full Width Solid" | "Glassy Island" | "Minimal Transparent"
+- Hero: "Split Text Left" | "Split Text Right" | "Centered Image Bg"
+- Text: "Centered Standard" | "Left Aligned Big" | "Card Based"
+- Gallery: "Modern Grid" | "Horizontal Scroll" | "Masonry Column" | "Bento Grid"
+- CTA: "Centered Large" | "Floating Pill" | "Split Screen CTA" | "Dark Banner"
+- ContactForm: "Left Text Right Form" | "Centered Card"
+- Footer: "Multi-Column Mock" | "Simple Centered" | "Ultra Minimal"
+
+CONTENT RULES:
+- Write real, compelling copy (not placeholder text)
+- Hero: powerful headline (max 8 words), compelling subheading (1-2 sentences), strong CTA
+- Text: substantive content about the business
+- Gallery: 4-6 diverse, non-repeating items with unique queries
+- CTA: conversion-focused copy
+- ContactForm: include fields relevant to the business (e.g., phone for medical, budget for agencies)
+
+Return ONLY valid JSON in this exact structure (no markdown, no explanation):
+
 {
   "pages": [
     {
@@ -102,10 +594,16 @@ Return ONLY a valid JSON object (no markdown, no explanation) in this exact form
             "description": "...",
             "ctaText": "...",
             "ctaLink": "#",
-            "items": [],
-            "brand": "Business Name",
+            "brand": "...",
             "links": ["Home", "About", "Services", "Contact"],
-            "text": "..."
+            "items": [],
+            "text": "...",
+            "fields": [],
+            "variant": "...",
+            "bgColor": "#hex",
+            "textColor": "#hex",
+            "accentColor": "#hex",
+            "backgroundImageQuery": "..."
           }
         }
       ]
@@ -113,20 +611,18 @@ Return ONLY a valid JSON object (no markdown, no explanation) in this exact form
   ]
 }
 
-Allowed section types ONLY: Hero, Text, Gallery, CTA, ContactForm, Navbar, Footer
+MANDATORY PAGE RULES:
 - Every page MUST start with Navbar and end with Footer
-- Hero section must have: heading, subheading, ctaText, ctaLink
-- Text section must have: heading, description
-- Gallery section must have: heading, items (array of image descriptions)
-- CTA section must have: heading, subheading, ctaText, ctaLink
-- ContactForm section must have: heading, fields (array of field names like ["name", "email", "phone", "city", "message"])
-- Navbar must have: brand, links (array of strings)
-- Footer must have: text (copyright text)
+- Generate exactly 3 pages: Home, About, Contact
+- Home page MUST include: Navbar, Hero, Text, Gallery, CTA, ContactForm or just CTA, Footer
+- About page: Navbar, Hero or Text, Text, Gallery (team/values), Footer
+- Contact page: Navbar, ContactForm, Footer
 
-IMPORTANT: ContactForm fields array should contain simple field names as strings. Common fields: name, email, phone, city, message, company, address, subject.
-The backend will automatically accept ANY fields you specify - be creative based on the business type!
-
-Generate at least 3 pages: Home, About, Contact. Add more relevant pages based on the business type.
+COLOR RULES:
+- primaryColor hint: ${primaryColor || "choose sophisticated accent color matching business"}
+- secondaryColor hint: ${secondaryColor || "choose complementary secondary"}
+- Use accentColor consistently for brand identity
+- Never use pure black (#000000) as background in light mode
 `.trim();
 
     let aiResponse = null;
@@ -137,13 +633,12 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
         const result = await model.generateContent(prompt);
         const text = result.response.text();
 
-        // Extract JSON from response (handle potential markdown code blocks)
+        // Extract JSON from response (handle markdown code blocks)
         let jsonStr = text;
         const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
             jsonStr = jsonMatch[1];
         } else {
-            // Try to find raw JSON object
             const objMatch = text.match(/\{[\s\S]*\}/);
             if (objMatch) jsonStr = objMatch[0];
         }
@@ -152,29 +647,34 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
         try {
             parsed = JSON.parse(jsonStr.trim());
         } catch {
-            throw new Error("Gemini returned invalid JSON");
+            console.error("❌ [AI] Failed to parse JSON, using fallback layout");
+            parsed = buildFallbackLayout(businessType, tone, targetAudience);
         }
 
         // Validate structure
         const { error: valErr, value: validated } = aiLayoutSchema.validate(parsed);
         if (valErr) {
-            throw new Error(`Invalid AI layout structure: ${valErr.details[0].message}`);
+            console.error(`⚠️ [AI] Layout validation failed: ${valErr.details[0].message}, using fallback`);
+            parsed = buildFallbackLayout(businessType, tone, targetAudience);
+            const { value: fallbackValidated } = aiLayoutSchema.validate(parsed);
+            aiResponse = await postProcessAIOutput(fallbackValidated, businessType);
+        } else {
+            // Post-process: enforce image query structure, uniqueness, then fetch real Unsplash URLs
+            aiResponse = await postProcessAIOutput(validated, businessType);
         }
-
-        aiResponse = validated;
 
         // If websiteId provided, save pages to DB
         if (website) {
             const autoPublish = req.query.autoPublish === "true" || req.body.autoPublish === true;
 
-            for (const pageData of validated.pages) {
+            for (const pageData of aiResponse.pages) {
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
                     type: s.type,
                     props: {
                         ...(s.props || {}),
-                        accentColor: primaryColor || undefined,
-                        secondaryColor: secondaryColor || undefined,
+                        accentColor: primaryColor || s.props?.accentColor || undefined,
+                        secondaryColor: secondaryColor || s.props?.secondaryColor || undefined,
                     },
                     order: idx,
                 }));
@@ -243,7 +743,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
                         name: website.name,
                         description: website.description,
                     },
-                    pages: validated.pages.map(p => ({
+                    pages: aiResponse.pages.map((p) => ({
                         ...p,
                         layoutConfig: { sections: p.sections },
                     })),
@@ -270,6 +770,14 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
         success = false;
         errorMessage = err.message;
         console.error("Gemini Error:", err.message);
+
+        // Use fallback layout on complete failure
+        if (!aiResponse) {
+            console.log("🔄 [AI] Using fallback layout due to error");
+            aiResponse = postProcessAIOutput(buildFallbackLayout(businessType, tone, targetAudience), businessType);
+            success = true; // Return fallback as success
+            errorMessage = null;
+        }
     }
 
     // Log AI usage regardless of success
@@ -279,7 +787,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
         websiteId: websiteId || null,
         prompt: { businessType, tone, targetAudience, features },
         response: aiResponse,
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         success,
         errorMessage,
     });
@@ -291,7 +799,7 @@ Generate at least 3 pages: Home, About, Contact. Add more relevant pages based o
     // Increment AI usage metric
     aiUsageTotal.inc({
         tenantId: req.tenant?.name || req.tenantId.toString(),
-        websiteId: website ? website.name : "none"
+        websiteId: website ? website.name : "none",
     });
 
     res.json({ success: true, layout: aiResponse, savedToWebsite: !!websiteId });

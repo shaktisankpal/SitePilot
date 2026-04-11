@@ -27,6 +27,8 @@ import formsRoutes from "./modules/forms/forms.routes.js";
 import uploadRoutes from "./modules/upload/upload.routes.js";
 import paymentRoutes from "./modules/payment/payment.routes.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
+import unsplashRoutes from "./modules/ai/unsplash.controller.js";
+
 
 // Public routes
 import {
@@ -153,6 +155,8 @@ app.get("/api/public/resolve", resolveHostname);
 app.get("/api/public/sites/:tenantSlug", getPublicSite);
 app.get("/api/public/sites/:tenantSlug/pages/:slug", getPublicPage);
 app.use("/api/public/forms", formsRoutes);
+app.use("/api/public/unsplash", unsplashRoutes);
+
 
 // Protected API routes
 app.use("/api/auth", authRoutes);

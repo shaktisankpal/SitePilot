@@ -1,155 +1,439 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import api from "../../services/api.js";
 
+// ─── Design System ─────────────────────────────────────────────────────────────
+const DS = {
+    radius: { sm: "8px", md: "16px", lg: "24px", xl: "32px", xxl: "48px", pill: "100px" },
+    shadow: {
+        sm: "0 2px 8px rgba(0,0,0,0.06)",
+        md: "0 8px 24px rgba(0,0,0,0.1)",
+        lg: "0 20px 48px rgba(0,0,0,0.12)",
+        xl: "0 32px 72px rgba(0,0,0,0.16)",
+        colored: (color) => `0 20px 48px ${color}50`,
+    },
+    spacing: { xs: "8px", sm: "16px", md: "24px", lg: "40px", xl: "64px", xxl: "100px", section: "120px" },
+    font: {
+        h1: "clamp(3rem, 6vw, 5rem)",
+        h2: "clamp(2.2rem, 4vw, 3.2rem)",
+        h3: "clamp(1.4rem, 2.5vw, 1.8rem)",
+        body: "1.05rem",
+        sm: "0.9rem",
+    },
+    transition: { fast: "all 0.2s ease", base: "all 0.3s ease", slow: "all 0.5s ease" },
+};
+
+// ─── Image Pipeline ────────────────────────────────────────────────────────────
+
+/** Session-level cache: query → URL (avoid re-fetching same image in one page visit) */
+const _imgCache = new Map();
+
+/**
+ * Fetch a real Unsplash image via the backend proxy.
+ * Returns a URL string. Never throws — falls back to static map on failure.
+ */
+async function fetchFromUnsplashProxy(query, width = 800, height = 600) {
+    const cacheKey = `${query}__${width}x${height}`;
+    if (_imgCache.has(cacheKey)) return _imgCache.get(cacheKey);
+
+    try {
+        const params = new URLSearchParams({ query, w: width, h: height });
+        const res = await fetch(`/api/public/unsplash?${params}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.success && data.url) {
+            _imgCache.set(cacheKey, data.url);
+            return data.url;
+        }
+    } catch {
+        // Silent — fall through to static fallback
+    }
+
+    const fallback = getStaticFallbackUrl(query, width, height);
+    _imgCache.set(cacheKey, fallback);
+    return fallback;
+}
+
+/** Static fallback map for when the proxy is unavailable */
+const FALLBACK_PHOTO_MAP = {
+    coffee: "photo-1495474472287-4d71bcdd2085",
+    latte: "photo-1541167760496-1628856ab772",
+    barista: "photo-1501339847302-ac426a4a7cbb",
+    cafe: "photo-1559925393-8be0ec4767c8",
+    espresso: "photo-1510591509098-f4fdc6d0ff04",
+    restaurant: "photo-1414235077428-338989a2e8c0",
+    food: "photo-1504674900247-0877df9cc836",
+    chef: "photo-1577219491135-ce391730fb2c",
+    dining: "photo-1517248135467-4c7edcad34c4",
+    gourmet: "photo-1555939594-58d7cb561ad1",
+    bakery: "photo-1509440159596-0249088772ff",
+    fitness: "photo-1534438327276-14e5300c3a48",
+    gym: "photo-1571019613454-1cb2f99b2d8b",
+    yoga: "photo-1593810450967-f9c42742e326",
+    workout: "photo-1517836357463-d25dfeac3438",
+    athlete: "photo-1552674605-db6ffd4facb5",
+    runner: "photo-1476480862126-209bfaa8edc8",
+    tech: "photo-1496181133206-80ce9b88a853",
+    startup: "photo-1497366216548-37526070297c",
+    developer: "photo-1517180102446-f3ece451e9d8",
+    code: "photo-1555066931-4365d14bab8c",
+    software: "photo-1518770660439-4636190af475",
+    laptop: "photo-1496181133206-80ce9b88a853",
+    fashion: "photo-1558769132-cb1aea458c5e",
+    clothing: "photo-1445205170230-053b83016050",
+    model: "photo-1496747611176-843222e1e57c",
+    luxury: "photo-1515886657613-9f3515b0c78f",
+    boutique: "photo-1441986300917-64674bd600d8",
+    medical: "photo-1576091160550-2173dba999ef",
+    doctor: "photo-1559839734-2b71ea197ec2",
+    healthcare: "photo-1519494026892-80bbd2d6fd0d",
+    clinic: "photo-1538108149393-fbbd82ab8c59",
+    home: "photo-1568605114967-8130f3a36994",
+    interior: "photo-1616486338812-3dadae4b4ace",
+    architecture: "photo-1486325212027-8081e485255e",
+    property: "photo-1600585154340-be6161a56a0c",
+    beauty: "photo-1522337360788-8b13dee7a37e",
+    spa: "photo-1519823551278-64ac92734fb1",
+    skincare: "photo-1570172619644-dfd03ed5d881",
+    salon: "photo-1562322140-8baeececf3df",
+    makeup: "photo-1487412840662-9f0b5e0bc9ab",
+    travel: "photo-1488646953014-85cb44e25828",
+    beach: "photo-1507525428034-b723cf961d3e",
+    mountain: "photo-1464822759023-fed622ff2c3b",
+    hotel: "photo-1566073771259-6a8506099945",
+    tropical: "photo-1539367628448-4bc5c9d171c8",
+    law: "photo-1589829545856-d10d557cf95f",
+    legal: "photo-1568027762272-e4da8b386fe9",
+    finance: "photo-1611974789855-9c2a0a7236a3",
+    business: "photo-1507679799987-c73779587ccf",
+    corporate: "photo-1497366754035-f200968a6e72",
+    office: "photo-1497366811353-6870744d04b2",
+    meeting: "photo-1552664730-d307ca884978",
+    creative: "photo-1558618666-fcd25c85cd64",
+    design: "photo-1561070791-2526d30994b5",
+    art: "photo-1579783902614-a3fb3927b6a5",
+    studio: "photo-1531746020798-e6953c6e8e04",
+    photography: "photo-1452587925148-ce544e77e70d",
+    education: "photo-1509062522246-3755977927d7",
+    professional: "photo-1521737711867-e3b97375f902",
+    team: "photo-1522071820081-009f0129c71c",
+    workspace: "photo-1497366216548-37526070297c",
+    abstract: "photo-1557683316-973673baf926",
+    nature: "photo-1501854140801-50d01698950b",
+    city: "photo-1477959858617-67f85cf4f1df",
+};
+
+function getStaticFallbackUrl(query, width, height) {
+    if (!query) return buildPhotoUrl("photo-1497366216548-37526070297c", width, height);
+    const lower = (query || "").toLowerCase();
+    const matched = Object.keys(FALLBACK_PHOTO_MAP).find(k => lower.includes(k));
+    const photoId = matched ? FALLBACK_PHOTO_MAP[matched] : "photo-1497366216548-37526070297c";
+    return buildPhotoUrl(photoId, width, height);
+}
+
+function buildPhotoUrl(photoId, width, height) {
+    return `https://images.unsplash.com/${photoId}?w=${width}&h=${height}&fit=crop&auto=format&q=80`;
+}
+
+/**
+ * Synchronous resolver — used for initial render.
+ * If the item already has a full URL (from AI generation), use it.
+ * Otherwise returns a static fallback immediately.
+ * The async hook useUnsplashImage() will update it later.
+ */
+/**
+ * Synchronous resolver — returns a URL immediately.
+ * Prefers: full URL from AI > static fallback.
+ * Components with imageQuery should use the useUnsplashImage hook for live fetching.
+ */
+function getImageUrl(queryOrUrl, width = 800, height = 600) {
+    if (!queryOrUrl) return getStaticFallbackUrl("professional", width, height);
+    // Already a resolved Unsplash URL (from AI generation)
+    if (queryOrUrl.startsWith("https://images.unsplash.com")) {
+        const hasParams = queryOrUrl.includes("?");
+        return hasParams ? queryOrUrl : `${queryOrUrl}?w=${width}&h=${height}&fit=crop&auto=format&q=80`;
+    }
+    if (queryOrUrl.startsWith("http")) return queryOrUrl;
+    // Keyword — use static fallback synchronously
+    return getStaticFallbackUrl(queryOrUrl, width, height);
+}
+
+/**
+ * React hook: fetches a real Unsplash image for a keyword query.
+ * Returns the URL (starts as static fallback, updates to real photo).
+ */
+function useUnsplashImage(queryOrUrl, width = 800, height = 600) {
+    const [url, setUrl] = useState(() => getImageUrl(queryOrUrl, width, height));
+    useEffect(() => {
+        if (!queryOrUrl) return;
+        // If it's already a full URL, no need to fetch
+        if (queryOrUrl.startsWith("http")) {
+            setUrl(queryOrUrl.startsWith("https://images.unsplash.com") && !queryOrUrl.includes("?")
+                ? `${queryOrUrl}?w=${width}&h=${height}&fit=crop&auto=format&q=80`
+                : queryOrUrl);
+            return;
+        }
+        // Check cache first
+        const cacheKey = `${queryOrUrl}__${width}x${height}`;
+        if (_imgCache.has(cacheKey)) {
+            setUrl(_imgCache.get(cacheKey));
+            return;
+        }
+        // Async fetch via proxy
+        fetchFromUnsplashProxy(queryOrUrl, width, height).then(setUrl);
+    }, [queryOrUrl, width, height]);
+    return url;
+}
+
+function resolveItemImage(item, width = 640, height = 480) {
+    if (!item) return getStaticFallbackUrl("workspace", width, height);
+    if (typeof item === "string") return getImageUrl(item, width, height);
+    // AI-generated images have a real URL in item.image
+    if (item.image && item.image.startsWith("http")) return item.image;
+    if (item.imageQuery) return getImageUrl(item.imageQuery, width, height);
+    if (item.title) return getStaticFallbackUrl(item.title, width, height);
+    return getStaticFallbackUrl("professional", width, height);
+}
+
+
+// ─── Font loader ───────────────────────────────────────────────────────────────
+const LOADED_FONTS = new Set();
+function loadFont(fontName) {
+    if (!fontName || LOADED_FONTS.has(fontName)) return;
+    LOADED_FONTS.add(fontName);
+    const encodedFont = fontName.replace(/ /g, "+");
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@300;400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+function isLightText(textColor) {
+    if (!textColor) return false;
+    const c = textColor.toLowerCase();
+    return c.includes("fff") || c.includes("f0f") || c.includes("faf") || c === "white";
+}
+
+// ─── Global CSS ────────────────────────────────────────────────────────────────
 export const globalResponsiveCss = `
-.responsive-master-container {
-    container-type: inline-size;
-    container-name: site-container;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+img { max-width: 100%; height: auto; display: block; }
+
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+@keyframes sp-fadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sp-scaleIn { from { opacity: 0; transform: scale(0.93); } to { opacity: 1; transform: scale(1); } }
+
+.sp-animate-up { animation: sp-fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+.sp-animate-scale { animation: sp-scaleIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+
+.sp-card-lift {
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease;
+  cursor: pointer;
 }
-.responsive-master-container * {
-    box-sizing: border-box !important;
+.sp-card-lift:hover { transform: translateY(-10px); }
+
+.sp-img-zoom { overflow: hidden; }
+.sp-img-zoom img { transition: transform 0.6s cubic-bezier(0.22,1,0.36,1); }
+.sp-img-zoom:hover img { transform: scale(1.08); }
+
+.sp-btn-base {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: none; cursor: pointer; font-family: inherit;
+  font-weight: 700; text-decoration: none; transition: all 0.25s ease;
+  white-space: nowrap; letter-spacing: -0.01em;
 }
-.responsive-master-container section {
-    max-width: 100cqi !important;
-    overflow-x: hidden !important;
+.sp-btn-base:hover { transform: translateY(-3px); }
+
+.sp-nav-link { text-decoration: none; font-weight: 600; font-size: 14px; transition: opacity 0.2s; opacity: 0.7; }
+.sp-nav-link:hover { opacity: 1; }
+
+.sp-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 100px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
 }
-@container site-container (max-width: 1024px) {
-    .responsive-master-container div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-    }
+
+/* ─ Responsive ─ */
+@media (max-width: 1024px) {
+  .sp-grid-halves, .sp-grid-thirds { grid-template-columns: 1fr !important; }
+  .sp-grid-thirds-2 { grid-template-columns: 1fr 1fr !important; }
 }
-@container site-container (max-width: 768px) {
-    .responsive-master-container section {
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-    }
-    .responsive-master-container h1 {
-        font-size: clamp(2.5rem, 8vw, 3rem) !important;
-    }
-    .responsive-master-container h2 {
-        font-size: clamp(2rem, 6vw, 2.5rem) !important;
-    }
-    .responsive-master-container div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-        gap: 32px !important;
-    }
-    .responsive-master-container nav {
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-    }
-    .responsive-master-container nav > div {
-        flex-direction: column !important;
-        gap: 16px !important;
-        text-align: center !important;
-    }
-    .responsive-master-container nav > div > div {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-    }
-    .responsive-master-container footer div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-        text-align: center !important;
-    }
+@media (max-width: 768px) {
+  .sp-section-pad { padding: 64px 20px !important; }
+  .sp-grid-halves, .sp-grid-thirds, .sp-grid-thirds-2, .sp-grid-quarters { grid-template-columns: 1fr !important; gap: 20px !important; }
+  .sp-hero-h1 { font-size: clamp(2.2rem, 9vw, 3rem) !important; }
+  .sp-hero-h2 { font-size: clamp(1.8rem, 7vw, 2.4rem) !important; }
+  .sp-hide-mobile { display: none !important; }
+  .sp-nav-links { display: none !important; }
+  .sp-footer-cols { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 480px) {
+  .sp-grid-thirds-2, .sp-footer-cols { grid-template-columns: 1fr !important; }
+  .sp-hero-h1 { font-size: 2rem !important; }
+}
+
+.sp-page-nav {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; gap: 4px;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(20px);
+  padding: 6px; border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 `;
 
-// ─── Component Helpers ────────────────────────────────────────────────────────
-const BackgroundLayer = ({ props }) => {
-    const bgImg = props.backgroundImage;
-    if (!bgImg) return null;
-    const blur = parseInt(props.bgBlur || 0, 10);
-    const dim = parseInt(props.bgDim || 0, 10) / 100;
-    return (
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-            <div style={{
-                position: "absolute",
-                top: -blur * 2, left: -blur * 2, right: -blur * 2, bottom: -blur * 2,
-                backgroundImage: `url(${bgImg})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: blur > 0 ? `blur(${blur}px)` : "none",
-            }} />
-            {dim > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${dim})` }} />}
+// ─── Decorative Blobs ──────────────────────────────────────────────────────────
+const GlowBlob = ({ color, style = {} }) => (
+    <div style={{
+        position: "absolute", borderRadius: "50%", pointerEvents: "none", zIndex: 0,
+        background: `radial-gradient(circle, ${color}35 0%, transparent 70%)`,
+        filter: "blur(72px)", ...style,
+    }} />
+);
+
+// ─── NAVBAR SECTION ────────────────────────────────────────────────────────────
+const NavbarSection = ({ props, branding }) => {
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const bg = props.bgColor || "#ffffff";
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
+    const variant = props.variant || "Full Width Solid";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+
+    const brand = props.brand || "Brand";
+    const links = props.links || ["Home", "About", "Services", "Contact"];
+    const fontStyle = `"${font}", "Inter", sans-serif`;
+
+    const brandEl = (
+        <span style={{ fontWeight: 900, fontSize: "22px", color: accent, letterSpacing: "-0.03em", fontFamily: fontStyle }}>
+            {brand}
+        </span>
+    );
+    const linksEl = (
+        <div className="sp-nav-links" style={{ display: "flex", gap: "32px", alignItems: "center" }}>
+            {links.map((l, i) => (
+                <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, fontFamily: fontStyle }}>{l}</a>
+            ))}
         </div>
     );
-};
+    const ctaEl = (
+        <button className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "11px 24px", borderRadius: "100px", fontSize: "13px", fontFamily: fontStyle, boxShadow: `0 4px 16px ${accent}55` }}>
+            Get Started
+        </button>
+    );
 
-// ─── Section renderers ────────────────────────────────────────────────────────
-
-const NavbarSection = ({ props, branding }) => {
-    const accent = props.accentColor || branding?.primaryColor || "#000000";
-    const bg = props.bgColor || "rgba(255, 255, 255, 0.9)";
-    const textColor = props.textColor || "#111827";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
-    const variant = props.variant || "Glassy Island";
-
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
-
-    if (variant === "Full Width Solid") {
+    if (variant === "Glassy Island") {
         return (
-            <nav style={{ position: "sticky", top: 0, zIndex: 100, background: bg, borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}`, padding: "20px 48px", fontFamily: baseFont }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "1400px", margin: "0 auto" }}>
-                    <span style={{ fontWeight: "900", fontSize: "24px", color: accent }}>{props.brand || "Brand"}</span>
-                    <div style={{ display: "flex", gap: "40px", alignItems: "center" }}>
-                        {(props.links || []).map((l, i) => <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} style={{ color: textColor, textDecoration: "none", fontSize: "15px", fontWeight: "600", opacity: 0.9 }}>{l}</a>)}
-                        <button style={{ background: accent, color: "#fff", border: "none", padding: "12px 28px", borderRadius: "8px", fontWeight: "700", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px ${accent}40` }}>Get Started</button>
+            <div style={{ padding: "14px 24px", position: "sticky", top: 0, zIndex: 100 }}>
+                <nav style={{
+                    background: light ? "rgba(10,10,20,0.85)" : "rgba(255,255,255,0.9)",
+                    backdropFilter: "blur(24px) saturate(2)",
+                    border: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`,
+                    borderRadius: "100px", padding: "14px 28px",
+                    maxWidth: "1060px", margin: "0 auto",
+                    boxShadow: light ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 32px rgba(0,0,0,0.08)",
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        {brandEl}
+                        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                            {linksEl}
+                            {ctaEl}
+                        </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
         );
     }
 
     if (variant === "Minimal Transparent") {
         return (
-            <nav style={{ padding: "32px 48px", background: "transparent", fontFamily: baseFont, position: "absolute", top: 0, left: 0, right: 0, zIndex: 100 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", margin: "0 auto" }}>
-                    <span style={{ fontWeight: "800", fontSize: "20px", color: textColor, letterSpacing: "2px", textTransform: "uppercase" }}>{props.brand || "Brand"}</span>
-                    <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-                        {(props.links || []).map((l, i) => <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} style={{ color: textColor, textDecoration: "none", fontSize: "13px", fontWeight: "700", opacity: 0.8, textTransform: "uppercase", letterSpacing: "1px" }}>{l}</a>)}
+            <nav style={{ padding: "28px 56px", background: "transparent", position: "absolute", top: 0, left: 0, right: 0, zIndex: 100 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1320px", margin: "0 auto" }}>
+                    <span style={{ fontWeight: 900, fontSize: "18px", color: tc, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: fontStyle }}>{brand}</span>
+                    <div className="sp-nav-links" style={{ display: "flex", gap: "40px", alignItems: "center" }}>
+                        {links.map((l, i) => (
+                            <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "12px", fontFamily: fontStyle }}>{l}</a>
+                        ))}
                     </div>
                 </div>
             </nav>
         );
     }
 
-    // Default: Glassy Island
+    // Full Width Solid (default)
     return (
-        <div style={{ padding: "16px", position: "sticky", top: 0, zIndex: 100 }}>
-            <nav style={{ background: bg, backdropFilter: "blur(20px)", border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}`, borderRadius: "100px", padding: "16px 32px", fontFamily: baseFont, maxWidth: "1000px", margin: "0 auto", boxShadow: `0 20px 40px ${isDark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.05)"}` }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: "800", fontSize: "22px", color: accent, letterSpacing: "-0.02em" }}>{props.brand || "Brand"}</span>
-                    <div style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-                        {(props.links || []).map((link, i) => <a key={i} href={`#${link.toLowerCase().replace(/\s/g, "-")}`} style={{ color: textColor, textDecoration: "none", fontSize: "14px", fontWeight: "600", opacity: 0.8 }}>{link}</a>)}
-                        <button style={{ background: accent, color: "#fff", border: "none", padding: "12px 28px", borderRadius: "50px", fontWeight: "700", fontSize: "14px", cursor: "pointer", boxShadow: `0 8px 16px ${accent}40` }}>Get Started</button>
-                    </div>
+        <nav style={{ background: bg, borderBottom: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)"}`, padding: "18px 48px", position: "sticky", top: 0, zIndex: 100 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1320px", margin: "0 auto" }}>
+                {brandEl}
+                <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+                    {linksEl}
+                    {ctaEl}
                 </div>
-            </nav>
-        </div>
+            </div>
+        </nav>
     );
 };
 
+// ─── HERO SECTION ──────────────────────────────────────────────────────────────
 const HeroSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const textColor = props.textColor || "#111827";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
     const variant = props.variant || "Split Text Left";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Plus Jakarta Sans", sans-serif`;
+
+    // Image: AI-generated sites have a resolved URL in backgroundImage.
+    // For templates using keywords, useUnsplashImage fetches via the proxy.
+    const heroQuery = props.backgroundImage && props.backgroundImage.startsWith("http")
+        ? props.backgroundImage
+        : (props.backgroundImageQuery || props.backgroundImage || "professional workspace");
+    const heroImgUrl = useUnsplashImage(heroQuery, 1400, 900);
+
+    const Badge = () => (
+        <div className="sp-badge sp-animate-up" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30`, marginBottom: "20px", animationDelay: "0.05s", fontFamily: fontStyle }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: accent, display: "inline-block" }} />
+            Now Available
+        </div>
+    );
+
+    const CTARow = () => (
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", marginTop: "36px" }}>
+            {props.ctaText && (
+                <a href={props.ctaLink || "#"} className="sp-btn-base sp-animate-up" style={{ background: accent, color: light ? "#000" : "#fff", padding: "16px 36px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent), animationDelay: "0.35s" }}>
+                    {props.ctaText}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                </a>
+            )}
+            <a href="#learn" className="sp-btn-base sp-animate-up" style={{ background: "transparent", color: tc, padding: "16px 32px", border: `2px solid ${light ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)"}`, borderRadius: "100px", fontSize: "15px", fontFamily: fontStyle, animationDelay: "0.45s" }}>
+                Learn More
+            </a>
+        </div>
+    );
 
     if (variant === "Centered Image Bg") {
         return (
-            <section style={{ position: "relative", padding: "20px", background: bg, fontFamily: baseFont }}>
-                <div style={{ position: "relative", width: "100%", height: "700px", borderRadius: "3rem", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "flex-start", padding: "0 6%", boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.1)" }}>
-                    <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80"})`, backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)", zIndex: 1 }} />
-                    <div style={{ position: "relative", zIndex: 2, maxWidth: "600px", background: "rgba(255, 255, 255, 0.1)", backdropFilter: "blur(20px)", padding: "48px", borderRadius: "2rem", border: "1px solid rgba(255,255,255,0.2)" }}>
-                        <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "50px", background: `${accent}`, color: isDark ? "#000" : "#fff", fontWeight: "800", fontSize: "12px", marginBottom: "24px", textTransform: "uppercase", letterSpacing: "1px" }}>Welcome</div>
-                        <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "900", color: "#fff", marginBottom: "20px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading || "Make your dream a reality"}</h1>
-                        {props.subheading && <p style={{ fontSize: "1.2rem", color: "rgba(255,255,255,0.9)", marginBottom: "40px", lineHeight: "1.6", fontWeight: "500" }}>{props.subheading}</p>}
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", alignItems: "center", padding: "18px 40px", borderRadius: "50px", background: "#fff", color: "#000", fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "transform 0.3s", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>{props.ctaText} <div style={{ marginLeft: 12, width: 32, height: 32, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff" }}>→</div></a>}
+            <section style={{ position: "relative", padding: "16px", background: bg }}>
+                <div style={{ position: "relative", borderRadius: "40px", overflow: "hidden", minHeight: "90vh", display: "flex", alignItems: "flex-end", padding: "60px 6%" }}>
+                    <img src={heroImgUrl} alt="Hero background" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} loading="eager" />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.1) 80%, transparent)", zIndex: 1 }} />
+                    <div style={{ position: "relative", zIndex: 2, maxWidth: "700px" }}>
+                        <Badge />
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.15s" }}>
+                            {props.heading || "Design That Speaks"}
+                        </h1>
+                        {props.subheading && (
+                            <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: "rgba(255,255,255,0.82)", lineHeight: 1.75, maxWidth: "520px", fontFamily: fontStyle, animationDelay: "0.25s" }}>
+                                {props.subheading}
+                            </p>
+                        )}
+                        <CTARow />
                     </div>
                 </div>
             </section>
@@ -158,26 +442,34 @@ const HeroSection = ({ props, branding }) => {
 
     if (variant === "Split Text Right") {
         return (
-            <section style={{ position: "relative", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont, overflow: "hidden" }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "absolute", top: "20%", left: "10%", width: "400px", height: "400px", background: accent, borderRadius: "50%", filter: "blur(120px)", opacity: 0.3 }} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
-                    <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-                        <div style={{ width: "450px", height: "450px", borderRadius: "50%", border: `12px solid ${isDark ? "#2D2D2D" : "#fff"}`, overflow: "hidden", boxShadow: `0 30px 60px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)"}`, position: "relative", zIndex: 2 }}>
-                            <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </div>
-                        <div style={{ position: "absolute", bottom: "10%", right: "-5%", background: isDark ? "#1A1A1A" : "#fff", padding: "16px 24px", borderRadius: "50px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", zIndex: 3, display: "flex", alignItems: "center", gap: 12, border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "transparent"}` }}>
-                            <div style={{ width: 40, height: 40, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff", fontWeight: "bold" }}>15+</div>
+            <section className="sp-section-pad" style={{ position: "relative", padding: "80px 56px", background: bg, overflow: "hidden", minHeight: "88vh", display: "flex", alignItems: "center" }}>
+                <GlowBlob color={accent} style={{ top: "10%", right: "0%", width: "500px", height: "500px" }} />
+                <div className="sp-grid-halves" style={{ position: "relative", zIndex: 1, maxWidth: "1320px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center" }}>
+                    {/* Image first on left */}
+                    <div className="sp-img-zoom sp-animate-scale" style={{ borderRadius: "28px", overflow: "hidden", aspectRatio: "4/5", boxShadow: DS.shadow.xl, position: "relative" }}>
+                        <img src={heroImgUrl} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager"
+                            onError={e => { e.target.src = getImageUrl("professional", 800, 1000); }} />
+                        {/* Floating card */}
+                        <div style={{ position: "absolute", bottom: "24px", left: "-20px", background: light ? "rgba(10,15,30,0.92)" : "rgba(255,255,255,0.96)", backdropFilter: "blur(16px)", padding: "14px 20px", borderRadius: "16px", boxShadow: DS.shadow.lg, display: "flex", gap: "12px", alignItems: "center", border: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}` }}>
+                            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: `${accent}22`, display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontSize: "18px" }}>✦</div>
                             <div>
-                                <h4 style={{ fontSize: "14px", fontWeight: "800", color: textColor, margin: 0 }}>Years Exp.</h4>
+                                <p style={{ fontSize: "11px", color: tc, opacity: 0.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: fontStyle }}>Trusted By</p>
+                                <p style={{ fontSize: "15px", fontWeight: 800, color: tc, fontFamily: fontStyle }}>5,000+ Clients</p>
                             </div>
                         </div>
                     </div>
+                    {/* Text */}
                     <div>
-                        <div style={{ display: "inline-block", padding: "8px 16px", borderRadius: "8px", background: `${accent}20`, color: accent, fontWeight: "800", fontSize: "12px", marginBottom: "24px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Trusted Services</div>
-                        <h1 style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", fontWeight: "900", lineHeight: "1.1", marginBottom: "24px", color: textColor }}>{props.heading || "Serve The Taste"}</h1>
-                        {props.subheading && <p style={{ fontSize: "1.2rem", color: textColor, marginBottom: "40px", lineHeight: "1.7", opacity: 0.7 }}>{props.subheading}</p>}
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "18px 40px", borderRadius: "50px", fontSize: "16px", fontWeight: "800", textDecoration: "none", background: accent, color: isDark ? "#000" : "#fff", transition: "transform 0.3s", boxShadow: `0 10px 20px ${accent}40` }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
+                        <Badge />
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.15s" }}>
+                            {props.heading || "Built For The Future"}
+                        </h1>
+                        {props.subheading && (
+                            <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: tc, opacity: 0.72, lineHeight: 1.78, fontFamily: fontStyle, animationDelay: "0.25s" }}>
+                                {props.subheading}
+                            </p>
+                        )}
+                        <CTARow />
                     </div>
                 </div>
             </section>
@@ -186,139 +478,235 @@ const HeroSection = ({ props, branding }) => {
 
     // Default: Split Text Left
     return (
-        <section style={{ position: "relative", display: "flex", alignItems: "center", padding: "80px 32px", background: bg, minHeight: "85vh", fontFamily: baseFont, overflow: "hidden" }}>
-            <BackgroundLayer props={props} />
-            <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
-                <div style={{ zIndex: 2 }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", padding: "6px 16px", borderRadius: "50px", background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, color: textColor, fontWeight: "600", fontSize: "13px", marginBottom: "24px", boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.5)" : "0 4px 12px rgba(0,0,0,0.05)" }}>
-                        <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: accent, marginRight: 8 }} />
-                        Next-Gen Experience
-                    </div>
-                    <h1 style={{ fontSize: "clamp(3.5rem, 5.5vw, 5rem)", fontWeight: "900", lineHeight: "1.05", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em" }}>{props.heading || "Modern Design"}</h1>
-                    {props.subheading && <p style={{ fontSize: "1.25rem", color: textColor, marginBottom: "40px", lineHeight: "1.6", opacity: 0.7, maxWidth: "500px" }}>{props.subheading}</p>}
-                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "16px 32px", borderRadius: "12px", fontSize: "16px", fontWeight: "700", textDecoration: "none", background: textColor, color: bg, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
-                        <button style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "50px", height: "50px", borderRadius: "50%", border: `1px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, background: "transparent", color: textColor, cursor: "pointer", transition: "background 0.3s" }} onMouseEnter={e => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }} onMouseLeave={e => { e.currentTarget.style.background = "transparent" }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
-                        </button>
-                    </div>
-                </div>
-                <div style={{ position: "relative" }}>
-                    <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "120%", height: "120%", background: `radial-gradient(circle, ${accent}30 0%, transparent 70%)`, zIndex: 0, filter: "blur(40px)" }} />
-                    <img src={props.backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80"} alt="Hero" style={{ width: "100%", height: "auto", borderRadius: "2rem", position: "relative", zIndex: 1, boxShadow: `0 30px 60px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.15)"}`, objectFit: "cover", aspectRatio: "4/5" }} />
-                    <div style={{ position: "absolute", bottom: "40px", left: "-40px", zIndex: 3, background: isDark ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(10px)", padding: "16px", borderRadius: "16px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: "0 20px 40px rgba(0,0,0,0.2)", display: "flex", gap: "12px", alignItems: "center" }}>
-                        <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: `${accent}20`, display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontWeight: "bold", fontSize: "16px" }}>99+</div>
+        <section className="sp-section-pad" style={{ position: "relative", padding: "80px 56px", background: bg, overflow: "hidden", minHeight: "88vh", display: "flex", alignItems: "center" }}>
+            <GlowBlob color={accent} style={{ top: "-10%", left: "-5%", width: "600px", height: "600px" }} />
+            <GlowBlob color={accent} style={{ bottom: "-15%", right: "5%", width: "400px", height: "400px", opacity: 0.4 }} />
+            <div className="sp-grid-halves" style={{ position: "relative", zIndex: 1, maxWidth: "1320px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center" }}>
+                {/* Text */}
+                <div>
+                    <Badge />
+                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.1s" }}>
+                        {props.heading || "The Future Is Here"}
+                    </h1>
+                    {props.subheading && (
+                        <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: tc, opacity: 0.72, lineHeight: 1.78, maxWidth: "480px", fontFamily: fontStyle, animationDelay: "0.2s" }}>
+                            {props.subheading}
+                        </p>
+                    )}
+                    <CTARow />
+                    {/* Stars / social proof */}
+                    <div className="sp-animate-up" style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "40px", paddingTop: "28px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`, animationDelay: "0.55s" }}>
+                        <div style={{ display: "flex" }}>
+                            {["😊","🤩","👏","⭐"].map((e, i) => (
+                                <div key={i} style={{ width: "34px", height: "34px", borderRadius: "50%", background: `hsl(${i * 55}, 60%, 55%)`, border: `2px solid ${bg}`, marginLeft: i > 0 ? "-8px" : "0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>{e}</div>
+                            ))}
+                        </div>
                         <div>
-                            <p style={{ margin: 0, fontSize: "12px", color: textColor, opacity: 0.6, fontWeight: "600", textTransform: "uppercase" }}>Experts</p>
-                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "800", color: textColor }}>Ready to Help</p>
+                            <div style={{ color: "#f59e0b", fontSize: "13px" }}>★★★★★</div>
+                            <p style={{ fontSize: "12px", color: tc, opacity: 0.55, marginTop: "2px", fontFamily: fontStyle }}>Loved by thousands</p>
                         </div>
                     </div>
+                </div>
+                {/* Image */}
+                <div className="sp-img-zoom sp-animate-scale" style={{ borderRadius: "28px", overflow: "hidden", aspectRatio: "4/5", boxShadow: DS.shadow.xl, position: "relative", animationDelay: "0.15s" }}>
+                    <img src={heroImgUrl} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager"
+                        onError={e => { e.target.src = getImageUrl("professional", 800, 1000); }} />
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "5px", background: `linear-gradient(to right, ${accent}, ${accent}66)` }} />
                 </div>
             </div>
         </section>
     );
 };
 
+// ─── TEXT SECTION ──────────────────────────────────────────────────────────────
 const TextSection = ({ props, branding }) => {
     const bg = props.bgColor || "#f9fafb";
-    const textColor = props.textColor || "#111827";
-    const font = props.fontFamily || branding?.font;
+    const tc = props.textColor || "#111827";
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const light = isLightText(tc);
     const variant = props.variant || "Centered Standard";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
+
+    const Chip = ({ text }) => (
+        <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}28`, marginBottom: "18px", fontFamily: fontStyle }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: accent }} />
+            {text}
+        </div>
+    );
 
     if (variant === "Left Aligned Big") {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "absolute", top: "10%", right: "-5%", width: "500px", height: "500px", background: `radial-gradient(circle, ${accent}20 0%, transparent 70%)`, filter: "blur(60px)", zIndex: 0 }} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "flex-start" }}>
+            <section className="sp-section-pad" style={{ position: "relative", padding: "96px 56px", background: bg, overflow: "hidden" }}>
+                <GlowBlob color={accent} style={{ top: "-5%", right: "-5%", width: "450px", height: "450px", opacity: 0.5 }} />
+                <div className="sp-grid-halves" style={{ position: "relative", zIndex: 1, maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "start" }}>
                     <div>
-                        <div style={{ display: "inline-flex", alignItems: "center", padding: "8px 20px", borderRadius: "50px", background: `${accent}15`, color: accent, fontWeight: "800", fontSize: "12px", marginBottom: "24px", letterSpacing: "1px", textTransform: "uppercase" }}>
-                            <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: accent, marginRight: 8, boxShadow: `0 0 10px ${accent}` }} />
-                            About Us
-                        </div>
-                        {props.heading && <h2 style={{ fontSize: "clamp(3rem, 5vw, 4rem)", fontWeight: "900", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.05", marginBottom: "32px" }}>{props.heading}</h2>}
+                        <Chip text="About Us" />
+                        {props.heading && (
+                            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>
+                                {props.heading}
+                            </h2>
+                        )}
+                        <div style={{ width: "52px", height: "4px", background: `linear-gradient(to right, ${accent}, ${accent}55)`, borderRadius: "2px", marginTop: "24px" }} />
                     </div>
-                    <div style={{ background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff", padding: "40px", borderRadius: "32px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.3)" : "0 20px 40px rgba(0,0,0,0.05)", position: "relative" }}>
-                        <div style={{ position: "absolute", top: -20, right: 40, width: 60, height: 60, borderRadius: "50%", background: accent, color: isDark ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", boxShadow: `0 10px 20px ${accent}60` }}>”</div>
-                        {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.8, fontWeight: "500" }}>{props.description}</p>}
+                    <div>
+                        <div style={{ position: "relative", background: light ? "rgba(255,255,255,0.05)" : "#fff", padding: "40px", borderRadius: "24px", border: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.lg }}>
+                            <div style={{ position: "absolute", top: "-16px", left: "28px", width: "32px", height: "32px", borderRadius: "8px", background: accent, color: light ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 800, boxShadow: DS.shadow.colored(accent) }}>"</div>
+                            {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.85", color: tc, opacity: 0.8, fontFamily: fontStyle }}>{props.description}</p>}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginTop: "20px" }}>
+                            {[["10+", "Years"], ["500+", "Projects"]].map(([n, l]) => (
+                                <div key={l} style={{ padding: "18px", borderRadius: "16px", background: light ? "rgba(255,255,255,0.04)" : "#fff", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, textAlign: "center" }}>
+                                    <p style={{ fontSize: "1.8rem", fontWeight: 900, color: accent, fontFamily: `"Syne", ${fontStyle}` }}>{n}</p>
+                                    <p style={{ fontSize: "12px", color: tc, opacity: 0.55, fontFamily: fontStyle }}>{l}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
         );
     }
+
     if (variant === "Card Based") {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: "transparent", fontFamily: baseFont }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1000px", margin: "0 auto" }}>
-                    <div style={{ position: "absolute", inset: 0, background: accent, borderRadius: "40px", transform: "rotate(-2deg)", zIndex: 0, opacity: 0.8 }} />
-                    <div style={{ position: "relative", background: isDark ? "#111" : "#fff", padding: "80px 60px", borderRadius: "40px", boxShadow: "0 30px 60px rgba(0,0,0,0.1)", textAlign: "center", zIndex: 1, border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}>
-                        <div style={{ width: "64px", height: "6px", background: accent, margin: "0 auto 32px", borderRadius: "3px" }} />
-                        {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "900", color: textColor, marginBottom: "32px", letterSpacing: "-0.02em", lineHeight: "1.2" }}>{props.heading}</h2>}
-                        {props.description && <p style={{ fontSize: "1.2rem", lineHeight: "1.8", color: textColor, opacity: 0.75, maxWidth: "700px", margin: "0 auto" }}>{props.description}</p>}
+            <section className="sp-section-pad" style={{ position: "relative", padding: "96px 56px", background: bg, overflow: "hidden" }}>
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "860px", margin: "0 auto" }}>
+                    <div style={{ position: "relative", background: light ? "rgba(255,255,255,0.04)" : "#fff", padding: "64px 56px", borderRadius: "40px", boxShadow: DS.shadow.xl, textAlign: "center", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
+                        <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "3px", background: `linear-gradient(to right, transparent, ${accent}, transparent)`, borderRadius: "2px" }} />
+                        <Chip text="Why Us" />
+                        {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                        {props.description && <p style={{ fontSize: "1.08rem", lineHeight: "1.85", color: tc, opacity: 0.72, maxWidth: "580px", margin: "0 auto", fontFamily: fontStyle }}>{props.description}</p>}
+                        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", marginTop: "32px" }}>
+                            {["Premium Quality", "24/7 Support", "Proven Results", "Expert Team"].map(f => (
+                                <span key={f} style={{ padding: "7px 16px", borderRadius: "100px", background: `${accent}12`, color: accent, fontSize: "13px", fontWeight: 600, border: `1px solid ${accent}22`, fontFamily: fontStyle }}>{f}</span>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
         );
     }
-    // Default: Centered Standard
+
+    // Centered Standard
     return (
-        <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
-            <BackgroundLayer props={props} />
-            <div style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
-                <div style={{ display: "flex", width: "80px", height: "80px", borderRadius: "24px", background: `${accent}15`, color: accent, alignItems: "center", justifyContent: "center", margin: "0 auto 32px", transform: "rotate(10deg)" }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 22h20L12 2z" /></svg>
-                </div>
-                {props.heading && <h2 style={{ fontSize: "3.5rem", fontWeight: "900", marginBottom: "24px", color: textColor, letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
-                {props.description && <p style={{ fontSize: "1.25rem", lineHeight: "1.8", color: textColor, opacity: 0.7, maxWidth: "600px", margin: "0 auto" }}>{props.description}</p>}
+        <section className="sp-section-pad" style={{ position: "relative", padding: "100px 56px", background: bg }}>
+            <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
+                <Chip text="Our Mission" />
+                {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.85", color: tc, opacity: 0.72, fontFamily: fontStyle }}>{props.description}</p>}
             </div>
         </section>
     );
 };
 
+// ─── GALLERY SECTION ───────────────────────────────────────────────────────────
 const GallerySection = ({ props, branding }) => {
-    const accent = props.accentColor || branding?.primaryColor || "#FDC55E";
-    const bg = props.bgColor || "#FFF9F0";
-    const textColor = props.textColor || "#191919";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
-    const variant = props.variant || "Bento Grid";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const bg = props.bgColor || "#ffffff";
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
+    const variant = props.variant || "Modern Grid";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
 
-    const getItemProps = (item) => {
-        if (typeof item === 'object' && item !== null) {
-            return {
-                title: item.title || "Untitled",
-                description: item.description || "Exceptional quality and design.",
-                image: item.image || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=80"
-            };
-        }
-        return { title: item, description: "Exceptional quality and design.", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=80" };
+    const items = (props.items || []).map((item, i) => {
+        if (typeof item === "string") return { title: item, description: "Premium quality and craftsmanship.", imageQuery: item };
+        return { title: item?.title || `Item ${i + 1}`, description: item?.description || "Premium quality.", imageQuery: item?.imageQuery || item?.title || "professional" };
+    });
+
+    const SectionHeader = () => props.heading ? (
+        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+            <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}28`, marginBottom: "14px", fontFamily: fontStyle }}>Our Work</div>
+            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>
+                {props.heading}
+            </h2>
+        </div>
+    ) : null;
+
+    const GridCard = ({ item, idx }) => {
+        // item.image is pre-resolved by the AI controller (real Unsplash URL)
+        // For template/editor images, fall back to imageQuery or title
+        const imgQuery = item.image && item.image.startsWith("http")
+            ? item.image
+            : (item.imageQuery || item.title || "professional");
+        const img = useUnsplashImage(imgQuery, 640, 480);
+        return (
+            <div className="sp-card-lift sp-img-zoom sp-animate-scale" style={{ background: light ? "rgba(255,255,255,0.04)" : "#fff", borderRadius: "20px", overflow: "hidden", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.md, animationDelay: `${idx * 0.07}s` }}>
+                <div style={{ height: "210px", overflow: "hidden", position: "relative" }}>
+                    <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy"
+                        onError={e => { e.target.src = getStaticFallbackUrl("professional workspace", 640, 480); }} />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 55%, rgba(0,0,0,0.35))" }} />
+                    <div style={{ position: "absolute", top: "12px", left: "12px", width: "30px", height: "30px", borderRadius: "8px", background: accent, color: light ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "12px", boxShadow: DS.shadow.sm }}>
+                        {String(idx + 1).padStart(2, "0")}
+                    </div>
+                </div>
+                <div style={{ padding: "22px" }}>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 700, color: tc, marginBottom: "6px", fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                    <p style={{ fontSize: "13px", color: tc, opacity: 0.6, lineHeight: "1.65", fontFamily: fontStyle }}>{item.description}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "18px", paddingTop: "14px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"}` }}>
+                        <div style={{ color: "#f59e0b", fontSize: "11px" }}>★★★★★</div>
+                        <a href="#" style={{ fontSize: "12px", color: accent, fontWeight: 700, textDecoration: "none", fontFamily: fontStyle }}>View →</a>
+                    </div>
+                </div>
+            </div>
+        );
+
     };
 
-    if (variant === "Horizontal Flex") {
+    if (variant === "Horizontal Scroll" || variant === "Horizontal Flex") {
         return (
-            <section style={{ position: "relative", padding: "80px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
-                    {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", color: textColor, marginBottom: "40px" }}>{props.heading}</h2>}
-                    <div style={{ display: "flex", gap: "32px", overflowX: "auto", paddingBottom: "40px", scrollSnapType: "x mandatory" }}>
-                        {(props.items || []).map((item, i) => {
-                            const { title, description, image } = getItemProps(item);
+            <section style={{ padding: "80px 0", background: bg }}>
+                <div style={{ maxWidth: "1320px", margin: "0 auto", paddingLeft: "56px" }}>
+                    {props.heading && (
+                        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "36px", paddingRight: "56px", flexWrap: "wrap", gap: "12px" }}>
+                            <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>
+                            <a href="#all" style={{ color: accent, fontWeight: 700, textDecoration: "none", fontSize: "14px", fontFamily: fontStyle }}>View All →</a>
+                        </div>
+                    )}
+                </div>
+                <div style={{ display: "flex", gap: "20px", overflowX: "auto", paddingLeft: "56px", paddingRight: "56px", paddingBottom: "16px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+                    {items.map((item, i) => {
+                        const img = resolveItemImage(item, 480, 360);
+                        return (
+                            <div key={i} className="sp-card-lift sp-img-zoom" style={{ scrollSnapAlign: "start", flex: "0 0 280px", background: light ? "rgba(255,255,255,0.04)" : "#fff", borderRadius: "20px", overflow: "hidden", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.md }}>
+                                <div style={{ height: "180px", overflow: "hidden" }}>
+                                    <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy"
+                                        onError={e => { e.target.src = getImageUrl("professional", 480, 360); }} />
+                                </div>
+                                <div style={{ padding: "20px" }}>
+                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: tc, marginBottom: "5px", fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                                    <p style={{ fontSize: "12px", color: tc, opacity: 0.6, lineHeight: "1.6", fontFamily: fontStyle }}>{item.description}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+        );
+    }
+
+    if (variant === "Bento Grid") {
+        return (
+            <section className="sp-section-pad" style={{ padding: "96px 56px", background: bg }}>
+                <div style={{ maxWidth: "1320px", margin: "0 auto" }}>
+                    <SectionHeader />
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "260px", gap: "18px" }}>
+                        {items.slice(0, 6).map((item, i) => {
+                            const big = i === 0;
+                            const wide = i === 3;
+                            const img = resolveItemImage(item, big ? 900 : 500, big ? 600 : 300);
                             return (
-                                <div key={i} style={{ scrollSnapAlign: "center", minWidth: "320px", width: "320px", background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff", padding: "24px", borderRadius: "32px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 10px 40px -10px rgba(0,0,0,0.5)" : "0 10px 40px -10px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", transition: "transform 0.3s", cursor: "pointer" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-8px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                                    <img src={image} alt={title} style={{ width: "160px", height: "160px", objectFit: "cover", borderRadius: "50%", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", marginBottom: "16px", marginTop: "-48px", background: isDark ? "#2D2D2D" : "#fff", border: `8px solid ${isDark ? "rgba(255,255,255,0.05)" : "#ffffff"}` }} />
-                                    <h3 style={{ fontSize: "1.5rem", fontWeight: "700", color: textColor, marginBottom: "8px" }}>{title}</h3>
-                                    <div style={{ display: "flex", color: accent, marginBottom: "16px", gap: "4px" }}>
-                                        {[1, 2, 3, 4, 5].map(s => <span key={s} style={{ fontSize: "14px" }}>★</span>)}
-                                    </div>
-                                    <p style={{ color: textColor, opacity: 0.6, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "24px" }}>{description}</p>
-                                    <div style={{ marginTop: "auto", width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "16px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}` }}>
-                                        <span style={{ fontWeight: "800", fontSize: "1.2rem", color: textColor }}>$18.00</span>
-                                        <button style={{ padding: "8px 16px", borderRadius: "50px", border: `1px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, background: "transparent", color: textColor, fontWeight: "700", fontSize: "0.8rem", cursor: "pointer" }} onMouseEnter={e => { e.currentTarget.style.background = accent; e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = isDark ? "#000" : "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"; e.currentTarget.style.color = textColor; }}>Add</button>
+                                <div key={i} className="sp-card-lift sp-img-zoom" style={{ gridColumn: big || wide ? "span 2" : "span 1", gridRow: big ? "span 2" : "span 1", borderRadius: "22px", overflow: "hidden", position: "relative", boxShadow: DS.shadow.lg }}>
+                                    <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} loading="lazy"
+                                        onError={e => { e.target.src = getImageUrl("professional", 900, 600); }} />
+                                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)" }} />
+                                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px" }}>
+                                        <span className="sp-badge" style={{ background: accent, color: light ? "#000" : "#fff", marginBottom: "8px", fontFamily: fontStyle }}>Featured</span>
+                                        <h3 style={{ color: "#fff", fontSize: big ? "1.5rem" : "1rem", fontWeight: 800, fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                                        {big && <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "13px", marginTop: "6px", fontFamily: fontStyle }}>{item.description}</p>}
                                     </div>
                                 </div>
                             );
@@ -331,83 +719,57 @@ const GallerySection = ({ props, branding }) => {
 
     if (variant === "Masonry Column") {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto" }}>
-                    {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", color: textColor, marginBottom: "48px", textAlign: "center" }}>{props.heading}</h2>}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "32px" }}>
-                        {(props.items || []).map((item, i) => {
-                            const { title, description, image } = getItemProps(item);
-                            return (
-                                <div key={i} style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", borderRadius: "24px", overflow: "hidden", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "transparent"}`, boxShadow: `0 12px 32px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.05)"}`, transition: "transform 0.3s, box-shadow 0.3s", cursor: "pointer" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-8px)"; e.currentTarget.style.boxShadow = `0 20px 40px ${isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.1)"}`; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 12px 32px ${isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.05)"}`; }}>
-                                    <div style={{ width: "100%", height: "240px", overflow: "hidden" }}>
-                                        <img src={image} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
-                                    </div>
-                                    <div style={{ padding: "32px", position: "relative" }}>
-                                        <div style={{ position: "absolute", top: "-24px", right: "32px", width: "48px", height: "48px", background: accent, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#000" : "#fff", fontWeight: "bold", fontSize: "20px", boxShadow: `0 8px 16px ${accent}60` }}>+</div>
-                                        <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: textColor, marginBottom: "12px" }}>{title}</h3>
-                                        <p style={{ color: textColor, opacity: 0.7, lineHeight: "1.6" }}>{description}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
+            <section className="sp-section-pad" style={{ padding: "96px 56px", background: bg }}>
+                <div style={{ maxWidth: "1320px", margin: "0 auto" }}>
+                    <SectionHeader />
+                    <div className="sp-grid-thirds" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "22px" }}>
+                        {items.map((item, i) => <GridCard key={i} item={item} idx={i} />)}
                     </div>
                 </div>
             </section>
         );
     }
 
-    // Default: Bento Grid
+    // Modern Grid (default)
     return (
-        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont }}>
-            <BackgroundLayer props={props} />
-            <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-                {props.heading && <h2 style={{ fontSize: "3rem", fontWeight: "800", marginBottom: "48px", color: textColor, letterSpacing: "-0.02em" }}>{props.heading}</h2>}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gridAutoRows: "280px", gap: "24px" }}>
-                    {(props.items || []).map((item, i) => {
-                        const { title, description, image } = getItemProps(item);
-                        const getGridStyles = (idx) => {
-                            if (idx % 5 === 0) return { gridColumn: "span 2", gridRow: "span 2" };
-                            if (idx % 3 === 0) return { gridColumn: "span 2", gridRow: "span 1" };
-                            return { gridColumn: "span 1", gridRow: "span 1" };
-                        };
-                        return (
-                            <div key={i} style={{ ...getGridStyles(i), borderRadius: "32px", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", position: "relative", overflow: "hidden", background: isDark ? "rgba(255,255,255,0.03)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: `0 12px 32px ${isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)"}`, transition: "transform 0.3s", cursor: "pointer" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-                                <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center", transition: "transform 0.5s", zIndex: 0 }} />
-                                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)", zIndex: 1 }} />
-                                <div style={{ position: "relative", zIndex: 2 }}>
-                                    <div style={{ display: "inline-block", padding: "6px 16px", borderRadius: "50px", background: `${accent}`, color: isDark ? "#000" : "#fff", fontWeight: "700", fontSize: "0.75rem", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Featured</div>
-                                    <h3 style={{ color: "#ffffff", fontSize: "2rem", fontWeight: "800", lineHeight: "1.1" }}>{title}</h3>
-                                    <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1rem", marginTop: "12px", lineHeight: "1.5" }}>{description}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
+        <section className="sp-section-pad" style={{ padding: "96px 56px", background: bg }}>
+            <div style={{ maxWidth: "1320px", margin: "0 auto" }}>
+                <SectionHeader />
+                <div className="sp-grid-thirds" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "22px" }}>
+                    {items.map((item, i) => <GridCard key={i} item={item} idx={i} />)}
                 </div>
             </div>
         </section>
     );
 };
 
+// ─── CTA SECTION ───────────────────────────────────────────────────────────────
 const CTASection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const textColor = props.textColor || "#111827";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
     const variant = props.variant || "Centered Large";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
 
     if (variant === "Floating Pill") {
         return (
-            <section style={{ position: "relative", padding: "60px 32px", background: bg, fontFamily: baseFont }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1000px", margin: "0 auto", padding: "32px 48px", borderRadius: "100px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px", boxShadow: `0 30px 60px ${accent}60`, border: `1px solid rgba(255,255,255,0.2)` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>🚀</div>
-                        <h2 style={{ fontSize: "2rem", fontWeight: "800", color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
+            <section style={{ padding: "48px 56px", background: bg }}>
+                <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "26px 40px", borderRadius: "100px", background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "24px", boxShadow: DS.shadow.colored(accent), flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                        <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🚀</div>
+                        <div>
+                            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#fff", fontFamily: `"Syne", ${fontStyle}`, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
+                            {props.subheading && <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", fontFamily: fontStyle }}>{props.subheading}</p>}
+                        </div>
                     </div>
-                    {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 40px", borderRadius: "50px", background: "#fff", color: accent, fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "transform 0.3s", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>{props.ctaText} →</a>}
+                    {props.ctaText && (
+                        <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: "#fff", color: accent, padding: "14px 36px", borderRadius: "100px", fontSize: "15px", fontFamily: fontStyle, boxShadow: "0 8px 20px rgba(0,0,0,0.15)", flexShrink: 0 }}>
+                            {props.ctaText}
+                        </a>
+                    )}
                 </div>
             </section>
         );
@@ -415,43 +777,66 @@ const CTASection = ({ props, branding }) => {
 
     if (variant === "Split Screen CTA") {
         return (
-            <section style={{ padding: "0", background: bg, fontFamily: baseFont }}>
-                <div style={{ display: "flex", flexWrap: "wrap", minHeight: "600px" }}>
-                    <div style={{ flex: "1 1 50%", padding: "100px 80px", background: accent, color: "#fff", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <div style={{ position: "absolute", top: "-50%", left: "-20%", width: "100%", height: "200%", background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)", zIndex: 0 }} />
-                        <div style={{ position: "relative", zIndex: 1 }}>
-                            {props.heading && <h2 style={{ fontSize: "clamp(3rem, 4vw, 4rem)", fontWeight: "900", marginBottom: "24px", lineHeight: "1.1", letterSpacing: "-0.02em" }}>{props.heading}</h2>}
-                            {props.subheading && <p style={{ fontSize: "1.25rem", opacity: 0.9, lineHeight: "1.6" }}>{props.subheading}</p>}
-                        </div>
+            <section style={{ display: "flex", flexWrap: "wrap", minHeight: "520px", overflow: "hidden" }}>
+                <div className="sp-grid-halves" style={{ flex: "1 1 50%", padding: "88px 72px", background: `linear-gradient(140deg, ${accent} 0%, ${accent}aa 100%)`, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <GlowBlob color="rgba(255,255,255,0.25)" style={{ top: "-40%", right: "-10%", width: "400px", height: "400px", filter: "blur(40px)" }} />
+                    <div style={{ position: "relative", zIndex: 1 }}>
+                        {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                        {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.85)", lineHeight: 1.72, fontFamily: fontStyle }}>{props.subheading}</p>}
                     </div>
-                    <div style={{ flex: "1 1 50%", padding: "100px 80px", display: "flex", alignItems: "center", justifyContent: "center", background: isDark ? "#111" : "#f9fafb", position: "relative" }}>
-                        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at center, ${accent}15 0%, transparent 60%)` }} />
-                        <div style={{ position: "relative", zIndex: 1, background: isDark ? "rgba(255,255,255,0.05)" : "#fff", padding: "60px", borderRadius: "32px", boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(0,0,0,0.05)", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", width: "100%", maxWidth: "400px" }}>
-                            <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: `${accent}20`, margin: "0 auto 32px", display: "flex", alignItems: "center", justifyContent: "center", color: accent }}>
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
-                            </div>
-                            {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", justifyContent: "center", width: "100%", padding: "20px", borderRadius: "16px", background: textColor, color: bg, fontWeight: "800", fontSize: "18px", textDecoration: "none", boxShadow: `0 12px 24px rgba(0,0,0,0.15)`, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
-                            <p style={{ marginTop: "24px", fontSize: "14px", color: textColor, opacity: 0.5, fontWeight: "600" }}>No credit card required.</p>
-                        </div>
+                </div>
+                <div style={{ flex: "1 1 50%", padding: "88px 72px", display: "flex", alignItems: "center", justifyContent: "center", background: light ? "#111" : "#f9fafb", position: "relative" }}>
+                    <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "400px", height: "400px" }} />
+                    <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "360px", width: "100%" }}>
+                        <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", color: accent, fontSize: "24px" }}>✦</div>
+                        {props.ctaText && (
+                            <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "18px 0", borderRadius: "14px", width: "100%", justifyContent: "center", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent), fontSize: "16px" }}>
+                                {props.ctaText}
+                            </a>
+                        )}
+                        <p style={{ marginTop: "14px", fontSize: "12px", color: tc, opacity: 0.45, fontFamily: fontStyle }}>No commitment required.</p>
                     </div>
                 </div>
             </section>
         );
     }
 
-    // Default: Centered Large
+    if (variant === "Dark Banner") {
+        return (
+            <section style={{ padding: "80px 56px", background: "#0f172a", position: "relative", overflow: "hidden" }}>
+                <GlowBlob color={accent} style={{ top: "50%", left: "15%", transform: "translateY(-50%)", width: "500px", height: "500px" }} />
+                <GlowBlob color={accent} style={{ top: "50%", right: "5%", transform: "translateY(-50%)", width: "300px", height: "300px", opacity: 0.5 }} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                    {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.72, marginBottom: "32px", fontFamily: fontStyle }}>{props.subheading}</p>}
+                    {props.ctaText && (
+                        <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: "#fff", padding: "16px 40px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent) }}>
+                            {props.ctaText}
+                        </a>
+                    )}
+                </div>
+            </section>
+        );
+    }
+
+    // Centered Large (default)
     return (
-        <section style={{ position: "relative", padding: "120px 32px", background: bg, fontFamily: baseFont }}>
-            <BackgroundLayer props={props} />
-            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "100px 48px", borderRadius: "48px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", zIndex: 1, boxShadow: isDark ? "0 40px 80px rgba(0,0,0,0.4)" : "0 40px 80px rgba(0,0,0,0.05)" }}>
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "1000px", height: "1000px", background: `radial-gradient(circle at center, ${accent}30 0%, transparent 60%)`, filter: "blur(60px)", zIndex: 0 }} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "700px", margin: "0 auto" }}>
-                    <div style={{ display: "inline-block", padding: "8px 24px", borderRadius: "50px", border: `1px solid ${accent}40`, color: accent, fontWeight: "800", fontSize: "14px", marginBottom: "32px", textTransform: "uppercase", letterSpacing: "1px", background: `${accent}10` }}>Join The Vanguard</div>
-                    {props.heading && <h2 style={{ fontSize: "clamp(3.5rem, 5vw, 4.5rem)", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading}</h2>}
-                    {props.subheading && <p style={{ color: textColor, opacity: 0.8, fontSize: "1.25rem", marginBottom: "48px", lineHeight: "1.6", fontWeight: "500" }}>{props.subheading}</p>}
-                    <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
-                        {props.ctaText && <a href={props.ctaLink || "#"} style={{ display: "inline-flex", padding: "20px 48px", borderRadius: "50px", background: accent, color: isDark ? "#000" : "#fff", fontWeight: "800", fontSize: "16px", textDecoration: "none", boxShadow: `0 20px 40px ${accent}60`, transition: "transform 0.3s" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>{props.ctaText}</a>}
-                        <a href="#" style={{ display: "inline-flex", padding: "20px 48px", borderRadius: "50px", background: "transparent", border: `2px solid ${isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}`, color: textColor, fontWeight: "800", fontSize: "16px", textDecoration: "none", transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }} onMouseLeave={e => { e.currentTarget.style.borderColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"; e.currentTarget.style.color = textColor }}>Learn More</a>
+        <section style={{ padding: "96px 56px", background: bg, position: "relative", overflow: "hidden" }}>
+            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "72px 56px", borderRadius: "40px", background: light ? "rgba(255,255,255,0.03)" : "#f4f4f6", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", boxShadow: light ? "0 40px 80px rgba(0,0,0,0.4)" : DS.shadow.xl, zIndex: 1 }}>
+                <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "700px", height: "700px" }} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
+                    <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "20px", fontFamily: fontStyle }}>Take Action</div>
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                    {props.subheading && <p style={{ fontSize: "1.08rem", color: tc, opacity: 0.72, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>{props.subheading}</p>}
+                    <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                        {props.ctaText && (
+                            <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "16px 40px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent) }}>
+                                {props.ctaText}
+                            </a>
+                        )}
+                        <a href="#learn" className="sp-btn-base" style={{ background: "transparent", color: tc, border: `2px solid ${light ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.12)"}`, padding: "16px 36px", borderRadius: "100px", fontSize: "15px", fontFamily: fontStyle }}>
+                            Learn More
+                        </a>
                     </div>
                 </div>
             </div>
@@ -459,120 +844,143 @@ const CTASection = ({ props, branding }) => {
     );
 };
 
+// ─── CONTACT FORM SECTION ──────────────────────────────────────────────────────
 const ContactFormSection = ({ props, branding, websiteId }) => {
     const fields = props.fields || ["name", "email", "message"];
-    const [formData, setFormData] = useState(fields.reduce((acc, field) => ({ ...acc, [field]: "" }), {}));
+    const [formData, setFormData] = useState(fields.reduce((a, f) => ({ ...a, [f]: "" }), {}));
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const [error, setError] = useState(null);
+    const [formError, setFormError] = useState(null);
 
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const textColor = props.textColor || "#111827";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
     const variant = props.variant || "Left Text Right Form";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitting(true); setError(null);
-        if (!websiteId) { setError("Website ID not found. Please refresh."); setSubmitting(false); return; }
+        setSubmitting(true); setFormError(null);
+        if (!websiteId) { setFormError("Website ID not found."); setSubmitting(false); return; }
         try {
-            const response = await fetch(`/api/public/forms/submit/${websiteId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
-            const result = await response.json();
-            if (result.success) setSubmitted(true);
-            else setError(result.message || "Submission failed");
-        } catch (err) { setError("Failed to submit form. Please try again."); } finally { setSubmitting(false); }
+            const r = await fetch(`/api/public/forms/submit/${websiteId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
+            const res = await r.json();
+            if (res.success) setSubmitted(true); else setFormError(res.message || "Failed");
+        } catch { setFormError("Failed to submit. Try again."); }
+        finally { setSubmitting(false); }
     };
 
-    if (submitted) {
-        return (
-            <section style={{ padding: "80px 32px", background: bg, fontFamily: baseFont }}>
-                <div style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "60px 48px", borderRadius: "32px", background: isDark ? "rgba(255,255,255,0.03)" : "#f4f4f5", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
-                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: accent, color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 24px" }}>✓</div>
-                    <h3 style={{ fontSize: "2rem", fontWeight: "800", color: textColor, marginBottom: "16px" }}>Message Received</h3>
-                    <p style={{ color: textColor, opacity: 0.7 }}>We'll get back to you shortly.</p>
-                </div>
-            </section>
-        );
-    }
+    const inputStyle = { padding: "13px 16px", borderRadius: "12px", fontSize: "14px", background: light ? "rgba(255,255,255,0.06)" : "#f9fafb", border: `1.5px solid ${light ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"}`, color: tc, fontFamily: fontStyle, width: "100%", outline: "none" };
 
-    const renderForm = () => (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
-            {fields.map((field) => {
-                const fname = field.toLowerCase();
-                const isTextarea = fname.includes("message") || fname.includes("comment");
-                const type = fname.includes("email") ? "email" : "text";
-                const styles = { padding: "16px 20px", borderRadius: "12px", width: "100%", background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`, color: textColor, fontSize: "15px", outline: "none" };
-                return isTextarea
-                    ? <textarea key={fname} name={fname} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} rows={5} value={formData[fname] || ""} onChange={(e) => setFormData({ ...formData, [fname]: e.target.value })} style={{ ...styles, resize: "none" }} />
-                    : <input key={fname} type={type} name={fname} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} value={formData[fname] || ""} onChange={(e) => setFormData({ ...formData, [fname]: e.target.value })} style={styles} />;
+    const Form = () => (
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            {formError && <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600, fontSize: "13px", fontFamily: fontStyle }}>{formError}</div>}
+            {fields.map(field => {
+                const f = field.toLowerCase();
+                const isArea = f.includes("message") || f.includes("comment");
+                const label = field.charAt(0).toUpperCase() + field.slice(1);
+                return isArea
+                    ? <textarea key={f} name={f} placeholder={label} rows={4} value={formData[f] || ""} onChange={e => setFormData({ ...formData, [f]: e.target.value })} style={{ ...inputStyle, resize: "vertical" }} />
+                    : <input key={f} type={f.includes("email") ? "email" : "text"} name={f} placeholder={label} value={formData[f] || ""} onChange={e => setFormData({ ...formData, [f]: e.target.value })} style={inputStyle} />;
             })}
-            <button type="submit" disabled={submitting} style={{ padding: "18px", borderRadius: "12px", background: submitting ? "gray" : accent, color: "white", fontWeight: "700", fontSize: "16px", border: "none", cursor: submitting ? "not-allowed" : "pointer" }}>{submitting ? "Sending..." : "Submit Inquiry"}</button>
+            <button type="submit" disabled={submitting} className="sp-btn-base" style={{ background: submitting ? "rgba(100,100,100,0.5)" : accent, color: "#fff", padding: "15px", justifyContent: "center", borderRadius: "12px", width: "100%", fontSize: "15px", fontFamily: fontStyle, boxShadow: submitting ? "none" : DS.shadow.colored(accent), cursor: submitting ? "not-allowed" : "pointer", marginTop: "4px" }}>
+                {submitting ? "Sending…" : (props.submitText || "Send Message")}
+            </button>
         </form>
     );
 
-    if (variant === "Centered Card") {
+    if (submitted) {
         return (
-            <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "800px", height: "800px", background: `radial-gradient(circle, ${accent}20 0%, transparent 60%)`, filter: "blur(60px)", zIndex: 0 }} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto", background: isDark ? "rgba(30,30,30,0.4)" : "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)", padding: "64px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 40px 80px rgba(0,0,0,0.5)" : "0 40px 80px rgba(0,0,0,0.05)" }}>
-                    <div style={{ width: "64px", height: "64px", borderRadius: "20px", background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px", color: accent }}>
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                    </div>
-                    <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: textColor, marginBottom: "40px", textAlign: "center", letterSpacing: "-0.02em" }}>{props.heading || "Contact Us"}</h2>
-                    {error && <div style={{ padding: "16px", borderRadius: "16px", marginBottom: "24px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "600" }}>{error}</div>}
-                    {renderForm()}
+            <section style={{ padding: "80px 56px", background: bg }}>
+                <div style={{ maxWidth: "520px", margin: "0 auto", textAlign: "center", padding: "56px 40px", borderRadius: "32px", background: light ? "rgba(255,255,255,0.04)" : "#fff", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.xl }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 20px", boxShadow: DS.shadow.colored(accent) }}>✓</div>
+                    <h3 style={{ fontSize: "1.6rem", fontWeight: 800, color: tc, marginBottom: "10px", fontFamily: `"Syne", ${fontStyle}` }}>Message Sent!</h3>
+                    <p style={{ color: tc, opacity: 0.65, fontFamily: fontStyle }}>We'll get back to you within 24 hours.</p>
                 </div>
             </section>
         );
     }
 
-    // Default: Left Text Right Form
-    return (
-        <section style={{ position: "relative", padding: "100px 32px", background: bg, fontFamily: baseFont, overflow: "hidden" }}>
-            <BackgroundLayer props={props} />
-            <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center", position: "relative", zIndex: 1 }}>
-                <div>
-                    <div style={{ display: "inline-block", padding: "8px 24px", borderRadius: "50px", border: `1px solid ${accent}40`, color: accent, fontWeight: "800", fontSize: "14px", marginBottom: "32px", textTransform: "uppercase", letterSpacing: "1px", background: `${accent}10` }}>Get In Touch</div>
-                    <h2 style={{ fontSize: "clamp(3.5rem, 5vw, 4.5rem)", fontWeight: "900", color: textColor, marginBottom: "24px", letterSpacing: "-0.03em", lineHeight: "1.1" }}>{props.heading || "Let's Talk"}</h2>
-                    <p style={{ fontSize: "1.25rem", color: textColor, opacity: 0.7, lineHeight: "1.6" }}>We'd love to hear from you. Fill out the form and our team will respond within 24 hours.</p>
+    if (variant === "Centered Card") {
+        return (
+            <section style={{ padding: "96px 56px", background: bg, position: "relative", overflow: "hidden" }}>
+                <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "600px", height: "600px" }} />
+                <div style={{ position: "relative", zIndex: 1, maxWidth: "560px", margin: "0 auto", background: light ? "rgba(15,15,25,0.7)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(24px)", padding: "56px 48px", borderRadius: "36px", border: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.xl }}>
+                    <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: accent }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                    </div>
+                    <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: tc, textAlign: "center", marginBottom: "28px", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading || "Contact Us"}</h2>
+                    <Form />
                 </div>
-                <div style={{ background: isDark ? "rgba(255,255,255,0.02)" : "#ffffff", padding: "48px", borderRadius: "40px", border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.3)" : "0 20px 40px rgba(0,0,0,0.05)" }}>
-                    {error && <div style={{ padding: "16px", borderRadius: "16px", marginBottom: "24px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "600" }}>{error}</div>}
-                    {renderForm()}
+            </section>
+        );
+    }
+
+    return (
+        <section style={{ padding: "96px 56px", background: bg, position: "relative", overflow: "hidden" }}>
+            <div className="sp-grid-halves" style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center", position: "relative", zIndex: 1 }}>
+                <div>
+                    <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "18px", fontFamily: fontStyle }}>Get In Touch</div>
+                    <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading || "Let's Talk"}</h2>
+                    <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.7, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>Fill out the form and we'll respond promptly.</p>
+                    {[["📧", "Email", "hello@company.com"], ["📞", "Phone", "+1 (555) 000-0000"], ["📍", "Location", "New York, USA"]].map(([icon, label, val]) => (
+                        <div key={label} style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "14px", padding: "14px 18px", background: light ? "rgba(255,255,255,0.04)" : "#f9fafb", borderRadius: "14px", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
+                            <span style={{ fontSize: "18px" }}>{icon}</span>
+                            <div>
+                                <p style={{ fontSize: "10px", color: tc, opacity: 0.45, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: fontStyle }}>{label}</p>
+                                <p style={{ fontSize: "13px", fontWeight: 600, color: tc, fontFamily: fontStyle }}>{val}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div style={{ background: light ? "rgba(255,255,255,0.03)" : "#fff", padding: "44px", borderRadius: "32px", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.lg }}>
+                    <Form />
                 </div>
             </div>
         </section>
     );
 };
 
+// ─── FOOTER SECTION ────────────────────────────────────────────────────────────
 const FooterSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const bg = props.bgColor || "#000000";
-    const textColor = props.textColor || "#9ca3af";
-    const font = props.fontFamily || branding?.font;
-    const isDark = textColor === "#ffffff" || textColor === "#f0f0ff" || textColor?.toLowerCase()?.includes("fff");
+    const bg = props.bgColor || "#0f172a";
+    const tc = props.textColor || "#9ca3af";
+    const light = isLightText(tc);
     const variant = props.variant || "Simple Centered";
-    const baseFont = font ? `"${font}", sans-serif` : "system-ui, sans-serif";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
+    const yr = new Date().getFullYear();
 
     if (variant === "Multi-Column Mock") {
         return (
-            <footer style={{ position: "relative", padding: "80px 32px 40px", background: bg, fontFamily: baseFont, borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "60px" }}>
-                    <div>
-                        <h3 style={{ fontSize: "20px", fontWeight: "800", color: textColor, marginBottom: "16px" }}>Company</h3>
-                        <p style={{ color: textColor, opacity: 0.6, lineHeight: "1.6", maxWidth: "300px" }}>Building the future of digital experiences with uncompromising quality.</p>
+            <footer style={{ background: bg, padding: "64px 56px 32px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)"}` }}>
+                <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+                    <div className="sp-footer-cols" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "48px" }}>
+                        <div>
+                            <h3 style={{ fontSize: "20px", fontWeight: 900, color: accent, marginBottom: "14px", fontFamily: `"Syne", ${fontStyle}`, letterSpacing: "-0.02em" }}>{props.brand || branding?.brandName || "Company"}</h3>
+                            <p style={{ color: tc, opacity: 0.65, lineHeight: 1.8, maxWidth: "260px", fontSize: "14px", fontFamily: fontStyle }}>{props.text || "Building exceptional digital experiences."}</p>
+                            <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
+                                {["𝕏", "in", "►", "f"].map(s => (
+                                    <a key={s} href="#" style={{ width: "34px", height: "34px", borderRadius: "8px", background: light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", color: tc, fontSize: "12px", fontWeight: 700, textDecoration: "none" }}>{s}</a>
+                                ))}
+                            </div>
+                        </div>
+                        {[["Product", ["Features", "Pricing", "Changelog"]], ["Company", ["About", "Careers", "Blog"]], ["Legal", ["Privacy", "Terms", "Cookies"]]].map(([col, its]) => (
+                            <div key={col}>
+                                <h4 style={{ color: light ? "#fff" : "#111827", fontWeight: 700, fontSize: "13px", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: fontStyle }}>{col}</h4>
+                                {its.map(item => <a key={item} href="#" style={{ display: "block", color: tc, opacity: 0.6, textDecoration: "none", marginBottom: "9px", fontSize: "14px", fontFamily: fontStyle }}>{item}</a>)}
+                            </div>
+                        ))}
                     </div>
-                    <div><h4 style={{ color: textColor, fontWeight: "700", marginBottom: "16px" }}>Product</h4><p style={{ color: textColor, opacity: 0.6 }}>Features</p><p style={{ color: textColor, opacity: 0.6 }}>Pricing</p></div>
-                    <div><h4 style={{ color: textColor, fontWeight: "700", marginBottom: "16px" }}>Resources</h4><p style={{ color: textColor, opacity: 0.6 }}>Blog</p><p style={{ color: textColor, opacity: 0.6 }}>Docs</p></div>
-                    <div><h4 style={{ color: textColor, fontWeight: "700", marginBottom: "16px" }}>Legal</h4><p style={{ color: textColor, opacity: 0.6 }}>Privacy</p><p style={{ color: textColor, opacity: 0.6 }}>Terms</p></div>
-                </div>
-                <div style={{ position: "relative", zIndex: 1, textAlign: "center", color: textColor, opacity: 0.5, fontSize: "14px", paddingTop: "40px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}` }}>
-                    {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
+                    <div style={{ borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                        <p style={{ color: tc, opacity: 0.45, fontSize: "13px", fontFamily: fontStyle }}>© {yr} {props.brand || "Company"}. All rights reserved.</p>
+                        <p style={{ color: tc, opacity: 0.35, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>SitePilot</span></p>
+                    </div>
                 </div>
             </footer>
         );
@@ -580,180 +988,133 @@ const FooterSection = ({ props, branding }) => {
 
     if (variant === "Ultra Minimal") {
         return (
-            <footer style={{ position: "relative", padding: "40px 32px", background: bg, fontFamily: baseFont, textAlign: "left" }}>
-                <BackgroundLayer props={props} />
-                <div style={{ position: "relative", zIndex: 1, maxWidth: "1200px", margin: "0 auto", display: "flex", justifyContent: "space-between", color: textColor, opacity: 0.6, fontSize: "14px", fontWeight: "500" }}>
-                    <span>{props.text || `© ${new Date().getFullYear()} All rights reserved.`}</span>
-                    <span>Designed with intention.</span>
+            <footer style={{ background: bg, padding: "28px 56px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}>
+                <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                    <p style={{ color: tc, opacity: 0.5, fontSize: "13px", fontFamily: fontStyle }}>{props.text || `© ${yr} All rights reserved.`}</p>
+                    <p style={{ color: tc, opacity: 0.3, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>SitePilot</span></p>
                 </div>
             </footer>
         );
     }
 
-    // Default: Simple Centered
     return (
-        <footer style={{ position: "relative", padding: "48px 32px", textAlign: "center", color: textColor, fontSize: "15px", borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, background: bg, fontFamily: baseFont }}>
-            <BackgroundLayer props={props} />
-            <div style={{ position: "relative", zIndex: 1, opacity: 0.9 }}>
-                {props.text || `© ${new Date().getFullYear()} All rights reserved.`}
-                <span style={{ marginLeft: "16px", fontWeight: "600", color: accent }}>Built with SitePilot</span>
-            </div>
+        <footer style={{ background: bg, padding: "36px 56px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, textAlign: "center" }}>
+            <p style={{ color: tc, opacity: 0.65, fontSize: "14px", fontFamily: fontStyle }}>{props.text || `© ${yr} All rights reserved.`} <span style={{ color: accent, fontWeight: 700 }}>· SitePilot</span></p>
         </footer>
     );
 };
 
-const ButtonSection = ({ props, branding }) => {
-    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const bg = props.bgColor || "transparent";
-    const textColor = props.textColor || "#ffffff";
-    const align = props.align || "center";
-    const variant = props.variant || "Primary Pill";
-
-    let btnStyles = { display: "inline-flex", padding: "16px 40px", borderRadius: "50px", background: accent, color: textColor, fontWeight: "700", fontSize: "16px", textDecoration: "none", boxShadow: `0 8px 16px ${accent}40`, transition: "all 0.2s" };
-
-    if (variant === "Secondary Outline") btnStyles = { ...btnStyles, background: "transparent", color: accent, border: `2px solid ${accent}`, boxShadow: "none" };
-    else if (variant === "Ghost Action") btnStyles = { ...btnStyles, background: "transparent", color: textColor, boxShadow: "none", opacity: 0.8, border: `1px solid transparent` };
-
-    return (
-        <section style={{ padding: "32px", background: bg, textAlign: align }}>
-            <a href={props.link || "#"} style={btnStyles}>{props.text || "Click Me"}</a>
-        </section>
-    );
+// ─── Section Registry ──────────────────────────────────────────────────────────
+export const SECTION_MAP = {
+    Navbar: NavbarSection,
+    Hero: HeroSection,
+    Text: TextSection,
+    Gallery: GallerySection,
+    CTA: CTASection,
+    ContactForm: ContactFormSection,
+    Footer: FooterSection,
 };
 
-const SpacerSection = ({ props }) => {
-    const bg = props.bgColor || "transparent";
-    const height = props.height || "80px";
-    const variant = props.variant || "Standard";
+// ─── Loading / Error screens ───────────────────────────────────────────────────
+const LoadingScreen = () => (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f172a" }}>
+        <div style={{ textAlign: "center" }}>
+            <div style={{ width: "48px", height: "48px", border: "3px solid rgba(99,102,241,0.25)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "sp-spin 0.85s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "14px", fontFamily: "system-ui" }}>Loading your site…</p>
+        </div>
+    </div>
+);
 
-    let actualHeight = height;
-    if (variant === "Large") actualHeight = "160px";
+const ErrorScreen = ({ message }) => (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f172a" }}>
+        <div style={{ textAlign: "center", maxWidth: "400px", padding: "40px" }}>
+            <div style={{ fontSize: "56px", fontWeight: 900, color: "#6366f1", lineHeight: 1 }}>404</div>
+            <p style={{ color: "rgba(255,255,255,0.5)", margin: "16px 0", lineHeight: 1.7, fontFamily: "system-ui" }}>{message}</p>
+            <a href="/" style={{ color: "#6366f1", textDecoration: "none", fontWeight: 700, fontFamily: "system-ui" }}>← Go Home</a>
+        </div>
+    </div>
+);
 
-    if (variant === "Divider Line") {
-        return (
-            <section style={{ padding: `${actualHeight} 32px`, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "100%", maxWidth: "1200px", height: "1px", background: "currentColor", opacity: 0.1 }} />
-            </section>
-        );
-    }
-
-    return <section style={{ height: actualHeight, background: bg }} />;
-};
-
-const ImageSection = ({ props }) => {
-    const bg = props.bgColor || "transparent";
-    const align = props.align || "center";
-    const variant = props.variant || "Rounded Shadow";
-
-    let imgStyle = { maxWidth: "100%", height: "auto", borderRadius: "24px", boxShadow: "0 12px 32px rgba(0,0,0,0.1)", objectFit: "cover" };
-
-    if (variant === "Full Bleed Edge") imgStyle = { ...imgStyle, borderRadius: "0", boxShadow: "none", width: "100%" };
-    else if (variant === "Circle Cropped") imgStyle = { ...imgStyle, borderRadius: "50%", aspectRatio: "1/1", width: "400px", margin: "0 auto", display: "block" };
-
-    return (
-        <section style={{ padding: variant === "Full Bleed Edge" ? "0" : "40px 32px", background: bg, textAlign: align }}>
-            <img src={props.src || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1000&q=80"} alt={props.alt || "Image"} style={imgStyle} />
-        </section>
-    );
-};
-
-// Section registry
-export const SECTION_MAP = { Navbar: NavbarSection, Hero: HeroSection, Text: TextSection, Gallery: GallerySection, CTA: CTASection, ContactForm: ContactFormSection, Footer: FooterSection, Button: ButtonSection, Spacer: SpacerSection, Image: ImageSection };
-
-// ─── Main Public Site Renderer ────────────────────────────────────────────────
+// ─── Main Renderer ─────────────────────────────────────────────────────────────
 export default function PublicSiteRenderer() {
     const { tenantSlug, pageSlug } = useParams();
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const [siteData, setSiteData] = useState(null);
     const [currentPage, setCurrentPage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        let slug = tenantSlug;
-        if (!slug) slug = window.location.hostname;
-        
+        let slug = tenantSlug || window.location.hostname;
         const websiteId = searchParams.get("websiteId");
         const websiteSlug = searchParams.get("websiteSlug");
-        
-        // Build URL with proper query parameters
         let url = `/public/sites/${slug}`;
         const params = new URLSearchParams();
         if (websiteId) params.append("websiteId", websiteId);
         if (websiteSlug) params.append("websiteSlug", websiteSlug);
-        // If tenantSlug is provided in route, use it as websiteSlug fallback
-        if (tenantSlug && !websiteId && !websiteSlug) {
-            params.append("websiteSlug", tenantSlug);
-        }
+        if (tenantSlug && !websiteId && !websiteSlug) params.append("websiteSlug", tenantSlug);
         if (params.toString()) url += `?${params.toString()}`;
 
         api.get(url)
-            .then((res) => {
+            .then(res => {
                 setSiteData(res.data);
-                const home = res.data.pages.find((p) => p.isHomePage) || res.data.pages[0];
-                setCurrentPage(home);
+                setCurrentPage(res.data.pages.find(p => p.isHomePage) || res.data.pages[0]);
             })
-            .catch((err) => setError(err.response?.data?.message || "Site not found"))
+            .catch(err => setError(err.response?.data?.message || "Site not found"))
             .finally(() => setLoading(false));
     }, [tenantSlug, searchParams]);
 
     useEffect(() => {
         if (!siteData || !pageSlug) return;
-        const found = siteData.pages.find((p) => p.slug === pageSlug);
+        const found = siteData.pages.find(p => p.slug === pageSlug);
         if (found) setCurrentPage(found);
     }, [pageSlug, siteData]);
 
     useEffect(() => {
-        if (siteData?.tenant?.branding) {
-            const { primaryColor, secondaryColor, font } = siteData.tenant.branding;
-            if (primaryColor) document.documentElement.style.setProperty("--color-primary", primaryColor);
-            if (secondaryColor) document.documentElement.style.setProperty("--color-secondary", secondaryColor);
-            if (font) document.documentElement.style.setProperty("--font-family", `"${font}", sans-serif`);
+        if (!siteData?.tenant?.branding) return;
+        const { primaryColor, secondaryColor, font } = siteData.tenant.branding;
+        if (primaryColor) document.documentElement.style.setProperty("--color-primary", primaryColor);
+        if (secondaryColor) document.documentElement.style.setProperty("--color-secondary", secondaryColor);
+        if (font) {
+            loadFont(font);
+            document.documentElement.style.setProperty("--font-family", `"${font}", sans-serif`);
         }
+        if (siteData.website?.name) document.title = siteData.website.name;
     }, [siteData]);
 
-    if (loading) return (
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f0f1a" }}>
-            <div style={{ textAlign: "center" }}>
-                <div style={{ width: "48px", height: "48px", border: "3px solid #6366f1", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-                <p style={{ color: "#a0a0c0" }}>Loading site...</p>
-            </div>
-        </div>
-    );
-
-    if (error) return (
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f0f1a" }}>
-            <div style={{ textAlign: "center" }}>
-                <h1 style={{ fontSize: "48px", fontWeight: "900", color: "#6366f1", marginBottom: "16px" }}>404</h1>
-                <p style={{ color: "#a0a0c0", marginBottom: "24px" }}>{error}</p>
-                <a href="/" style={{ color: "#6366f1", textDecoration: "none" }}>← Go home</a>
-            </div>
-        </div>
-    );
+    if (loading) return <LoadingScreen />;
+    if (error) return <ErrorScreen message={error} />;
 
     const branding = siteData?.tenant?.branding;
     const sections = currentPage?.layoutConfig?.sections || [];
-    const websiteIdFromUrl = searchParams.get("websiteId");
-    const websiteId = websiteIdFromUrl || siteData?.website?._id || currentPage?.websiteId || siteData?.pages?.[0]?.websiteId;
+    const websiteId = searchParams.get("websiteId") || siteData?.website?._id || siteData?.pages?.[0]?.websiteId;
 
     return (
-        <div className="responsive-master-container" style={{ minHeight: "100vh", background: "#0f0f1a", fontFamily: `"${branding?.font || "Montserrat"}", "DM Sans", sans-serif`, color: "#f0f0ff", overflowX: "hidden" }}>
+        <div style={{ minHeight: "100vh", background: "#fff", overflowX: "hidden" }}>
             <style>{globalResponsiveCss}</style>
-            {/* Page navigation (multi-page) */}
+
+            {/* Multi-page floating nav */}
             {siteData?.pages?.length > 1 && (
-                <div style={{ display: "flex", gap: "4px", padding: "8px 32px", background: "rgba(0,0,0,0.4)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    {siteData.pages.map((page) => (
-                        <button key={page._id} onClick={() => setCurrentPage(page)} style={{ padding: "4px 14px", borderRadius: "6px", fontSize: "12px", background: currentPage?._id === page._id ? `${branding?.primaryColor || "#6366f1"}20` : "transparent", border: currentPage?._id === page._id ? `1px solid ${branding?.primaryColor || "#6366f1"}50` : "1px solid transparent", color: currentPage?._id === page._id ? branding?.primaryColor || "#6366f1" : "#606090", cursor: "pointer" }}>{page.title}</button>
+                <div className="sp-page-nav">
+                    {siteData.pages.map(page => (
+                        <button key={page._id} onClick={() => setCurrentPage(page)} style={{ padding: "6px 16px", borderRadius: "100px", fontSize: "12px", fontWeight: 700, background: currentPage?._id === page._id ? (branding?.primaryColor || "#6366f1") : "transparent", border: "none", color: currentPage?._id === page._id ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", transition: "all 0.2s", fontFamily: "system-ui" }}>
+                            {page.title}
+                        </button>
                     ))}
                 </div>
             )}
-            {sections.sort((a, b) => a.order - b.order).map((section) => {
+
+            {[...sections].sort((a, b) => a.order - b.order).map(section => {
                 const Component = SECTION_MAP[section.type];
                 if (!Component) return null;
                 return <Component key={section.id} props={section.props || {}} branding={branding} websiteId={websiteId} />;
             })}
-            {sections.length === 0 && <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}><p style={{ color: "#606090" }}>This page has no content yet.</p></div>}
+
+            {sections.length === 0 && (
+                <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <p style={{ color: "rgba(0,0,0,0.25)", fontFamily: "system-ui" }}>This page has no content yet.</p>
+                </div>
+            )}
         </div>
     );
 }
