@@ -23,8 +23,8 @@ export default function App() {
   const isSaasApp =
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
-    hostname === "sitepilot.com" ||
-    hostname === "www.sitepilot.com" ||
+    hostname === "sitezy.ai.com" ||
+    hostname === "www.sitezy.ai.com" ||
     /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) ||
     hostname.includes("ngrok") ||
     hostname.includes("onrender.com");

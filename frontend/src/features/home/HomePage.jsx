@@ -179,7 +179,7 @@ const ChartIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 
 /* ─── Feature data ─────────────────────────────────────────────────────── */
 const FEATURES = [
-    { icon: <MagicIcon />, gradient: "#111", title: "AI-Powered Builder", desc: "Describe your vision in plain english. SitePilot's AI drafts pixel-perfect pages in seconds — no design skills required." },
+    { icon: <MagicIcon />, gradient: "#111", title: "AI-Powered Builder", desc: "Describe your vision in plain english. Sitezy.ai's AI drafts pixel-perfect pages in seconds — no design skills required." },
     { icon: <BrushIcon />, gradient: "#111", title: "Visual Drag & Drop", desc: "A canvas that feels as natural as sketching. Move, resize, and style every element with professional-grade precision." },
     { icon: <GlobeIcon />, gradient: "#111", title: "One-Click Publishing", desc: "A global CDN, automatic SSL, and custom domains. Your site goes live instantly and stays blazing fast worldwide." },
     { icon: <BoltIcon />, gradient: "#111", title: "Edge Performance", desc: "Sub-100ms load times. Intelligent caching, optimised assets, and Core Web Vitals built in from the ground up." },
@@ -291,7 +291,7 @@ export default function HomePage() {
                             maxWidth: 580, margin: "0 auto 44px", fontWeight: 400, letterSpacing: "-0.01em",
                             animation: "heroFadeUp 0.7s cubic-bezier(0.4,0,0.2,1) 0.45s both",
                         }}>
-                            SitePilot combines a professional drag-and-drop editor with generative AI — so you can go from idea to live website in{" "}
+                            Sitezy.ai combines a professional drag-and-drop editor with generative AI — so you can go from idea to live website in{" "}
                             <span style={{ color: "rgba(165,180,252,0.9)", fontWeight: 500 }}>minutes, not months.</span>
                         </p>
 
@@ -424,7 +424,7 @@ export default function HomePage() {
                                 </span>
                             </h2>
                             <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", marginBottom: 40, lineHeight: 1.65, maxWidth: 460, margin: "0 auto 40px", letterSpacing: "-0.01em" }}>
-                                Join 50,000+ teams who chose SitePilot to build, launch, and scale their online presence.
+                                Join 50,000+ teams who chose Sitezy.ai to build, launch, and scale their online presence.
                             </p>
                             <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
                                 <Link to="/register" className="hp-cta-primary" style={{ fontSize: 15, padding: "15px 36px" }}>

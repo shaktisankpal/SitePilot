@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }) {
                                 <Zap size={16} color="var(--text-primary)" />
                             </div>
                             <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                                SitePilot
+                                Sitezy.ai
                             </span>
                         </Link>
 

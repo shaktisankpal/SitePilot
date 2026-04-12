@@ -69,7 +69,7 @@ const seed = async () => {
         layoutConfig: {
             sections: [
                 { id: "s1", type: "Navbar", props: { brand: "Acme Corp", links: ["Home", "About", "Services", "Contact"] }, order: 0 },
-                { id: "s2", type: "Hero", props: { heading: "Build Better Websites", subheading: "Powered by SitePilot AI", ctaText: "Get Started", ctaLink: "#", backgroundImage: "" }, order: 1 },
+                { id: "s2", type: "Hero", props: { heading: "Build Better Websites", subheading: "Powered by Sitezy.ai AI", ctaText: "Get Started", ctaLink: "#", backgroundImage: "" }, order: 1 },
                 { id: "s3", type: "Text", props: { heading: "About Acme", description: "We have been building exceptional digital experiences since 2010. Our team of experts delivers cutting-edge solutions." }, order: 2 },
                 { id: "s4", type: "Gallery", props: { heading: "Our Work", items: ["Project Alpha", "Project Beta", "Project Gamma", "Project Delta"] }, order: 3 },
                 { id: "s5", type: "CTA", props: { heading: "Ready to Get Started?", subheading: "Join hundreds of satisfied customers.", ctaText: "Contact Us", ctaLink: "#contact" }, order: 4 },

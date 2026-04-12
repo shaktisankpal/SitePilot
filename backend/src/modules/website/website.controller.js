@@ -70,7 +70,7 @@ export const createWebsite = async (req, res) => {
                     type: "Hero",
                     props: {
                         heading: `Welcome to ${value.name}`,
-                        subheading: value.description || "Built with SitePilot",
+                        subheading: value.description || "Built with Sitezy.ai",
                         ctaText: "Get Started",
                         ctaLink: "#",
                     },

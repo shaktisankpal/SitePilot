@@ -39,7 +39,7 @@ export const addDomain = async (req, res) => {
     res.status(201).json({
         success: true,
         domain: domainDoc,
-        verificationInstructions: `Add a TXT record to your DNS: sitepilot-verify=${domainDoc.verificationToken}`,
+        verificationInstructions: `Add a TXT record to your DNS: sitezy.ai-verify=${domainDoc.verificationToken}`,
     });
 };
 

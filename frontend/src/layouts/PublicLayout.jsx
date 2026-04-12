@@ -68,7 +68,7 @@ function Logo() {
                 color: "white",
                 lineHeight: 1,
             }}>
-                Site<span style={{ color: "var(--color-primary)" }}>Pilot</span>
+                Sitezy<span style={{ color: "var(--color-primary)" }}>.ai</span>
             </span>
         </div>
     );
@@ -136,7 +136,7 @@ export function PublicFooter() {
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     <Logo />
                     <span style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", marginLeft: 8 }}>
-                        © 2026 SitePilot, Inc.
+                        © 2026 Sitezy.ai, Inc.
                     </span>
                 </div>
                 <div style={{ display: "flex", gap: 28 }}>

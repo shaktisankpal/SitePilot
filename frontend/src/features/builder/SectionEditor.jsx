@@ -160,7 +160,7 @@ export default function SectionEditor({ section, onChange }) {
             });
             if (res.data.success) {
                 // If it starts with /uploads, prepend the backend URL if we need to, 
-                // but the sitepilot router usually handles relative paths via proxy or base url.
+                // but the sitezy.ai router usually handles relative paths via proxy or base url.
                 // Let's use the full absolute URL for the image
                 const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
                 const base = backendUrl.replace("/api", "");

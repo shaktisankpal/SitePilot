@@ -6,7 +6,7 @@ import { fetchWebsites } from "../../store/slices/websiteSlice.js";
 import toast from "react-hot-toast";
 import {
     Wand2, Sparkles, Loader2, CheckCircle,
-    Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate
+    Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate, Globe, Mic
 } from "lucide-react";
 import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
 import { updateTenantBranding } from "../../store/slices/authSlice.js";
@@ -40,8 +40,17 @@ export default function AIGeneratorPage() {
         baseTemplateSections: null
     });
     const [loading, setLoading] = useState(false);
+    const [activeModel, setActiveModel] = useState(null);
     const [result, setResult] = useState(null);
     const [activePageIdx, setActivePageIdx] = useState(0);
+    const [inputLanguage, setInputLanguage] = useState("en");
+    const [isListening, setIsListening] = useState(false);
+
+    const TRANSLATION_LANGUAGES = [
+        { code: "en", label: "English" },
+        { code: "hi", label: "Hindi (हिंदी)" },
+        { code: "mr", label: "Marathi (मराठी)" },
+    ];
 
     const toggleFeature = (f) => {
         setForm((p) => ({
@@ -50,13 +59,100 @@ export default function AIGeneratorPage() {
         }));
     };
 
-    const handleGenerate = async (e) => {
-        e.preventDefault();
+    const handleVoiceInput = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.error("Browser does not support voice input natively.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        const langCode = inputLanguage === 'en' ? 'en-US' : (inputLanguage === 'hi' ? 'hi-IN' : 'mr-IN');
+        recognition.lang = langCode;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            toast.loading("Listening... Speak now", { id: "voice-toast" });
+        };
+
+        recognition.onresult = (event) => {
+            let addText = "";
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    addText += event.results[i][0].transcript + " ";
+                }
+            }
+            if (addText.trim()) {
+                setForm(p => ({ ...p, businessType: p.businessType + (p.businessType ? " " : "") + addText.trim() }));
+                toast.success("Voice added!", { id: "voice-toast" });
+            } else {
+                toast.dismiss("voice-toast");
+            }
+        };
+
+        recognition.onerror = (event) => {
+            setIsListening(false);
+            if (event.error !== 'no-speech') {
+                toast.error("Voice input failed: " + event.error, { id: "voice-toast" });
+            } else {
+                toast.dismiss("voice-toast");
+            }
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error(e);
+            setIsListening(false);
+            toast.dismiss("voice-toast");
+        }
+    };
+
+    const handleGenerate = async (e, preferredModel = 'qwen') => {
+        if (e) e.preventDefault();
         if (!form.businessType) return toast.error("Please describe your business");
         if (form.features.length === 0) return toast.error("Select at least one feature");
-        setLoading(true); setResult(null);
+        setLoading(true); setResult(null); setActiveModel(preferredModel);
+
+        let translatedConcept = form.businessType;
+
+        if (inputLanguage !== "en") {
+            try {
+                const translatorAPI = self.translation || self.ai?.translator;
+                if (translatorAPI && translatorAPI.createTranslator) {
+                    const canTranslate = await translatorAPI.canTranslate({
+                        sourceLanguage: inputLanguage,
+                        targetLanguage: "en"
+                    });
+                    if (canTranslate !== "no") {
+                        toast("Initializing AI Translator...", { icon: "🌐" });
+                        const translator = await translatorAPI.createTranslator({
+                            sourceLanguage: inputLanguage,
+                            targetLanguage: "en"
+                        });
+                        translatedConcept = await translator.translate(form.businessType);
+                        toast.success("Translation applied!");
+                        console.log("Translated concept:", translatedConcept);
+                    } else {
+                        toast.error("Translation language pair not natively supported by browser. Sending raw text.");
+                    }
+                } else {
+                    toast.error("Browser Built-in AI Translation API not detected. Enable it in chrome://flags. Sending raw text.");
+                }
+            } catch (err) {
+                console.error("Translation error:", err);
+                toast.error("Translation failed, falling back to original input.");
+            }
+        }
+
         try {
-            const res = await api.post("/ai/generate-website", { ...form, autoPublish: false });
+            const res = await api.post("/ai/generate-website", { ...form, businessType: translatedConcept, autoPublish: false, preferredModel });
             setResult(res.data);
             toast.success("Layout generated! ✨");
             if (form.websiteId) {
@@ -82,14 +178,14 @@ export default function AIGeneratorPage() {
                         <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>AI Playground</h1>
                     </div>
                     <p style={{ fontSize: 16, color: "var(--text-secondary)", paddingLeft: 64 }}>
-                        Powered by Google Gemini — Generate a complete, stunning website layout in seconds.
+                        Powered by Sitezy's AI — Generate a complete, stunning website layout in seconds.
                     </p>
                 </div>
 
                 {/* Two Column Layout */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
                     {/* Left: Form */}
-                    <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    <form style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                         {/* Architect Details Card */}
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 32 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
@@ -120,12 +216,49 @@ export default function AIGeneratorPage() {
                                 </div>
 
                                 <div>
-                                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
-                                        Describe Your Concept *
-                                    </label>
-                                    <textarea value={form.businessType} onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
-                                        placeholder="e.g. A futuristic startup building smart AI agents with a sleek, dark aesthetic..."
-                                        rows={4} required style={{ ...inputStyle, resize: "none", lineHeight: 1.6 }} />
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                                        <label style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)" }}>
+                                            Describe Your Concept *
+                                        </label>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                            <span style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>Input Lang:</span>
+                                            <select
+                                                value={inputLanguage}
+                                                onChange={(e) => setInputLanguage(e.target.value)}
+                                                style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", border: "1px solid var(--border-color)", borderRadius: 8, padding: "4px 8px", fontSize: 12, outline: "none", cursor: "pointer" }}
+                                            >
+                                                {TRANSLATION_LANGUAGES.map(lang => (
+                                                    <option key={lang.code} value={lang.code} style={{ background: "#1e293b", color: "#fff" }}>{lang.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style={{ position: "relative" }}>
+                                        <textarea value={form.businessType} onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
+                                            placeholder={inputLanguage === 'hi' ? "उदाहरण: एक आधुनिक स्टार्टअप जो स्लीक एआई एजेंट बनाता है..." : inputLanguage === 'mr' ? "उदाहरण: आधुनिक एआय एजंट्स तयार करणारी स्टार्टअप..." : "e.g. A futuristic startup building smart AI agents with a sleek, dark aesthetic..."}
+                                            rows={4} required style={{ ...inputStyle, resize: "none", lineHeight: 1.6, paddingRight: 48 }} />
+                                        <button
+                                            type="button"
+                                            onClick={handleVoiceInput}
+                                            style={{
+                                                position: "absolute", right: 12, bottom: 12,
+                                                background: isListening ? "#ef4444" : "rgba(255,255,255,0.1)",
+                                                color: "#fff", border: "none", borderRadius: "50%",
+                                                width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                                                cursor: "pointer", transition: "all 0.2s",
+                                                animation: isListening ? "pulse-glow 1.5s infinite" : "none"
+                                            }}
+                                            title="Use Voice Input"
+                                        >
+                                            <Mic size={16} />
+                                        </button>
+                                    </div>
+                                    {inputLanguage !== 'en' && (
+                                        <div style={{ fontSize: 11, color: "var(--color-primary)", marginTop: 6, display: "flex", gap: 4, alignItems: "center" }}>
+                                            <Globe size={12} />
+                                            <span>Text will be translated to English locally via Browser AI before generating.</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
@@ -133,7 +266,7 @@ export default function AIGeneratorPage() {
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Tone</label>
                                         <select value={form.tone} onChange={(e) => setForm((p) => ({ ...p, tone: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
-                                            {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                            {TONES.map((t) => <option key={t} value={t} style={{ background: "#1e293b", color: "#fff" }}>{t}</option>)}
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
@@ -141,7 +274,7 @@ export default function AIGeneratorPage() {
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Audience</label>
                                         <select value={form.targetAudience} onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
-                                            {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
+                                            {AUDIENCES.map((a) => <option key={a} value={a} style={{ background: "#1e293b", color: "#fff" }}>{a}</option>)}
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
@@ -149,8 +282,8 @@ export default function AIGeneratorPage() {
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Theme Mode</label>
                                         <select value={form.theme} onChange={(e) => setForm((p) => ({ ...p, theme: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
-                                            <option value="Light">Light</option>
-                                            <option value="Dark">Dark</option>
+                                            <option value="Light" style={{ background: "#1e293b", color: "#fff" }}>Light</option>
+                                            <option value="Dark" style={{ background: "#1e293b", color: "#fff" }}>Dark</option>
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
@@ -186,8 +319,8 @@ export default function AIGeneratorPage() {
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Apply Directly (Optional)</label>
                                         <select value={form.websiteId} onChange={(e) => setForm((p) => ({ ...p, websiteId: e.target.value }))}
                                             style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
-                                            <option value="">— Preview Sandbox Only —</option>
-                                            {websites.map((w) => <option key={w._id} value={w._id}>{w.name}</option>)}
+                                            <option value="" style={{ background: "#1e293b", color: "#fff" }}>— Preview Sandbox Only —</option>
+                                            {websites.map((w) => <option key={w._id} value={w._id} style={{ background: "#1e293b", color: "#fff" }}>{w.name}</option>)}
                                         </select>
                                         <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
                                     </div>
@@ -224,17 +357,30 @@ export default function AIGeneratorPage() {
                             </div>
                         </div>
 
-                        {/* Generate Button */}
-                        <button type="submit" disabled={loading} style={{
-                            width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                            padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 700, border: "none",
-                            background: loading ? "var(--bg-input)" : "var(--color-primary)",
-                            color: loading ? "var(--text-muted)" : "#000",
-                            cursor: loading ? "not-allowed" : "pointer",
-                            boxShadow: "none",
-                        }}>
-                            {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking Layout...</> : <><Sparkles size={20} strokeWidth={2.5} /> Generate Website Layout</>}
-                        </button>
+                        {/* Generate Buttons */}
+                        <div style={{ display: "flex", gap: "16px" }}>
+                            <button type="button" onClick={(e) => handleGenerate(e, 'qwen')} disabled={loading} style={{
+                                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                                padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 700, border: "none",
+                                background: loading ? "var(--bg-input)" : "var(--color-primary)",
+                                color: loading ? "var(--text-muted)" : "#000",
+                                cursor: loading ? "not-allowed" : "pointer",
+                                boxShadow: "none",
+                            }}>
+                                {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking...</> : <><Sparkles size={20} strokeWidth={2.5} /> Generate with Basic AI</>}
+                            </button>
+
+                            <button type="button" onClick={(e) => handleGenerate(e, 'gemini')} disabled={loading} style={{
+                                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                                padding: "20px 0", borderRadius: 16, fontSize: 16, fontWeight: 700, border: "2px solid var(--color-primary)",
+                                background: "rgba(255,255,255,0.02)",
+                                color: loading ? "var(--text-muted)" : "var(--color-primary)",
+                                cursor: loading ? "not-allowed" : "pointer",
+                                boxShadow: "none",
+                            }}>
+                                {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking...</> : <><Wand2 size={20} strokeWidth={2.5} /> Generate with Pro AI</>}
+                            </button>
+                        </div>
                     </form>
 
                     {/* Right: Preview */}
@@ -271,7 +417,7 @@ export default function AIGeneratorPage() {
                                     <Sparkles size={36} color="#000" className="animate-spin" style={{ animationDuration: "3s" }} />
                                 </div>
                                 <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: "var(--text-primary)", position: "relative", zIndex: 1 }}>Engineering Layout...</h2>
-                                <p style={{ fontSize: 15, color: "var(--text-secondary)", position: "relative", zIndex: 1 }}>Gemini AI is structuring your pages.</p>
+                                <p style={{ fontSize: 15, color: "var(--text-secondary)", position: "relative", zIndex: 1 }}>{activeModel === 'gemini' ? 'Our Pro AI is designing' : 'Our Basic AI is designing'} your pages.</p>
                             </div>
                         )}
 

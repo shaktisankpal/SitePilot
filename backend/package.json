@@ -1,8 +1,8 @@
 {
-  "name": "sitepilot-backend",
+  "name": "sitezy.ai-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "SitePilot - AI Multi-Tenant Website Builder Backend",
+  "description": "Sitezy.ai - AI Multi-Tenant Website Builder Backend",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

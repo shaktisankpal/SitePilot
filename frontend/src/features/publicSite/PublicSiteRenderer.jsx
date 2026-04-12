@@ -211,8 +211,17 @@ function loadFont(fontName) {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function isLightText(textColor) {
     if (!textColor) return false;
-    const c = textColor.toLowerCase();
-    return c.includes("fff") || c.includes("f0f") || c.includes("faf") || c === "white";
+    const c = textColor.toLowerCase().trim();
+    if (c === "white" || c.includes("fff") || c.includes("faf") || c.includes("f0f")) return true;
+    if (c.startsWith("#") && (c.length === 4 || c.length === 7)) {
+        let hex = c.slice(1);
+        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
+    }
+    return false;
 }
 
 // ─── Global CSS ────────────────────────────────────────────────────────────────
@@ -425,7 +434,7 @@ const HeroSection = ({ props, branding }) => {
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.1) 80%, transparent)", zIndex: 1 }} />
                     <div style={{ position: "relative", zIndex: 2, maxWidth: "700px" }}>
                         <Badge />
-                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.15s" }}>
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.15s" }}>
                             {props.heading || "Design That Speaks"}
                         </h1>
                         {props.subheading && (
@@ -461,7 +470,7 @@ const HeroSection = ({ props, branding }) => {
                     {/* Text */}
                     <div>
                         <Badge />
-                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.15s" }}>
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.15s" }}>
                             {props.heading || "Built For The Future"}
                         </h1>
                         {props.subheading && (
@@ -485,7 +494,7 @@ const HeroSection = ({ props, branding }) => {
                 {/* Text */}
                 <div>
                     <Badge />
-                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}`, animationDelay: "0.1s" }}>
+                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.1s" }}>
                         {props.heading || "The Future Is Here"}
                     </h1>
                     {props.subheading && (
@@ -497,7 +506,7 @@ const HeroSection = ({ props, branding }) => {
                     {/* Stars / social proof */}
                     <div className="sp-animate-up" style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "40px", paddingTop: "28px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`, animationDelay: "0.55s" }}>
                         <div style={{ display: "flex" }}>
-                            {["😊","🤩","👏","⭐"].map((e, i) => (
+                            {["😊", "🤩", "👏", "⭐"].map((e, i) => (
                                 <div key={i} style={{ width: "34px", height: "34px", borderRadius: "50%", background: `hsl(${i * 55}, 60%, 55%)`, border: `2px solid ${bg}`, marginLeft: i > 0 ? "-8px" : "0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>{e}</div>
                             ))}
                         </div>
@@ -544,7 +553,7 @@ const TextSection = ({ props, branding }) => {
                     <div>
                         <Chip text="About Us" />
                         {props.heading && (
-                            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>
+                            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>
                                 {props.heading}
                             </h2>
                         )}
@@ -558,7 +567,7 @@ const TextSection = ({ props, branding }) => {
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginTop: "20px" }}>
                             {[["10+", "Years"], ["500+", "Projects"]].map(([n, l]) => (
                                 <div key={l} style={{ padding: "18px", borderRadius: "16px", background: light ? "rgba(255,255,255,0.04)" : "#fff", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, textAlign: "center" }}>
-                                    <p style={{ fontSize: "1.8rem", fontWeight: 900, color: accent, fontFamily: `"Syne", ${fontStyle}` }}>{n}</p>
+                                    <p style={{ fontSize: "1.8rem", fontWeight: 900, color: accent, fontFamily: fontStyle }}>{n}</p>
                                     <p style={{ fontSize: "12px", color: tc, opacity: 0.55, fontFamily: fontStyle }}>{l}</p>
                                 </div>
                             ))}
@@ -576,7 +585,7 @@ const TextSection = ({ props, branding }) => {
                     <div style={{ position: "relative", background: light ? "rgba(255,255,255,0.04)" : "#fff", padding: "64px 56px", borderRadius: "40px", boxShadow: DS.shadow.xl, textAlign: "center", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
                         <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "3px", background: `linear-gradient(to right, transparent, ${accent}, transparent)`, borderRadius: "2px" }} />
                         <Chip text="Why Us" />
-                        {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                        {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
                         {props.description && <p style={{ fontSize: "1.08rem", lineHeight: "1.85", color: tc, opacity: 0.72, maxWidth: "580px", margin: "0 auto", fontFamily: fontStyle }}>{props.description}</p>}
                         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", marginTop: "32px" }}>
                             {["Premium Quality", "24/7 Support", "Proven Results", "Expert Team"].map(f => (
@@ -594,7 +603,7 @@ const TextSection = ({ props, branding }) => {
         <section className="sp-section-pad" style={{ position: "relative", padding: "100px 56px", background: bg }}>
             <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
                 <Chip text="Our Mission" />
-                {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
                 {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.85", color: tc, opacity: 0.72, fontFamily: fontStyle }}>{props.description}</p>}
             </div>
         </section>
@@ -620,7 +629,7 @@ const GallerySection = ({ props, branding }) => {
     const SectionHeader = () => props.heading ? (
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
             <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}28`, marginBottom: "14px", fontFamily: fontStyle }}>Our Work</div>
-            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>
+            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>
                 {props.heading}
             </h2>
         </div>
@@ -644,7 +653,7 @@ const GallerySection = ({ props, branding }) => {
                     </div>
                 </div>
                 <div style={{ padding: "22px" }}>
-                    <h3 style={{ fontSize: "1rem", fontWeight: 700, color: tc, marginBottom: "6px", fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 700, color: tc, marginBottom: "6px", fontFamily: fontStyle }}>{item.title}</h3>
                     <p style={{ fontSize: "13px", color: tc, opacity: 0.6, lineHeight: "1.65", fontFamily: fontStyle }}>{item.description}</p>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "18px", paddingTop: "14px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"}` }}>
                         <div style={{ color: "#f59e0b", fontSize: "11px" }}>★★★★★</div>
@@ -662,7 +671,7 @@ const GallerySection = ({ props, branding }) => {
                 <div style={{ maxWidth: "1320px", margin: "0 auto", paddingLeft: "56px" }}>
                     {props.heading && (
                         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "36px", paddingRight: "56px", flexWrap: "wrap", gap: "12px" }}>
-                            <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>
+                            <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>
                             <a href="#all" style={{ color: accent, fontWeight: 700, textDecoration: "none", fontSize: "14px", fontFamily: fontStyle }}>View All →</a>
                         </div>
                     )}
@@ -677,7 +686,7 @@ const GallerySection = ({ props, branding }) => {
                                         onError={e => { e.target.src = getImageUrl("professional", 480, 360); }} />
                                 </div>
                                 <div style={{ padding: "20px" }}>
-                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: tc, marginBottom: "5px", fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                                    <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: tc, marginBottom: "5px", fontFamily: fontStyle }}>{item.title}</h3>
                                     <p style={{ fontSize: "12px", color: tc, opacity: 0.6, lineHeight: "1.6", fontFamily: fontStyle }}>{item.description}</p>
                                 </div>
                             </div>
@@ -705,7 +714,7 @@ const GallerySection = ({ props, branding }) => {
                                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)" }} />
                                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px" }}>
                                         <span className="sp-badge" style={{ background: accent, color: light ? "#000" : "#fff", marginBottom: "8px", fontFamily: fontStyle }}>Featured</span>
-                                        <h3 style={{ color: "#fff", fontSize: big ? "1.5rem" : "1rem", fontWeight: 800, fontFamily: `"Syne", ${fontStyle}` }}>{item.title}</h3>
+                                        <h3 style={{ color: "#fff", fontSize: big ? "1.5rem" : "1rem", fontWeight: 800, fontFamily: fontStyle }}>{item.title}</h3>
                                         {big && <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "13px", marginTop: "6px", fontFamily: fontStyle }}>{item.description}</p>}
                                     </div>
                                 </div>
@@ -761,7 +770,7 @@ const CTASection = ({ props, branding }) => {
                     <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🚀</div>
                         <div>
-                            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#fff", fontFamily: `"Syne", ${fontStyle}`, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
+                            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#fff", fontFamily: fontStyle, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
                             {props.subheading && <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", fontFamily: fontStyle }}>{props.subheading}</p>}
                         </div>
                     </div>
@@ -781,7 +790,7 @@ const CTASection = ({ props, branding }) => {
                 <div className="sp-grid-halves" style={{ flex: "1 1 50%", padding: "88px 72px", background: `linear-gradient(140deg, ${accent} 0%, ${accent}aa 100%)`, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <GlowBlob color="rgba(255,255,255,0.25)" style={{ top: "-40%", right: "-10%", width: "400px", height: "400px", filter: "blur(40px)" }} />
                     <div style={{ position: "relative", zIndex: 1 }}>
-                        {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                        {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
                         {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.85)", lineHeight: 1.72, fontFamily: fontStyle }}>{props.subheading}</p>}
                     </div>
                 </div>
@@ -807,7 +816,7 @@ const CTASection = ({ props, branding }) => {
                 <GlowBlob color={accent} style={{ top: "50%", left: "15%", transform: "translateY(-50%)", width: "500px", height: "500px" }} />
                 <GlowBlob color={accent} style={{ top: "50%", right: "5%", transform: "translateY(-50%)", width: "300px", height: "300px", opacity: 0.5 }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
-                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
                     {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.72, marginBottom: "32px", fontFamily: fontStyle }}>{props.subheading}</p>}
                     {props.ctaText && (
                         <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: "#fff", padding: "16px 40px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent) }}>
@@ -826,7 +835,7 @@ const CTASection = ({ props, branding }) => {
                 <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "700px", height: "700px" }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
                     <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "20px", fontFamily: fontStyle }}>Take Action</div>
-                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading}</h2>}
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
                     {props.subheading && <p style={{ fontSize: "1.08rem", color: tc, opacity: 0.72, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>{props.subheading}</p>}
                     <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
                         {props.ctaText && (
@@ -897,7 +906,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
             <section style={{ padding: "80px 56px", background: bg }}>
                 <div style={{ maxWidth: "520px", margin: "0 auto", textAlign: "center", padding: "56px 40px", borderRadius: "32px", background: light ? "rgba(255,255,255,0.04)" : "#fff", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.xl }}>
                     <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 20px", boxShadow: DS.shadow.colored(accent) }}>✓</div>
-                    <h3 style={{ fontSize: "1.6rem", fontWeight: 800, color: tc, marginBottom: "10px", fontFamily: `"Syne", ${fontStyle}` }}>Message Sent!</h3>
+                    <h3 style={{ fontSize: "1.6rem", fontWeight: 800, color: tc, marginBottom: "10px", fontFamily: fontStyle }}>Message Sent!</h3>
                     <p style={{ color: tc, opacity: 0.65, fontFamily: fontStyle }}>We'll get back to you within 24 hours.</p>
                 </div>
             </section>
@@ -912,7 +921,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                     <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: accent }}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                     </div>
-                    <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: tc, textAlign: "center", marginBottom: "28px", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading || "Contact Us"}</h2>
+                    <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: tc, textAlign: "center", marginBottom: "28px", fontFamily: fontStyle }}>{props.heading || "Contact Us"}</h2>
                     <Form />
                 </div>
             </section>
@@ -924,7 +933,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
             <div className="sp-grid-halves" style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "72px", alignItems: "center", position: "relative", zIndex: 1 }}>
                 <div>
                     <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "18px", fontFamily: fontStyle }}>Get In Touch</div>
-                    <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: `"Syne", ${fontStyle}` }}>{props.heading || "Let's Talk"}</h2>
+                    <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading || "Let's Talk"}</h2>
                     <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.7, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>Fill out the form and we'll respond promptly.</p>
                     {[["📧", "Email", "hello@company.com"], ["📞", "Phone", "+1 (555) 000-0000"], ["📍", "Location", "New York, USA"]].map(([icon, label, val]) => (
                         <div key={label} style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "14px", padding: "14px 18px", background: light ? "rgba(255,255,255,0.04)" : "#f9fafb", borderRadius: "14px", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
@@ -962,7 +971,7 @@ const FooterSection = ({ props, branding }) => {
                 <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
                     <div className="sp-footer-cols" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "48px" }}>
                         <div>
-                            <h3 style={{ fontSize: "20px", fontWeight: 900, color: accent, marginBottom: "14px", fontFamily: `"Syne", ${fontStyle}`, letterSpacing: "-0.02em" }}>{props.brand || branding?.brandName || "Company"}</h3>
+                            <h3 style={{ fontSize: "20px", fontWeight: 900, color: accent, marginBottom: "14px", fontFamily: fontStyle, letterSpacing: "-0.02em" }}>{props.brand || branding?.brandName || "Company"}</h3>
                             <p style={{ color: tc, opacity: 0.65, lineHeight: 1.8, maxWidth: "260px", fontSize: "14px", fontFamily: fontStyle }}>{props.text || "Building exceptional digital experiences."}</p>
                             <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
                                 {["𝕏", "in", "►", "f"].map(s => (
@@ -979,7 +988,7 @@ const FooterSection = ({ props, branding }) => {
                     </div>
                     <div style={{ borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                         <p style={{ color: tc, opacity: 0.45, fontSize: "13px", fontFamily: fontStyle }}>© {yr} {props.brand || "Company"}. All rights reserved.</p>
-                        <p style={{ color: tc, opacity: 0.35, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>SitePilot</span></p>
+                        <p style={{ color: tc, opacity: 0.35, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>Sitezy.ai</span></p>
                     </div>
                 </div>
             </footer>
@@ -991,7 +1000,7 @@ const FooterSection = ({ props, branding }) => {
             <footer style={{ background: bg, padding: "28px 56px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}>
                 <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                     <p style={{ color: tc, opacity: 0.5, fontSize: "13px", fontFamily: fontStyle }}>{props.text || `© ${yr} All rights reserved.`}</p>
-                    <p style={{ color: tc, opacity: 0.3, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>SitePilot</span></p>
+                    <p style={{ color: tc, opacity: 0.3, fontSize: "13px", fontFamily: fontStyle }}>Built with <span style={{ color: accent }}>Sitezy.ai</span></p>
                 </div>
             </footer>
         );
@@ -999,7 +1008,7 @@ const FooterSection = ({ props, branding }) => {
 
     return (
         <footer style={{ background: bg, padding: "36px 56px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, textAlign: "center" }}>
-            <p style={{ color: tc, opacity: 0.65, fontSize: "14px", fontFamily: fontStyle }}>{props.text || `© ${yr} All rights reserved.`} <span style={{ color: accent, fontWeight: 700 }}>· SitePilot</span></p>
+            <p style={{ color: tc, opacity: 0.65, fontSize: "14px", fontFamily: fontStyle }}>{props.text || `© ${yr} All rights reserved.`} <span style={{ color: accent, fontWeight: 700 }}>· Sitezy.ai</span></p>
         </footer>
     );
 };

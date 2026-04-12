@@ -32,7 +32,7 @@ export default function RegisterPage() {
         e.preventDefault();
         const result = await dispatch(register(formData));
         if (register.fulfilled.match(result)) {
-            toast.success("Workspace created! Welcome to SitePilot 🚀");
+            toast.success("Workspace created! Welcome to Sitezy.ai 🚀");
             navigate("/dashboard");
         } else {
             toast.error(result.payload || "Registration failed");
@@ -64,7 +64,7 @@ export default function RegisterPage() {
                         <Zap size={24} color="var(--text-primary)" />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>SitePilot</h1>
+                        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>Sitezy.ai</h1>
                         <p style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>Workspace Setup</p>
                     </div>
                 </div>

@@ -105,7 +105,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Health check
 app.get("/health", (req, res) => {
-    res.json({ success: true, service: "SitePilot API", timestamp: new Date().toISOString() });
+    res.json({ success: true, service: "Sitezy.ai API", timestamp: new Date().toISOString() });
 });
 
 // Prometheus Metrics
@@ -190,7 +190,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await connectDB();
     httpServer.listen(PORT, () => {
-        console.log(`🚀 SitePilot API running on port ${PORT}`);
+        console.log(`🚀 Sitezy.ai API running on port ${PORT}`);
         console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
         console.log(`📡 Socket.io active`);
     });

@@ -1,4 +1,4 @@
-# 🚀 SitePilot
+# 🚀 Sitezy.ai
 **AI-Powered Multi-Tenant Website Builder Platform**
 
 *Empowering organizations to create, customize, deploy, and manage their websites within a governed SaaS ecosystem.*
@@ -14,9 +14,9 @@
 
 **Problem Statement 2: Web Development**
 
-SitePilot is a robust, scalable multi-tenant SaaS platform that enables multiple non-technical users, independent organizations, and businesses to host and manage their own branded websites via a shared unified infrastructure. Taking inspiration from systems where independent teams operate under one governing structure, SitePilot provides a centralized platform that ensures high governance, operational consistency, and intelligent automation while allowing complete logical isolation among tenants. 
+Sitezy.ai is a robust, scalable multi-tenant SaaS platform that enables multiple non-technical users, independent organizations, and businesses to host and manage their own branded websites via a shared unified infrastructure. Taking inspiration from systems where independent teams operate under one governing structure, Sitezy.ai provides a centralized platform that ensures high governance, operational consistency, and intelligent automation while allowing complete logical isolation among tenants. 
 
-With SitePilot, building professional-quality websites is a breeze! AI-assisted creation automates layout generation, content structuring, and component formulation. All tenant operations—from onboarding, plan subscription, real-time collaboration, and monitoring—are streamlined.
+With Sitezy.ai, building professional-quality websites is a breeze! AI-assisted creation automates layout generation, content structuring, and component formulation. All tenant operations—from onboarding, plan subscription, real-time collaboration, and monitoring—are streamlined.
 
 ---
 
@@ -94,8 +94,8 @@ An integrated built-in economy engine:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/sitepilot.git
-cd sitepilot
+git clone https://github.com/yourusername/sitezy.ai.git
+cd sitezy.ai
 ```
 
 ### 2. Environment Variables Setup
@@ -122,10 +122,10 @@ npm run dev
 ### 4. Docker Deployment
 ```bash
 # Build the production image with Docker
-docker build -t sitepilot-app .
+docker build -t sitezy.ai-app .
 
 # Run the application (mapped to port 5001 to avoid dev conflict)
-docker run -d --name sitepilot-container -p 5001:5000 --env-file backend/.env -e NODE_ENV=production sitepilot-app
+docker run -d --name sitezy.ai-container -p 5001:5000 --env-file backend/.env -e NODE_ENV=production sitezy.ai-app
 ```
 
 ---

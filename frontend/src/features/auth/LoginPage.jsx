@@ -51,7 +51,7 @@ export default function LoginPage() {
                         <Zap size={24} color="var(--text-primary)" />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>SitePilot</h1>
+                        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>Sitezy.ai</h1>
                         <p style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>Workspace Login</p>
                     </div>
                 </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 </form>
 
                 <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "var(--text-muted)" }}>
-                    New to SitePilot?{" "}
+                    New to Sitezy.ai?{" "}
                     <Link to="/register" style={{ color: "var(--text-primary)", textDecoration: "none", fontWeight: 600 }}>
                         Create workspace
                     </Link>

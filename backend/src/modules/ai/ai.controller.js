@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import ollama from "ollama";
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
@@ -244,6 +245,18 @@ async function postProcessAIOutput(layout, businessType) {
         page.sections.forEach((section, si) => {
             if (!section.props) section.props = {};
 
+            if (section.type === "Text" && section.props.text && !section.props.description) {
+                section.props.description = section.props.text;
+                delete section.props.text;
+            }
+
+            if (section.type === "ContactForm" && Array.isArray(section.props.fields)) {
+                section.props.fields = section.props.fields.map(f => {
+                    if (typeof f === "object" && f !== null) return f.name || f.label || "message";
+                    return String(f);
+                });
+            }
+
             if (section.type === "Gallery" && Array.isArray(section.props.items)) {
                 section.props.items = section.props.items.map((item, ii) => {
                     if (typeof item === "string") {
@@ -485,6 +498,7 @@ const inputSchema = Joi.object({
     targetAudience: Joi.string().min(2).max(200).required(),
     features: Joi.array().items(Joi.string()).min(1).required(),
     websiteId: Joi.string().allow("").optional(),
+    preferredModel: Joi.string().valid("qwen", "gemini").optional(),
 }).unknown(true);
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -501,7 +515,7 @@ export const generateLayout = async (req, res) => {
         return res.status(400).json({ success: false, message: error.details[0].message });
     }
 
-    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor, theme, baseTemplateSections } = value;
+    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor, theme, baseTemplateSections, preferredModel } = value;
 
     // Verify website ownership if provided
     let website = null;
@@ -525,9 +539,9 @@ Relevant Image Contexts: ${contextImages}
 
 ${baseTemplateSections ? `
 IMPORTANT - Base Template Override:
-- Keep section TYPES exactly the same as provided
-- Only enhance content, props, colors, and styling
-- DO NOT add or remove section types
+- Keep section TYPES exactly the same as provided in the Base Template.
+- YOU MUST COMPLETELY REWRITE ALL TEXT content (headings, descriptions, list items, ctaText) and image queries to match the Business Type (${businessType}).
+- DO NOT copy the placeholder text from the base template. It MUST be 100% relevant and specific to a ${businessType}.
 Base Template:
 ${JSON.stringify(baseTemplateSections)}
 ` : ""}
@@ -571,12 +585,14 @@ SECTION VARIANTS (assign intelligently):
 - Footer: "Multi-Column Mock" | "Simple Centered" | "Ultra Minimal"
 
 CONTENT RULES:
-- Write real, compelling copy (not placeholder text)
-- Hero: powerful headline (max 8 words), compelling subheading (1-2 sentences), strong CTA
-- Text: substantive content about the business
-- Gallery: 4-6 diverse, non-repeating items with unique queries
-- CTA: conversion-focused copy
+- Write real, FULLY FLESHED OUT copy (not placeholder text).
+- EXHAUSTIVE CONTENT (CRITICAL): You MUST provide rich content for EVERY section. NEVER leave 'heading', 'subheading', 'description', 'text', or 'fields' empty. If a section supports a description or subheading, YOU MUST WRITE IT!
+- Hero: powerful headline (max 8 words), compelling subheading (2-3 sentences), strong CTA
+- Text: substantive content describing the business in detail (3-4 sentences minimum)
+- Gallery: 4-6 diverse, non-repeating items with unique 'title', 'description' (at least 2 sentences), and 'imageQuery'
+- CTA: conversion-focused copy with a compelling subheading
 - ContactForm: include fields relevant to the business (e.g., phone for medical, budget for agencies)
+- CONTACT FORM FIELDS (CRITICAL): The 'fields' property MUST be a flat array of STRING primitives (e.g. ["name", "email", "phone", "message"]), NEVER an array of objects.
 
 Return ONLY valid JSON in this exact structure (no markdown, no explanation):
 
@@ -598,7 +614,7 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
             "links": ["Home", "About", "Services", "Contact"],
             "items": [],
             "text": "...",
-            "fields": [],
+            "fields": ["name", "email", "message"],
             "variant": "...",
             "bgColor": "#hex",
             "textColor": "#hex",
@@ -628,10 +644,43 @@ COLOR RULES:
     let aiResponse = null;
     let success = true;
     let errorMessage = null;
+    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen3.5:4b (Ollama)";
 
     try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        let text = "";
+        if (preferredModel === "gemini") {
+            console.log("🔵 [AI] User requested Pro AI directly. Skipping Basic AI.");
+            const result = await model.generateContent(prompt);
+            text = result.response.text();
+            console.log("🔵 [AI] Successfully used Pro AI for content generation.");
+        } else {
+            try {
+                console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
+                const r = await ollama.chat({
+                    model: 'qwen3.5:4b',
+                    messages: [
+                        { role: 'system', content: 'You are an expert AI website generator and elite copywriter. You MUST generate unique, engaging content perfectly tailored to the requested business type. NEVER blindly copy placeholder text from templates.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    format: 'json',
+                    think: false,
+                    options: {
+                        num_predict: 8192,
+                        num_ctx: 8192,
+                        temperature: 0.1
+                    }
+                });
+                text = r.message.content;
+                console.log("🟢 [AI] Successfully used Basic AI for content generation.");
+            } catch (ollamaErr) {
+                console.warn("⚠️ [AI] Basic AI failed, falling back to Pro AI...");
+                console.warn("⚠️ [AI] Basic AI Error:", ollamaErr.message);
+                usedModel = "gemini-3-flash-preview";
+                const result = await model.generateContent(prompt);
+                text = result.response.text();
+                console.log("🔵 [AI] Successfully used Pro AI for content generation.");
+            }
+        }
 
         // Extract JSON from response (handle markdown code blocks)
         let jsonStr = text;
@@ -646,8 +695,10 @@ COLOR RULES:
         let parsed;
         try {
             parsed = JSON.parse(jsonStr.trim());
-        } catch {
-            console.error("❌ [AI] Failed to parse JSON, using fallback layout");
+        } catch (parseErr) {
+            console.error("❌ [AI] Failed to parse JSON, using fallback layout. Error:", parseErr.message);
+            console.error("📄 [AI] Raw Output Length:", text?.length);
+            console.error("📄 [AI] Raw JSON Snippet:", jsonStr?.substring(0, 1000) + (jsonStr?.length > 1000 ? "..." : ""));
             parsed = buildFallbackLayout(businessType, tone, targetAudience);
         }
 
@@ -787,7 +838,7 @@ COLOR RULES:
         websiteId: websiteId || null,
         prompt: { businessType, tone, targetAudience, features },
         response: aiResponse,
-        model: "gemini-2.0-flash",
+        model: usedModel,
         success,
         errorMessage,
     });

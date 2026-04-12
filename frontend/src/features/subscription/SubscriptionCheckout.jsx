@@ -40,7 +40,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                 key: keyId,
                 amount: amount,
                 currency: currency,
-                name: "SitePilot",
+                name: "Sitezy.ai",
                 description: `${plan.displayName} Subscription`,
                 order_id: orderId,
                 handler: async function (response) {
