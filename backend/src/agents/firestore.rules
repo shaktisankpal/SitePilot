@@ -6,8 +6,8 @@ rules_version = '2';
  * CRITICAL: These rules enforce strict tenant isolation
  * Each tenant's data is completely isolated from other tenants
  * 
- * Structure:
- * /tenants/{tenantId}/sites/{siteId}/...
+ * Structure (Human-Readable):
+ * /tenants/{tenantSlug}/sites/{websiteSlug}/...
  * 
  * Deploy these rules using Firebase CLI:
  * firebase deploy --only firestore:rules
@@ -22,14 +22,14 @@ service cloud.firestore {
     }
     
     // Helper function: Check if user belongs to tenant
-    function belongsToTenant(tenantId) {
+    function belongsToTenant(tenantSlug) {
       return isAuthenticated() && 
-             request.auth.token.tenantId == tenantId;
+             request.auth.token.tenantSlug == tenantSlug;
     }
     
-    // Helper function: Validate tenant ID in document
-    function hasValidTenantId(tenantId) {
-      return request.resource.data.tenantId == tenantId;
+    // Helper function: Validate tenant slug in document
+    function hasValidTenantSlug(tenantSlug) {
+      return request.resource.data.tenantSlug == tenantSlug;
     }
     
     // Root level - deny all direct access
@@ -38,38 +38,38 @@ service cloud.firestore {
     }
     
     // Tenant collection - isolated per tenant
-    match /tenants/{tenantId} {
+    match /tenants/{tenantSlug} {
       // Only allow read if user belongs to tenant
-      allow read: if belongsToTenant(tenantId);
+      allow read: if belongsToTenant(tenantSlug);
       
       // Only backend service account can write
       allow write: if false;
       
       // Sites subcollection
-      match /sites/{siteId} {
+      match /sites/{websiteSlug} {
         // Allow read if user belongs to tenant
-        allow read: if belongsToTenant(tenantId);
+        allow read: if belongsToTenant(tenantSlug);
         
         // Only backend service account can write
         allow write: if false;
         
-        // Pages subcollection - public read for published sites
-        match /pages/published/{pageId} {
-          // Public read access for published pages
+        // Pages subcollection - public read for all pages
+        match /pages/{pageSlug} {
+          // Public read access for all pages
           allow read: if true;
           
           // Only backend can write
           allow write: if false;
         }
         
-        // Forms subcollection - allow submissions
-        match /forms/{formId} {
+        // Contact form submissions - allow public submissions
+        match /contact_form_submissions/{submissionId} {
           // Allow read if user belongs to tenant
-          allow read: if belongsToTenant(tenantId);
+          allow read: if belongsToTenant(tenantSlug);
           
-          // Allow form submissions (must include tenantId and siteId)
-          allow create: if hasValidTenantId(tenantId) &&
-                          request.resource.data.siteId == siteId &&
+          // Allow form submissions (must include tenantSlug and websiteSlug)
+          allow create: if hasValidTenantSlug(tenantSlug) &&
+                          request.resource.data.websiteSlug == websiteSlug &&
                           request.resource.data.submittedAt is timestamp;
           
           // No updates or deletes from client
@@ -79,11 +79,11 @@ service cloud.firestore {
         // Analytics subcollection
         match /analytics/{analyticsId} {
           // Allow read if user belongs to tenant
-          allow read: if belongsToTenant(tenantId);
+          allow read: if belongsToTenant(tenantSlug);
           
-          // Allow analytics events (must include tenantId and siteId)
-          allow create: if hasValidTenantId(tenantId) &&
-                          request.resource.data.siteId == siteId &&
+          // Allow analytics events (must include tenantSlug and websiteSlug)
+          allow create: if hasValidTenantSlug(tenantSlug) &&
+                          request.resource.data.websiteSlug == websiteSlug &&
                           request.resource.data.timestamp is timestamp;
           
           // No updates or deletes from client
@@ -140,10 +140,24 @@ service cloud.firestore {
  * 
  * SECURITY NOTES:
  * 
- * - All tenant data is isolated by tenantId
+ * - All tenant data is isolated by tenantSlug (human-readable)
  * - Cross-tenant reads/writes are impossible
  * - Public pages are readable by anyone
- * - Form submissions require valid tenantId and siteId
+ * - Form submissions require valid tenantSlug and websiteSlug
  * - Only backend service account can write to most collections
- * - Custom auth tokens should include tenantId claim
+ * - Custom auth tokens should include tenantSlug claim
+ * 
+ * HUMAN-READABLE STRUCTURE:
+ * 
+ * Instead of:
+ *   /tenants/69993d6bb884dbbbef3b93f1/sites/69999b6da7bc698c6913452d/submissions/ClGVGXEo8O2iYO05L0Dv
+ * 
+ * Now:
+ *   /tenants/acme-corp/sites/coffee-shop-website/contact_form_submissions/john-doe-1234567890
+ * 
+ * This makes it much easier to:
+ * - Navigate Firestore Console
+ * - Debug issues
+ * - Understand data structure
+ * - Manually verify submissions
  */

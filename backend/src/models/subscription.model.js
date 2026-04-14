@@ -9,15 +9,12 @@ const SubscriptionSchema = new mongoose.Schema(
         },
         razorpaySubscriptionId: {
             type: String,
-            sparse: true,
         },
         razorpayOrderId: {
             type: String,
-            sparse: true,
         },
         razorpayPaymentId: {
             type: String,
-            sparse: true,
         },
         planType: {
             type: String,

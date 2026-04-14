@@ -59,82 +59,107 @@ class FirebaseService {
     }
 
     /**
-     * Create tenant-isolated Firestore structure
+     * Create tenant-isolated Firestore structure with human-readable names
      * @param {string} tenantId - MongoDB tenant ID
      * @param {string} siteId - MongoDB website ID
+     * @param {Object} metadata - Additional metadata (tenantSlug, websiteSlug, websiteName)
      */
-    async createTenantStructure(tenantId, siteId) {
+    async createTenantStructure(tenantId, siteId, metadata = {}) {
         const db = this.getFirestore();
-        const tenantRef = db.collection("tenants").doc(tenantId);
-        const siteRef = tenantRef.collection("sites").doc(siteId);
+        
+        // Use human-readable slugs for Firestore paths
+        const tenantSlug = metadata.tenantSlug || tenantId;
+        const websiteSlug = metadata.websiteSlug || metadata.websiteName?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || siteId;
+        
+        const tenantRef = db.collection("tenants").doc(tenantSlug);
+        const siteRef = tenantRef.collection("sites").doc(websiteSlug);
 
-        // Initialize tenant document
+        // Initialize tenant document with readable metadata
         await tenantRef.set(
             {
+                tenantId,
+                tenantSlug,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
             },
             { merge: true }
         );
 
-        // Initialize site document
+        // Initialize site document with readable metadata
         await siteRef.set({
             siteId,
             tenantId,
+            websiteSlug,
+            websiteName: metadata.websiteName || "Untitled Website",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             status: "active",
         });
 
-        // Create initial collections
+        // Create initial collections with descriptive names
         await siteRef.collection("pages").doc("_init").set({ initialized: true });
-        await siteRef.collection("submissions").doc("_init").set({ initialized: true });
+        await siteRef.collection("contact_form_submissions").doc("_init").set({ initialized: true });
         await siteRef.collection("analytics").doc("_init").set({ initialized: true });
 
         return {
-            tenantPath: `tenants/${tenantId}`,
-            sitePath: `tenants/${tenantId}/sites/${siteId}`,
+            tenantPath: `tenants/${tenantSlug}`,
+            sitePath: `tenants/${tenantSlug}/sites/${websiteSlug}`,
+            tenantSlug,
+            websiteSlug,
         };
     }
 
     /**
      * Setup form submission collection (auto-called when ContactForm detected)
-     * @param {string} tenantId
-     * @param {string} siteId
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
+     * @param {Object} metadata - Additional metadata
      */
-    async setupFormCollection(tenantId, siteId) {
+    async setupFormCollection(tenantSlug, websiteSlug, metadata = {}) {
         const db = this.getFirestore();
-        const siteRef = db.collection("tenants").doc(tenantId).collection("sites").doc(siteId);
+        const siteRef = db.collection("tenants").doc(tenantSlug).collection("sites").doc(websiteSlug);
 
-        // Initialize submissions collection with metadata
-        await siteRef.collection("submissions").doc("_metadata").set({
+        // Initialize contact_form_submissions collection with metadata
+        await siteRef.collection("contact_form_submissions").doc("_metadata").set({
             setupAt: admin.firestore.FieldValue.serverTimestamp(),
             totalSubmissions: 0,
             lastSubmissionAt: null,
             formEnabled: true,
+            websiteName: metadata.websiteName || "Untitled Website",
         });
 
         return {
-            submissionsPath: `tenants/${tenantId}/sites/${siteId}/submissions`,
+            submissionsPath: `tenants/${tenantSlug}/sites/${websiteSlug}/contact_form_submissions`,
             formEnabled: true,
         };
     }
 
     /**
-     * Save form submission to Firestore
-     * @param {string} tenantId
-     * @param {string} siteId
+     * Save form submission to Firestore with human-readable structure
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
      * @param {Object} formData - Form fields submitted by user
+     * @param {Object} metadata - Additional metadata (tenantId, siteId for backward compatibility)
      */
-    async saveFormSubmission(tenantId, siteId, formData) {
+    async saveFormSubmission(tenantSlug, websiteSlug, formData, metadata = {}) {
         const db = this.getFirestore();
-        const siteRef = db.collection("tenants").doc(tenantId).collection("sites").doc(siteId);
-        const submissionsRef = siteRef.collection("submissions");
+        const siteRef = db.collection("tenants").doc(tenantSlug).collection("sites").doc(websiteSlug);
+        const submissionsRef = siteRef.collection("contact_form_submissions");
 
-        // Create submission document
-        const submissionDoc = await submissionsRef.add({
+        // Generate human-readable submission ID based on name/email and timestamp
+        const timestamp = Date.now();
+        const nameSlug = (formData.name || formData.email || "anonymous")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .substring(0, 30);
+        const submissionId = `${nameSlug}-${timestamp}`;
+
+        // Create submission document with readable ID
+        await submissionsRef.doc(submissionId).set({
             ...formData,
-            tenantId,
-            siteId,
+            tenantId: metadata.tenantId,
+            siteId: metadata.siteId,
+            tenantSlug,
+            websiteSlug,
             submittedAt: admin.firestore.FieldValue.serverTimestamp(),
             status: "new",
             read: false,
@@ -151,28 +176,27 @@ class FirebaseService {
         );
 
         return {
-            submissionId: submissionDoc.id,
-            path: `tenants/${tenantId}/sites/${siteId}/submissions/${submissionDoc.id}`,
+            submissionId,
+            path: `tenants/${tenantSlug}/sites/${websiteSlug}/contact_form_submissions/${submissionId}`,
         };
     }
 
     /**
      * Get form submissions for a site
-     * @param {string} tenantId
-     * @param {string} siteId
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
      * @param {number} limit
      */
-    async getFormSubmissions(tenantId, siteId, limit = 50) {
+    async getFormSubmissions(tenantSlug, websiteSlug, limit = 50) {
         const db = this.getFirestore();
         const submissionsRef = db
             .collection("tenants")
-            .doc(tenantId)
+            .doc(tenantSlug)
             .collection("sites")
-            .doc(siteId)
-            .collection("submissions");
+            .doc(websiteSlug)
+            .collection("contact_form_submissions");
 
         const snapshot = await submissionsRef
-            .where("status", "!=", "_metadata")
             .orderBy("submittedAt", "desc")
             .limit(limit)
             .get();
@@ -188,57 +212,71 @@ class FirebaseService {
     }
 
     /**
-     * Deploy site pages to Firestore
-     * @param {string} tenantId
-     * @param {string} siteId
+     * Deploy site pages to Firestore with human-readable structure
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
      * @param {Array} pages - Array of page objects
+     * @param {Object} metadata - Additional metadata (tenantId, siteId for backward compatibility)
      */
-    async deployPages(tenantId, siteId, pages) {
+    async deployPages(tenantSlug, websiteSlug, pages, metadata = {}) {
         const db = this.getFirestore();
         const batch = db.batch();
-        const sitePath = `tenants/${tenantId}/sites/${siteId}`;
-        const pagesRef = db.collection(sitePath).doc("pages").collection("published");
+        const siteRef = db.collection("tenants").doc(tenantSlug).collection("sites").doc(websiteSlug);
+        const pagesRef = siteRef.collection("pages");
 
-        // Clear existing pages
+        // Clear existing pages (except _init)
         const existingPages = await pagesRef.get();
         existingPages.forEach((doc) => {
-            batch.delete(doc.ref);
+            if (doc.id !== "_init") {
+                batch.delete(doc.ref);
+            }
         });
 
-        // Deploy new pages
+        // Deploy new pages with readable slugs
         pages.forEach((page) => {
-            const pageRef = pagesRef.doc(page.slug || uuidv4());
+            const pageSlug = page.slug || page.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || uuidv4();
+            const pageRef = pagesRef.doc(pageSlug);
             batch.set(pageRef, {
                 ...page,
                 deployedAt: admin.firestore.FieldValue.serverTimestamp(),
-                tenantId, // Enforce tenant isolation
-                siteId,
+                tenantId: metadata.tenantId,
+                siteId: metadata.siteId,
+                tenantSlug,
+                websiteSlug,
             });
         });
 
         await batch.commit();
-        return { deployed: pages.length, path: sitePath };
+        return { 
+            deployed: pages.length, 
+            path: `tenants/${tenantSlug}/sites/${websiteSlug}`,
+            tenantSlug,
+            websiteSlug
+        };
     }
 
     /**
-     * Upload assets to Firebase Storage with tenant isolation
-     * @param {string} tenantId
-     * @param {string} siteId
+     * Upload assets to Firebase Storage with human-readable paths
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
      * @param {Array} assets - Array of {name, buffer, contentType}
+     * @param {Object} metadata - Additional metadata (tenantId, siteId for backward compatibility)
      */
-    async uploadAssets(tenantId, siteId, assets) {
+    async uploadAssets(tenantSlug, websiteSlug, assets, metadata = {}) {
         const bucket = this.getStorage().bucket();
         const uploadedUrls = [];
 
         for (const asset of assets) {
-            const filePath = `tenants/${tenantId}/sites/${siteId}/assets/${asset.name}`;
+            const filePath = `tenants/${tenantSlug}/sites/${websiteSlug}/assets/${asset.name}`;
             const file = bucket.file(filePath);
 
             await file.save(asset.buffer, {
                 contentType: asset.contentType,
                 metadata: {
-                    tenantId,
-                    siteId,
+                    tenantId: metadata.tenantId,
+                    siteId: metadata.siteId,
+                    tenantSlug,
+                    websiteSlug,
                     uploadedAt: new Date().toISOString(),
                 },
             });
@@ -253,21 +291,21 @@ class FirebaseService {
 
     /**
      * Apply Firestore security rules for tenant isolation
-     * @param {string} tenantId
+     * @param {string} tenantSlug - Human-readable tenant identifier
      */
-    async applySecurityRules(tenantId) {
+    async applySecurityRules(tenantSlug) {
         // Security rules are applied at project level via Firebase Console or CLI
         // This method validates the structure is correct
         const db = this.getFirestore();
-        const tenantRef = db.collection("tenants").doc(tenantId);
+        const tenantRef = db.collection("tenants").doc(tenantSlug);
 
         const doc = await tenantRef.get();
         if (!doc.exists) {
-            throw new Error(`Tenant ${tenantId} not found in Firestore`);
+            throw new Error(`Tenant ${tenantSlug} not found in Firestore`);
         }
 
         return {
-            tenantId,
+            tenantSlug,
             securityRulesApplied: true,
             message: "Tenant structure validated. Ensure Firestore rules enforce isolation.",
         };
@@ -275,12 +313,12 @@ class FirebaseService {
 
     /**
      * Get deployment status from Firestore
-     * @param {string} tenantId
-     * @param {string} siteId
+     * @param {string} tenantSlug - Human-readable tenant identifier
+     * @param {string} websiteSlug - Human-readable website identifier
      */
-    async getDeploymentStatus(tenantId, siteId) {
+    async getDeploymentStatus(tenantSlug, websiteSlug) {
         const db = this.getFirestore();
-        const siteRef = db.collection("tenants").doc(tenantId).collection("sites").doc(siteId);
+        const siteRef = db.collection("tenants").doc(tenantSlug).collection("sites").doc(websiteSlug);
 
         const doc = await siteRef.get();
         if (!doc.exists) {
@@ -309,11 +347,11 @@ class FirebaseService {
 
     /**
      * Delete tenant data (for cleanup/testing)
-     * @param {string} tenantId
+     * @param {string} tenantSlug - Human-readable tenant identifier
      */
-    async deleteTenantData(tenantId) {
+    async deleteTenantData(tenantSlug) {
         const db = this.getFirestore();
-        const tenantRef = db.collection("tenants").doc(tenantId);
+        const tenantRef = db.collection("tenants").doc(tenantSlug);
 
         // Delete all subcollections
         const sites = await tenantRef.collection("sites").get();
@@ -326,7 +364,7 @@ class FirebaseService {
         batch.delete(tenantRef);
         await batch.commit();
 
-        return { deleted: true, tenantId };
+        return { deleted: true, tenantSlug };
     }
 }
 

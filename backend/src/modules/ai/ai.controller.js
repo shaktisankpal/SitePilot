@@ -787,9 +787,18 @@ COLOR RULES:
                 console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
 
                 const firebaseAgent = new FirebaseAgent();
+                
+                // Get tenant info for human-readable slugs
+                const tenant = await Tenant.findById(req.tenantId);
+                const tenantSlug = tenant?.slug || req.tenantId.toString();
+                const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || website._id.toString();
+                
                 const deploymentContext = {
                     tenantId: req.tenantId.toString(),
                     siteId: website._id.toString(),
+                    tenantSlug,
+                    websiteSlug,
+                    websiteName: website.name,
                     websiteData: {
                         name: website.name,
                         description: website.description,
@@ -805,8 +814,9 @@ COLOR RULES:
                     const firebaseResult = await firebaseAgent.execute(deploymentContext);
                     if (firebaseResult.success) {
                         console.log(`✅ [AI] Firebase backend auto-configured!`);
+                        console.log(`📍 [AI] Firestore path: ${firebaseResult.firestorePath}`);
                         if (firebaseResult.hasContactForm) {
-                            console.log(`📝 [AI] Form submission backend is LIVE!`);
+                            console.log(`📝 [AI] Form submission backend is LIVE at: tenants/${tenantSlug}/sites/${websiteSlug}/contact_form_submissions`);
                         }
                     } else {
                         console.error(`⚠️ [AI] Firebase setup failed:`, firebaseResult.error);
@@ -866,4 +876,85 @@ export const getAILogs = async (req, res) => {
         .limit(50)
         .lean();
     res.json({ success: true, logs });
+};
+
+/**
+ * POST /api/public/ai/chat
+ */
+export const chatWithWebsite = async (req, res) => {
+    try {
+        const { question, websiteId } = req.body;
+        if (!question || !websiteId) {
+            return res.status(400).json({ success: false, message: "Missing question or websiteId" });
+        }
+
+        const pages = await Page.find({ websiteId }).lean();
+        if (!pages || pages.length === 0) {
+            return res.status(404).json({ success: false, message: "Website not found or has no content" });
+        }
+
+        // Simplify pages content to save tokens
+        const siteContext = pages.map(page => {
+            return `Page: ${page.title} (${page.slug})
+Sections:
+${(page.layoutConfig?.sections || []).map(s => {
+    const p = s.props || {};
+    // Extract textual content to form the context
+    let content = `- [${s.type} Section]:`;
+    if (p.heading) content += ` Heading: "${p.heading}"`;
+    if (p.subheading) content += ` Subheading: "${p.subheading}"`;
+    if (p.description) content += ` Description: "${p.description}"`;
+    if (p.text) content += ` Text: "${p.text}"`;
+    if (p.items && Array.isArray(p.items)) {
+        content += ` Items: ` + p.items.map(i => `(Title: ${i.title}, Desc: ${i.description})`).join(', ');
+    }
+    return content;
+}).join('\n')}
+`;
+        }).join('\n\n');
+
+        const systemPrompt = `You are a helpful AI chatbot specifically built for a website.
+You must answer questions strictly based on the following website content. Do not invent information or provide details outside of this content.
+If the answer is not in the content, say "I'm sorry, I don't have that information on our website."
+Keep your answers concise, helpful, and friendly.
+
+CRITICAL LANGUAGE INSTRUCTION:
+You must detect if the user's question is in Hindi, Marathi, or English. You MUST answer specifically in the exact same language.
+- If the user asks in Hindi, answer in Hindi.
+- If the user asks in Marathi, answer in Marathi.
+- If the user asks in English, answer in English.
+
+Website Content Context:
+${siteContext}
+`;
+
+        try {
+            console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
+            const r = await ollama.chat({
+                model: 'qwen3.5:4b',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: question }
+                ],
+                think: false,
+                options: {
+                    num_predict: 1024,
+                    num_ctx: 8192,
+                    temperature: 0.2
+                }
+            });
+            console.log("🟢 [AI Chat] Answer generated via qwen3.5:4b.");
+            return res.json({ success: true, answer: r.message.content });
+        } catch (ollamaErr) {
+            console.warn("⚠️ [AI Chat] Ollama failure, falling back to Gemini...");
+            const result = await model.generateContent(systemPrompt + "\\n\\nUser Question: " + question);
+            const answer = result.response.text();
+            console.log("🔵 [AI Chat] Answer generated via Gemini.");
+            return res.json({ success: true, answer });
+        }
+
+    } catch (err) {
+        console.error("❌ [AI Chat] generate response error:", err);
+        res.status(500).json({ success: false, message: "Failed to process chat" });
+    }
 };
