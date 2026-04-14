@@ -10,7 +10,7 @@ import { useState } from "react";
 
 const FONT_OPTIONS = ["Montserrat", "Google Sans", "Inter", "Roboto", "Outfit", "Playfair Display", "Poppins", "DM Sans"];
 
-export default function SectionEditor({ section, onChange }) {
+export default function SectionEditor({ section, onChange, pages = [] }) {
     const { type, props } = section;
     const [uploading, setUploading] = useState(false);
 
@@ -81,6 +81,65 @@ export default function SectionEditor({ section, onChange }) {
                 style={{ marginTop: "6px", fontSize: "12px", color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
             >
                 + Add item
+            </button>
+        </div>
+    );
+
+    const renderNavLinksField = (label, key) => (
+        <div key={key}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <label style={labelStyle}>{label}</label>
+                <button
+                    onClick={() => {
+                        if (pages && pages.length > 0) {
+                            const newLinks = pages.map(p => ({
+                                label: p.title,
+                                url: `/${p.slug === 'home' ? '' : p.slug}`
+                            }));
+                            onChange({ [key]: newLinks });
+                        }
+                    }}
+                    title="Overwrite links with your currently created pages"
+                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "4px", color: "#818cf8", fontSize: "10px", padding: "4px 8px", cursor: "pointer", fontWeight: 700 }}
+                >
+                    Auto-Fill Pages
+                </button>
+            </div>
+            {(props[key] || []).map((item, i) => {
+                const isObj = typeof item === 'object' && item !== null;
+                const linkLabel = isObj ? item.label : item;
+                const linkUrl = isObj ? item.url : `#${linkLabel.toLowerCase().replace(/\s/g, "-")}`;
+
+                const updateItem = (field, val) => {
+                    const arr = [...(props[key] || [])];
+                    if (!isObj) arr[i] = { label: arr[i], url: linkUrl };
+                    arr[i] = { ...arr[i], [field]: val };
+                    onChange({ [key]: arr });
+                };
+
+                return (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, padding: 8, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 8 }}>
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <input value={linkLabel} onChange={e => updateItem('label', e.target.value)} style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="Link Name" />
+                            <button onClick={() => {
+                                const arr = [...(props[key] || [])];
+                                arr.splice(i, 1);
+                                onChange({ [key]: arr });
+                            }} style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", cursor: "pointer", padding: "0 8px", fontSize: "14px", border: "none", borderRadius: 4 }}>×</button>
+                        </div>
+                        <input value={linkUrl} onChange={e => updateItem('url', e.target.value)} style={{ ...inputStyle, marginTop: 0 }} placeholder="URL (e.g. /about or #section)" />
+                    </div>
+                );
+            })}
+            <button
+                onClick={() => {
+                    const arr = [...(props[key] || [])];
+                    arr.push({ label: "New Link", url: "#" });
+                    onChange({ [key]: arr });
+                }}
+                style={{ marginTop: "6px", fontSize: "12px", color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            >
+                + Add Link
             </button>
         </div>
     );
@@ -375,7 +434,9 @@ export default function SectionEditor({ section, onChange }) {
             case "Navbar":
                 return <>
                     {renderField("Brand Name", "brand", "text", "My Brand")}
-                    {renderArrayField("Nav Links", "links")}
+                    <div style={{ marginTop: "16px", marginBottom: "8px" }}>
+                        {renderNavLinksField("Navigation Links", "links")}
+                    </div>
                 </>;
 
             case "Hero":
