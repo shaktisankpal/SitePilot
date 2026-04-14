@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import api from "../../services/api.js";
+import ChatWidget from "./ChatWidget.jsx";
 
 // ─── Design System ─────────────────────────────────────────────────────────────
 const DS = {
@@ -856,7 +857,7 @@ const CTASection = ({ props, branding }) => {
 // ─── CONTACT FORM SECTION ──────────────────────────────────────────────────────
 const ContactFormSection = ({ props, branding, websiteId }) => {
     const fields = props.fields || ["name", "email", "message"];
-    const [formData, setFormData] = useState(fields.reduce((a, f) => ({ ...a, [f]: "" }), {}));
+    const [formData, setFormData] = useState(() => fields.reduce((a, f) => ({ ...a, [f]: "" }), {}));
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [formError, setFormError] = useState(null);
@@ -882,24 +883,11 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
         finally { setSubmitting(false); }
     };
 
-    const inputStyle = { padding: "13px 16px", borderRadius: "12px", fontSize: "14px", background: light ? "rgba(255,255,255,0.06)" : "#f9fafb", border: `1.5px solid ${light ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"}`, color: tc, fontFamily: fontStyle, width: "100%", outline: "none" };
+    const handleInputChange = (fieldName, value) => {
+        setFormData(prev => ({ ...prev, [fieldName]: value }));
+    };
 
-    const Form = () => (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {formError && <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600, fontSize: "13px", fontFamily: fontStyle }}>{formError}</div>}
-            {fields.map(field => {
-                const f = field.toLowerCase();
-                const isArea = f.includes("message") || f.includes("comment");
-                const label = field.charAt(0).toUpperCase() + field.slice(1);
-                return isArea
-                    ? <textarea key={f} name={f} placeholder={label} rows={4} value={formData[f] || ""} onChange={e => setFormData({ ...formData, [f]: e.target.value })} style={{ ...inputStyle, resize: "vertical" }} />
-                    : <input key={f} type={f.includes("email") ? "email" : "text"} name={f} placeholder={label} value={formData[f] || ""} onChange={e => setFormData({ ...formData, [f]: e.target.value })} style={inputStyle} />;
-            })}
-            <button type="submit" disabled={submitting} className="sp-btn-base" style={{ background: submitting ? "rgba(100,100,100,0.5)" : accent, color: "#fff", padding: "15px", justifyContent: "center", borderRadius: "12px", width: "100%", fontSize: "15px", fontFamily: fontStyle, boxShadow: submitting ? "none" : DS.shadow.colored(accent), cursor: submitting ? "not-allowed" : "pointer", marginTop: "4px" }}>
-                {submitting ? "Sending…" : (props.submitText || "Send Message")}
-            </button>
-        </form>
-    );
+    const inputStyle = { padding: "13px 16px", borderRadius: "12px", fontSize: "14px", background: light ? "rgba(255,255,255,0.06)" : "#f9fafb", border: `1.5px solid ${light ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"}`, color: tc, fontFamily: fontStyle, width: "100%", outline: "none" };
 
     if (submitted) {
         return (
@@ -922,7 +910,20 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                     </div>
                     <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: tc, textAlign: "center", marginBottom: "28px", fontFamily: fontStyle }}>{props.heading || "Contact Us"}</h2>
-                    <Form />
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        {formError && <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600, fontSize: "13px", fontFamily: fontStyle }}>{formError}</div>}
+                        {fields.map(field => {
+                            const f = field.toLowerCase();
+                            const isArea = f.includes("message") || f.includes("comment");
+                            const label = field.charAt(0).toUpperCase() + field.slice(1);
+                            return isArea
+                                ? <textarea key={f} name={f} placeholder={label} rows={4} value={formData[f] || ""} onChange={e => handleInputChange(f, e.target.value)} style={{ ...inputStyle, resize: "vertical" }} />
+                                : <input key={f} type={f.includes("email") ? "email" : "text"} name={f} placeholder={label} value={formData[f] || ""} onChange={e => handleInputChange(f, e.target.value)} style={inputStyle} />;
+                        })}
+                        <button type="submit" disabled={submitting} className="sp-btn-base" style={{ background: submitting ? "rgba(100,100,100,0.5)" : accent, color: "#fff", padding: "15px", justifyContent: "center", borderRadius: "12px", width: "100%", fontSize: "15px", fontFamily: fontStyle, boxShadow: submitting ? "none" : DS.shadow.colored(accent), cursor: submitting ? "not-allowed" : "pointer", marginTop: "4px" }}>
+                            {submitting ? "Sending…" : (props.submitText || "Send Message")}
+                        </button>
+                    </form>
                 </div>
             </section>
         );
@@ -946,7 +947,20 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                     ))}
                 </div>
                 <div style={{ background: light ? "rgba(255,255,255,0.03)" : "#fff", padding: "44px", borderRadius: "32px", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.lg }}>
-                    <Form />
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        {formError && <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 600, fontSize: "13px", fontFamily: fontStyle }}>{formError}</div>}
+                        {fields.map(field => {
+                            const f = field.toLowerCase();
+                            const isArea = f.includes("message") || f.includes("comment");
+                            const label = field.charAt(0).toUpperCase() + field.slice(1);
+                            return isArea
+                                ? <textarea key={f} name={f} placeholder={label} rows={4} value={formData[f] || ""} onChange={e => handleInputChange(f, e.target.value)} style={{ ...inputStyle, resize: "vertical" }} />
+                                : <input key={f} type={f.includes("email") ? "email" : "text"} name={f} placeholder={label} value={formData[f] || ""} onChange={e => handleInputChange(f, e.target.value)} style={inputStyle} />;
+                        })}
+                        <button type="submit" disabled={submitting} className="sp-btn-base" style={{ background: submitting ? "rgba(100,100,100,0.5)" : accent, color: "#fff", padding: "15px", justifyContent: "center", borderRadius: "12px", width: "100%", fontSize: "15px", fontFamily: fontStyle, boxShadow: submitting ? "none" : DS.shadow.colored(accent), cursor: submitting ? "not-allowed" : "pointer", marginTop: "4px" }}>
+                            {submitting ? "Sending…" : (props.submitText || "Send Message")}
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
@@ -1097,6 +1111,10 @@ export default function PublicSiteRenderer() {
     const branding = siteData?.tenant?.branding;
     const sections = currentPage?.layoutConfig?.sections || [];
     const websiteId = searchParams.get("websiteId") || siteData?.website?._id || siteData?.pages?.[0]?.websiteId;
+    
+    // Extract brand name for the chatbot
+    const navbarSection = sections.find(s => s.type === "Navbar");
+    const brandName = navbarSection?.props?.brand || siteData?.website?.name || "AI Assistant";
 
     return (
         <div style={{ minHeight: "100vh", background: "#fff", overflowX: "hidden" }}>
@@ -1124,6 +1142,9 @@ export default function PublicSiteRenderer() {
                     <p style={{ color: "rgba(0,0,0,0.25)", fontFamily: "system-ui" }}>This page has no content yet.</p>
                 </div>
             )}
+
+            {/* AI Chatbot Widget */}
+            {websiteId && <ChatWidget websiteId={websiteId} branding={branding} brandName={brandName} />}
         </div>
     );
 }

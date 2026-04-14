@@ -23,14 +23,16 @@ class FirebaseAgent {
      * @returns {Object} - Deployment result
      */
     async execute(context) {
-        const { tenantId, siteId, websiteData, pages, assets = [] } = context;
+        const { tenantId, siteId, websiteData, pages, assets = [], tenantSlug, websiteSlug, websiteName } = context;
 
-        console.log(`🤖 [${this.name}] Starting deployment for tenant: ${tenantId}, site: ${siteId}`);
+        console.log(`🤖 [${this.name}] Starting deployment for tenant: ${tenantSlug || tenantId}, site: ${websiteSlug || siteId}`);
 
         const result = {
             agent: this.name,
             tenantId,
             siteId,
+            tenantSlug,
+            websiteSlug,
             timestamp: new Date().toISOString(),
             steps: [],
             success: false,
@@ -42,34 +44,34 @@ class FirebaseAgent {
             // Step 1: Initialize Firebase
             result.steps.push(await this.initializeFirebase());
 
-            // Step 2: Create tenant structure
-            result.steps.push(await this.createTenantStructure(tenantId, siteId));
+            // Step 2: Create tenant structure with human-readable names
+            result.steps.push(await this.createTenantStructure(tenantId, siteId, { tenantSlug, websiteSlug, websiteName }));
 
-            // Step 3: Deploy pages
-            result.steps.push(await this.deployPages(tenantId, siteId, pages));
+            // Step 3: Deploy pages with human-readable structure
+            result.steps.push(await this.deployPages(tenantSlug || tenantId, websiteSlug || siteId, pages, { tenantId, siteId }));
 
             // Step 4: Upload assets (if any)
             if (assets.length > 0) {
-                result.steps.push(await this.uploadAssets(tenantId, siteId, assets));
+                result.steps.push(await this.uploadAssets(tenantSlug || tenantId, websiteSlug || siteId, assets, { tenantId, siteId }));
             }
 
             // Step 5: Auto-detect and setup form submission backend
             const hasContactForm = this.detectContactForms(pages);
             if (hasContactForm) {
                 result.hasContactForm = true;
-                result.steps.push(await this.setupFormSubmissionBackend(tenantId, siteId));
+                result.steps.push(await this.setupFormSubmissionBackend(tenantSlug || tenantId, websiteSlug || siteId, { websiteName }));
                 console.log(`📝 [${this.name}] Contact form detected - Backend auto-configured`);
             }
 
             // Step 6: Apply security rules
-            result.steps.push(await this.applySecurityRules(tenantId));
+            result.steps.push(await this.applySecurityRules(tenantSlug || tenantId));
 
             // Step 7: Validate deployment
-            result.steps.push(await this.validateDeployment(tenantId, siteId));
+            result.steps.push(await this.validateDeployment(tenantSlug || tenantId, websiteSlug || siteId));
 
             result.success = true;
-            result.hostingUrl = this.generateHostingUrl(tenantId, siteId);
-            result.firestorePath = `tenants/${tenantId}/sites/${siteId}`;
+            result.hostingUrl = this.generateHostingUrl(tenantSlug || tenantId, websiteSlug || siteId);
+            result.firestorePath = `tenants/${tenantSlug || tenantId}/sites/${websiteSlug || siteId}`;
 
             console.log(`✅ [${this.name}] Deployment successful`);
             return result;
@@ -103,9 +105,9 @@ class FirebaseAgent {
     /**
      * Create tenant-isolated Firestore structure
      */
-    async createTenantStructure(tenantId, siteId) {
+    async createTenantStructure(tenantId, siteId, metadata) {
         try {
-            const structure = await firebaseService.createTenantStructure(tenantId, siteId);
+            const structure = await firebaseService.createTenantStructure(tenantId, siteId, metadata);
             return {
                 step: "create_tenant_structure",
                 status: "success",
@@ -119,13 +121,13 @@ class FirebaseAgent {
     /**
      * Deploy pages to Firestore
      */
-    async deployPages(tenantId, siteId, pages) {
+    async deployPages(tenantSlug, websiteSlug, pages, metadata) {
         try {
             if (!pages || pages.length === 0) {
                 throw new Error("No pages provided for deployment");
             }
 
-            const result = await firebaseService.deployPages(tenantId, siteId, pages);
+            const result = await firebaseService.deployPages(tenantSlug, websiteSlug, pages, metadata);
             return {
                 step: "deploy_pages",
                 status: "success",
@@ -139,9 +141,9 @@ class FirebaseAgent {
     /**
      * Upload assets to Firebase Storage
      */
-    async uploadAssets(tenantId, siteId, assets) {
+    async uploadAssets(tenantSlug, websiteSlug, assets, metadata) {
         try {
-            const urls = await firebaseService.uploadAssets(tenantId, siteId, assets);
+            const urls = await firebaseService.uploadAssets(tenantSlug, websiteSlug, assets, metadata);
             return {
                 step: "upload_assets",
                 status: "success",
@@ -155,9 +157,9 @@ class FirebaseAgent {
     /**
      * Apply Firestore security rules
      */
-    async applySecurityRules(tenantId) {
+    async applySecurityRules(tenantSlug) {
         try {
-            const result = await firebaseService.applySecurityRules(tenantId);
+            const result = await firebaseService.applySecurityRules(tenantSlug);
             return {
                 step: "apply_security_rules",
                 status: "success",
@@ -183,9 +185,9 @@ class FirebaseAgent {
     /**
      * Setup form submission backend automatically
      */
-    async setupFormSubmissionBackend(tenantId, siteId) {
+    async setupFormSubmissionBackend(tenantSlug, websiteSlug, metadata) {
         try {
-            const result = await firebaseService.setupFormCollection(tenantId, siteId);
+            const result = await firebaseService.setupFormCollection(tenantSlug, websiteSlug, metadata);
             return {
                 step: "setup_form_backend",
                 status: "success",
@@ -200,9 +202,9 @@ class FirebaseAgent {
     /**
      * Validate deployment integrity
      */
-    async validateDeployment(tenantId, siteId) {
+    async validateDeployment(tenantSlug, websiteSlug) {
         try {
-            const status = await firebaseService.getDeploymentStatus(tenantId, siteId);
+            const status = await firebaseService.getDeploymentStatus(tenantSlug, websiteSlug);
             if (!status.exists) {
                 throw new Error("Deployment validation failed: Site not found in Firestore");
             }
@@ -220,11 +222,11 @@ class FirebaseAgent {
     /**
      * Generate hosting URL for deployed site
      */
-    generateHostingUrl(tenantId, siteId) {
+    generateHostingUrl(tenantSlug, websiteSlug) {
         // In production, this would be the actual Firebase Hosting URL
-        // Format: https://{tenantId}-{siteId}.web.app or custom domain
+        // Format: https://{tenantSlug}-{websiteSlug}.web.app or custom domain
         const projectId = process.env.FIREBASE_PROJECT_ID;
-        return `https://${projectId}.web.app/tenants/${tenantId}/sites/${siteId}`;
+        return `https://${projectId}.web.app/tenants/${tenantSlug}/sites/${websiteSlug}`;
     }
 
     /**
