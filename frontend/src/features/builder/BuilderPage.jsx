@@ -318,6 +318,7 @@ export default function BuilderPage() {
                                                                 >
                                                                     <SectionEditor
                                                                         section={section}
+                                                                        pages={pages}
                                                                         onChange={(props) => {
                                                                             dispatch(updateSectionProps({ sectionId: section.id, props }));
                                                                             broadcastUpdate(
@@ -520,7 +521,7 @@ export default function BuilderPage() {
                                                                     canEdit && dispatch(setSelectedSection(section.id));
                                                                 }}
                                                             >
-                                                                <Component props={section.props || {}} branding={tenant?.branding} />
+                                                                <Component props={section.props || {}} branding={tenant?.branding} websiteId={websiteId} allPages={pages} currentPage={currentPage} />
                                                             </div>
                                                         )}
                                                     </Draggable>
