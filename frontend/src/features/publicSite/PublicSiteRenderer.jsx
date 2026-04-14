@@ -305,7 +305,7 @@ const GlowBlob = ({ color, style = {} }) => (
 );
 
 // ─── NAVBAR SECTION ────────────────────────────────────────────────────────────
-const NavbarSection = ({ props, branding }) => {
+const NavbarSection = ({ props, branding, allPages, currentPage, onPageChange }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
     const tc = props.textColor || "#111827";
@@ -323,13 +323,39 @@ const NavbarSection = ({ props, branding }) => {
             {brand}
         </span>
     );
+    
+    // Map navbar links to actual pages
     const linksEl = (
         <div className="sp-nav-links" style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-            {links.map((l, i) => (
-                <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, fontFamily: fontStyle }}>{l}</a>
-            ))}
+            {allPages && allPages.length > 0 ? (
+                // Use actual pages for navigation
+                allPages.map((page, i) => (
+                    <button
+                        key={page._id || i}
+                        onClick={() => onPageChange && onPageChange(page)}
+                        className="sp-nav-link"
+                        style={{
+                            color: tc,
+                            fontFamily: fontStyle,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontWeight: currentPage?._id === page._id ? 700 : 600,
+                            opacity: currentPage?._id === page._id ? 1 : 0.7,
+                        }}
+                    >
+                        {page.title}
+                    </button>
+                ))
+            ) : (
+                // Fallback to anchor links if no pages provided
+                links.map((l, i) => (
+                    <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, fontFamily: fontStyle }}>{l}</a>
+                ))
+            )}
         </div>
     );
+    
     const ctaEl = (
         <button className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "11px 24px", borderRadius: "100px", fontSize: "13px", fontFamily: fontStyle, boxShadow: `0 4px 16px ${accent}55` }}>
             Get Started
@@ -365,9 +391,33 @@ const NavbarSection = ({ props, branding }) => {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1320px", margin: "0 auto" }}>
                     <span style={{ fontWeight: 900, fontSize: "18px", color: tc, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: fontStyle }}>{brand}</span>
                     <div className="sp-nav-links" style={{ display: "flex", gap: "40px", alignItems: "center" }}>
-                        {links.map((l, i) => (
-                            <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "12px", fontFamily: fontStyle }}>{l}</a>
-                        ))}
+                        {allPages && allPages.length > 0 ? (
+                            allPages.map((page, i) => (
+                                <button
+                                    key={page._id || i}
+                                    onClick={() => onPageChange && onPageChange(page)}
+                                    className="sp-nav-link"
+                                    style={{
+                                        color: tc,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.08em",
+                                        fontSize: "12px",
+                                        fontFamily: fontStyle,
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontWeight: currentPage?._id === page._id ? 700 : 600,
+                                        opacity: currentPage?._id === page._id ? 1 : 0.7,
+                                    }}
+                                >
+                                    {page.title}
+                                </button>
+                            ))
+                        ) : (
+                            links.map((l, i) => (
+                                <a key={i} href={`#${l.toLowerCase().replace(/\s/g, "-")}`} className="sp-nav-link" style={{ color: tc, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "12px", fontFamily: fontStyle }}>{l}</a>
+                            ))
+                        )}
                     </div>
                 </div>
             </nav>
@@ -1120,8 +1170,8 @@ export default function PublicSiteRenderer() {
         <div style={{ minHeight: "100vh", background: "#fff", overflowX: "hidden" }}>
             <style>{globalResponsiveCss}</style>
 
-            {/* Multi-page floating nav */}
-            {siteData?.pages?.length > 1 && (
+            {/* Multi-page floating nav - HIDDEN: Top navbar now handles navigation */}
+            {false && siteData?.pages?.length > 1 && (
                 <div className="sp-page-nav">
                     {siteData.pages.map(page => (
                         <button key={page._id} onClick={() => setCurrentPage(page)} style={{ padding: "6px 16px", borderRadius: "100px", fontSize: "12px", fontWeight: 700, background: currentPage?._id === page._id ? (branding?.primaryColor || "#6366f1") : "transparent", border: "none", color: currentPage?._id === page._id ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", transition: "all 0.2s", fontFamily: "system-ui" }}>
@@ -1134,6 +1184,20 @@ export default function PublicSiteRenderer() {
             {[...sections].sort((a, b) => a.order - b.order).map(section => {
                 const Component = SECTION_MAP[section.type];
                 if (!Component) return null;
+                
+                // Pass additional props to Navbar for page navigation
+                if (section.type === "Navbar") {
+                    return <Component 
+                        key={section.id} 
+                        props={section.props || {}} 
+                        branding={branding} 
+                        websiteId={websiteId}
+                        allPages={siteData?.pages}
+                        currentPage={currentPage}
+                        onPageChange={setCurrentPage}
+                    />;
+                }
+                
                 return <Component key={section.id} props={section.props || {}} branding={branding} websiteId={websiteId} />;
             })}
 
