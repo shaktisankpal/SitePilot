@@ -327,41 +327,64 @@ const NavbarSection = ({ props, branding, allPages, currentPage, onPageChange })
     // Map custom links to actual pages or custom URLs
     const linksEl = (
         <div className="sp-nav-links" style={{ display: "flex", gap: "32px", alignItems: "center" }}>
-            {links.map((item, i) => {
-                const isObj = typeof item === 'object' && item !== null;
-                const label = isObj ? item.label : item;
-                const url = isObj ? item.url : `#${label.toLowerCase().replace(/\s/g, "-")}`;
+            {allPages && allPages.length > 0 ? (
+                // Use actual pages for navigation (PRIORITY)
+                allPages.map((page, i) => (
+                    <button
+                        key={page._id || i}
+                        onClick={() => onPageChange && onPageChange(page)}
+                        className="sp-nav-link"
+                        style={{
+                            color: tc,
+                            fontFamily: fontStyle,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontWeight: currentPage?._id === page._id ? 700 : 600,
+                            opacity: currentPage?._id === page._id ? 1 : 0.7,
+                        }}
+                    >
+                        {page.title}
+                    </button>
+                ))
+            ) : (
+                // Fallback to custom links if no pages provided
+                links.map((item, i) => {
+                    const isObj = typeof item === 'object' && item !== null;
+                    const label = isObj ? item.label : item;
+                    const url = isObj ? item.url : `#${label.toLowerCase().replace(/\s/g, "-")}`;
 
-                // Try to handle internal routing using onPageChange
-                if (url.startsWith('/') && onPageChange && allPages) {
-                    const targetSlug = url === '/' ? 'home' : url.substring(1);
-                    const matchedPage = allPages.find(p => p.slug === targetSlug);
-                    if (matchedPage) {
-                        return (
-                            <button
-                                key={i}
-                                onClick={() => onPageChange(matchedPage)}
-                                className="sp-nav-link"
-                                style={{
-                                    color: tc,
-                                    fontFamily: fontStyle,
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    fontWeight: currentPage?._id === matchedPage._id ? 700 : 600,
-                                    opacity: currentPage?._id === matchedPage._id ? 1 : 0.7,
-                                }}
-                            >
-                                {label}
-                            </button>
-                        );
+                    // Try to handle internal routing using onPageChange
+                    if (url.startsWith('/') && onPageChange && allPages) {
+                        const targetSlug = url === '/' ? 'home' : url.substring(1);
+                        const matchedPage = allPages.find(p => p.slug === targetSlug);
+                        if (matchedPage) {
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => onPageChange(matchedPage)}
+                                    className="sp-nav-link"
+                                    style={{
+                                        color: tc,
+                                        fontFamily: fontStyle,
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontWeight: currentPage?._id === matchedPage._id ? 700 : 600,
+                                        opacity: currentPage?._id === matchedPage._id ? 1 : 0.7,
+                                    }}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        }
                     }
-                }
 
-                return (
-                    <a key={i} href={url} className="sp-nav-link" style={{ color: tc, fontFamily: fontStyle }}>{label}</a>
-                );
-            })}
+                    return (
+                        <a key={i} href={url} className="sp-nav-link" style={{ color: tc, fontFamily: fontStyle }}>{label}</a>
+                    );
+                })
+            )}
         </div>
     );
 
@@ -400,31 +423,75 @@ const NavbarSection = ({ props, branding, allPages, currentPage, onPageChange })
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1320px", margin: "0 auto" }}>
                     <span style={{ fontWeight: 900, fontSize: "18px", color: tc, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: fontStyle }}>{brand}</span>
                     <div className="sp-nav-links" style={{ display: "flex", gap: "40px", alignItems: "center" }}>
-                        {links.map((item, i) => {
-                            const isObj = typeof item === 'object' && item !== null;
-                            const label = isObj ? item.label : item;
-                            const url = isObj ? item.url : `#${label.toLowerCase().replace(/\s/g, "-")}`;
+                        {allPages && allPages.length > 0 ? (
+                            // Use actual pages for navigation (PRIORITY)
+                            allPages.map((page, i) => (
+                                <button
+                                    key={page._id || i}
+                                    onClick={() => onPageChange && onPageChange(page)}
+                                    className="sp-nav-link"
+                                    style={{
+                                        color: tc,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.08em",
+                                        fontSize: "12px",
+                                        fontFamily: fontStyle,
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontWeight: currentPage?._id === page._id ? 700 : 600,
+                                        opacity: currentPage?._id === page._id ? 1 : 0.7,
+                                    }}
+                                >
+                                    {page.title}
+                                </button>
+                            ))
+                        ) : (
+                            // Fallback to custom links
+                            links.map((item, i) => {
+                                const isObj = typeof item === 'object' && item !== null;
+                                const label = isObj ? item.label : item;
+                                const url = isObj ? item.url : `#${label.toLowerCase().replace(/\s/g, "-")}`;
 
-                            // Try to handle internal routing using onPageChange
-                            if (url.startsWith('/') && onPageChange && allPages) {
-                                const targetSlug = url === '/' ? 'home' : url.substring(1);
-                                const matchedPage = allPages.find(p => p.slug === targetSlug);
-                                if (matchedPage) {
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => onPageChange(matchedPage)}
-                                            className="sp-nav-link"
-                                            style={{
-                                                color: tc,
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.08em",
-                                                fontSize: "12px",
-                                                fontFamily: fontStyle,
-                                                background: "none",
-                                                border: "none",
-                                                cursor: "pointer",
-                                                fontWeight: currentPage?._id === matchedPage._id ? 700 : 600,
+                                // Try to handle internal routing using onPageChange
+                                if (url.startsWith('/') && onPageChange && allPages) {
+                                    const targetSlug = url === '/' ? 'home' : url.substring(1);
+                                    const matchedPage = allPages.find(p => p.slug === targetSlug);
+                                    if (matchedPage) {
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => onPageChange(matchedPage)}
+                                                className="sp-nav-link"
+                                                style={{
+                                                    color: tc,
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: "0.08em",
+                                                    fontSize: "12px",
+                                                    fontFamily: fontStyle,
+                                                    background: "none",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                    fontWeight: currentPage?._id === matchedPage._id ? 700 : 600,
+                                                    opacity: currentPage?._id === matchedPage._id ? 1 : 0.7,
+                                                }}
+                                            >
+                                                {label}
+                                            </button>
+                                        );
+                                    }
+                                }
+
+                                return (
+                                    <a key={i} href={url} className="sp-nav-link" style={{ color: tc, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "12px", fontFamily: fontStyle }}>{label}</a>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            </nav>
+        );
+    }
                                                 opacity: currentPage?._id === matchedPage._id ? 1 : 0.7,
                                             }}
                                         >
