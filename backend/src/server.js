@@ -36,6 +36,7 @@ import {
     getPublicPage,
     getPublicSite,
 } from "./modules/domain/domain.controller.js";
+import { chatWithWebsite } from "./modules/ai/ai.controller.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -156,6 +157,7 @@ app.get("/api/public/sites/:tenantSlug", getPublicSite);
 app.get("/api/public/sites/:tenantSlug/pages/:slug", getPublicPage);
 app.use("/api/public/forms", formsRoutes);
 app.use("/api/public/unsplash", unsplashRoutes);
+app.post("/api/public/chat", chatWithWebsite);
 
 
 // Protected API routes

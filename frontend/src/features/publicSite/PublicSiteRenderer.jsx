@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import api from "../../services/api.js";
+import ChatWidget from "./ChatWidget.jsx";
 
 // ─── Design System ─────────────────────────────────────────────────────────────
 const DS = {
@@ -1110,6 +1111,10 @@ export default function PublicSiteRenderer() {
     const branding = siteData?.tenant?.branding;
     const sections = currentPage?.layoutConfig?.sections || [];
     const websiteId = searchParams.get("websiteId") || siteData?.website?._id || siteData?.pages?.[0]?.websiteId;
+    
+    // Extract brand name for the chatbot
+    const navbarSection = sections.find(s => s.type === "Navbar");
+    const brandName = navbarSection?.props?.brand || siteData?.website?.name || "AI Assistant";
 
     return (
         <div style={{ minHeight: "100vh", background: "#fff", overflowX: "hidden" }}>
@@ -1137,6 +1142,9 @@ export default function PublicSiteRenderer() {
                     <p style={{ color: "rgba(0,0,0,0.25)", fontFamily: "system-ui" }}>This page has no content yet.</p>
                 </div>
             )}
+
+            {/* AI Chatbot Widget */}
+            {websiteId && <ChatWidget websiteId={websiteId} branding={branding} brandName={brandName} />}
         </div>
     );
 }
