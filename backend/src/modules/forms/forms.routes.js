@@ -57,7 +57,7 @@ router.post("/submit/:websiteId", async (req, res) => {
             });
         }
 
-        // Find website
+        // Find website with tenant info
         const website = await Website.findById(websiteId)
             .populate("tenantId")
             .lean();
@@ -71,15 +71,20 @@ router.post("/submit/:websiteId", async (req, res) => {
 
         const tenantId = website.tenantId._id.toString();
         const siteId = website._id.toString();
+        
+        // Generate human-readable slugs
+        const tenantSlug = website.tenantId.slug || tenantId;
+        const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || siteId;
 
-        // Save to Firebase with all dynamic fields
+        // Save to Firebase with human-readable structure
         const result = await firebaseService.saveFormSubmission(
-            tenantId,
-            siteId,
-            sanitizedData
+            tenantSlug,
+            websiteSlug,
+            sanitizedData,
+            { tenantId, siteId }
         );
 
-        console.log(`📝 [Forms] Submission saved: ${result.submissionId} with fields: ${Object.keys(sanitizedData).join(", ")}`);
+        console.log(`📝 [Forms] Submission saved: ${result.submissionId} at ${result.path}`);
 
         return res.status(200).json({
             success: true,
@@ -109,7 +114,7 @@ router.get("/submissions/:websiteId", authenticateJWT, async (req, res) => {
         const website = await Website.findOne({
             _id: websiteId,
             tenantId,
-        });
+        }).populate("tenantId");
 
         if (!website) {
             return res.status(404).json({
@@ -118,10 +123,14 @@ router.get("/submissions/:websiteId", authenticateJWT, async (req, res) => {
             });
         }
 
-        // Get submissions from Firebase
+        // Generate human-readable slugs
+        const tenantSlug = website.tenantId.slug || tenantId;
+        const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || websiteId;
+
+        // Get submissions from Firebase using human-readable structure
         const submissions = await firebaseService.getFormSubmissions(
-            tenantId,
-            websiteId,
+            tenantSlug,
+            websiteSlug,
             limit
         );
 

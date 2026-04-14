@@ -787,9 +787,18 @@ COLOR RULES:
                 console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
 
                 const firebaseAgent = new FirebaseAgent();
+                
+                // Get tenant info for human-readable slugs
+                const tenant = await Tenant.findById(req.tenantId);
+                const tenantSlug = tenant?.slug || req.tenantId.toString();
+                const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || website._id.toString();
+                
                 const deploymentContext = {
                     tenantId: req.tenantId.toString(),
                     siteId: website._id.toString(),
+                    tenantSlug,
+                    websiteSlug,
+                    websiteName: website.name,
                     websiteData: {
                         name: website.name,
                         description: website.description,
@@ -805,8 +814,9 @@ COLOR RULES:
                     const firebaseResult = await firebaseAgent.execute(deploymentContext);
                     if (firebaseResult.success) {
                         console.log(`✅ [AI] Firebase backend auto-configured!`);
+                        console.log(`📍 [AI] Firestore path: ${firebaseResult.firestorePath}`);
                         if (firebaseResult.hasContactForm) {
-                            console.log(`📝 [AI] Form submission backend is LIVE!`);
+                            console.log(`📝 [AI] Form submission backend is LIVE at: tenants/${tenantSlug}/sites/${websiteSlug}/contact_form_submissions`);
                         }
                     } else {
                         console.error(`⚠️ [AI] Firebase setup failed:`, firebaseResult.error);
