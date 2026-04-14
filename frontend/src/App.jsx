@@ -83,8 +83,8 @@ export default function App() {
           </Route>
 
           {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </BrowserRouter>
     </Provider>

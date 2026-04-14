@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import ollama from "ollama";
+import { Ollama } from "ollama";
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
@@ -13,6 +13,11 @@ import { searchUnsplash, searchUnsplashBatch } from "../../services/unsplash.ser
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Configure Ollama client with host from environment
+const ollamaClient = new Ollama({
+    host: process.env.OLLAMA_HOST || 'http://localhost:11434'
+});
 
 const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
@@ -656,7 +661,7 @@ COLOR RULES:
         } else {
             try {
                 console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
-                const r = await ollama.chat({
+                const r = await ollamaClient.chat({
                     model: 'qwen3.5:4b',
                     messages: [
                         { role: 'system', content: 'You are an expert AI website generator and elite copywriter. You MUST generate unique, engaging content perfectly tailored to the requested business type. NEVER blindly copy placeholder text from templates.' },
@@ -930,7 +935,7 @@ ${siteContext}
 
         try {
             console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
-            const r = await ollama.chat({
+            const r = await ollamaClient.chat({
                 model: 'qwen3.5:4b',
                 messages: [
                     { role: 'system', content: systemPrompt },
