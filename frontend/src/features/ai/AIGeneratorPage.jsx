@@ -143,7 +143,7 @@ export default function AIGeneratorPage() {
                         toast.error("Translation language pair not natively supported by browser. Sending raw text.");
                     }
                 } else {
-                    toast.error("Browser Built-in AI Translation API not detected. Enable it in chrome://flags. Sending raw text.");
+                    // Muted error notification: Browser Built-in AI Translation API not detected.
                 }
             } catch (err) {
                 console.error("Translation error:", err);

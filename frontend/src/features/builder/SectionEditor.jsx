@@ -373,6 +373,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
             Gallery: ["Bento Grid", "Masonry Column", "Horizontal Flex"],
             CTA: ["Centered Large", "Floating Pill", "Split Screen CTA"],
             ContactForm: ["Left Text Right Form", "Centered Card", "Minimal Left Form"],
+            DynamicForm: ["Card Based", "Split Left Text"],
             Footer: ["Simple Centered", "Multi-Column Mock", "Ultra Minimal"],
             Button: ["Primary Pill", "Secondary Outline", "Ghost Action"],
             Image: ["Rounded Shadow", "Full Bleed Edge", "Circle Cropped"],
@@ -475,6 +476,14 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                 return <>
                     {renderField("Heading", "heading", "text", "Contact Us")}
                     {renderArrayField("Form Fields", "fields")}
+                    {renderImageField("Background Image", "backgroundImage")}
+                </>;
+
+            case "DynamicForm":
+                return <>
+                    {renderField("Heading", "heading", "text", "Fill Details")}
+                    {renderField("Description", "description", "textarea", "Please provide the following information.")}
+                    {renderField("Submit Button Text", "submitText", "text", "Submit")}
                     {renderImageField("Background Image", "backgroundImage")}
                 </>;
 

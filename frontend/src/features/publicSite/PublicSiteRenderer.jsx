@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { io } from "socket.io-client";
 import api from "../../services/api.js";
 import ChatWidget from "./ChatWidget.jsx";
 
@@ -965,7 +966,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                 <div style={{ maxWidth: "520px", margin: "0 auto", textAlign: "center", padding: "56px 40px", borderRadius: "32px", background: light ? "rgba(255,255,255,0.04)" : "#fff", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.xl }}>
                     <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 20px", boxShadow: DS.shadow.colored(accent) }}>✓</div>
                     <h3 style={{ fontSize: "1.6rem", fontWeight: 800, color: tc, marginBottom: "10px", fontFamily: fontStyle }}>Message Sent!</h3>
-                    <p style={{ color: tc, opacity: 0.65, fontFamily: fontStyle }}>We'll get back to you within 24 hours.</p>
+                    <p style={{ color: tc, opacity: 0.65, fontFamily: fontStyle }}>We&apos;ll get back to you within 24 hours.</p>
                 </div>
             </section>
         );
@@ -1005,7 +1006,7 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
                 <div>
                     <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "18px", fontFamily: fontStyle }}>Get In Touch</div>
                     <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading || "Let's Talk"}</h2>
-                    <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.7, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>Fill out the form and we'll respond promptly.</p>
+                    <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.7, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>Fill out the form and we&apos;ll respond promptly.</p>
                     {[["📧", "Email", "hello@company.com"], ["📞", "Phone", "+1 (555) 000-0000"], ["📍", "Location", "New York, USA"]].map(([icon, label, val]) => (
                         <div key={label} style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "14px", padding: "14px 18px", background: light ? "rgba(255,255,255,0.04)" : "#f9fafb", borderRadius: "14px", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
                             <span style={{ fontSize: "18px" }}>{icon}</span>
@@ -1097,6 +1098,142 @@ const FooterSection = ({ props, branding }) => {
     );
 };
 
+// ─── DYNAMIC FORM SECTION ──────────────────────────────────────────────────────
+const DynamicFormSection = ({ props, branding, websiteId }) => {
+    // Read from dynamicFields (normalized by backend) or fall back to generic
+    const fields = props.dynamicFields || props.fields || [
+        { name: "name", label: "Name", type: "text", required: true },
+        { name: "phone", label: "Phone", type: "tel", required: true },
+        { name: "message", label: "Message", type: "textarea", required: false },
+    ];
+    const [formData, setFormData] = useState(() => fields.reduce((a, f) => ({ ...a, [f.name]: "" }), {}));
+    const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [formError, setFormError] = useState(null);
+
+    const accent = props.accentColor || branding?.primaryColor || "#6366f1";
+    const bg = props.bgColor || "#ffffff";
+    const tc = props.textColor || "#111827";
+    const light = isLightText(tc);
+    const variant = props.variant || "Card Based";
+    const font = props.fontFamily || branding?.font || "Inter";
+    useEffect(() => { loadFont(font); }, [font]);
+    const fontStyle = `"${font}", "Inter", sans-serif`;
+
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true); setFormError(null);
+        if (!websiteId) { setFormError("Website ID not found."); setSubmitting(false); return; }
+        try {
+            const r = await fetch(`/api/public/forms/submit/${websiteId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
+            const res = await r.json();
+            if (res.success) setSubmitted(true); else setFormError(res.message || "Failed to submit.");
+        } catch { setFormError("Network error. Please try again."); }
+        finally { setSubmitting(false); }
+    };
+
+    const handleInputChange = (fieldName, value) => {
+        setFormData(prev => ({ ...prev, [fieldName]: value }));
+    };
+
+    const inputBaseStyle = { padding: "13px 16px", borderRadius: "12px", fontSize: "14px", background: light ? "rgba(255,255,255,0.06)" : "#f8fafc", border: `1.5px solid ${light ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.1)"}`, color: tc, fontFamily: fontStyle, width: "100%", outline: "none", transition: "border-color 0.2s" };
+    const cardBg = light ? "rgba(15,15,30,0.78)" : "rgba(255,255,255,0.97)";
+    const labelColor = light ? "rgba(255,255,255,0.72)" : "#374151";
+
+    const renderField = (field, idx) => {
+        const { name, label, type = "text", options, placeholder, required = true } = field;
+        const isArea = type === "textarea" || name.toLowerCase().includes("message") || name.toLowerCase().includes("instruction");
+        const isSelect = type === "select" && Array.isArray(options) && options.length > 0;
+        const isWide = isArea || isSelect || type === "date";
+        const fieldEl = isSelect ? (
+            <div style={{ position: "relative" }}>
+                <select name={name} value={formData[name] || ""} onChange={e => handleInputChange(name, e.target.value)} style={{ ...inputBaseStyle, appearance: "none", WebkitAppearance: "none", cursor: "pointer", paddingRight: "36px" }} required={required}>
+                    <option value="" disabled>Select {label}</option>
+                    {options.map(opt => <option key={opt} value={opt} style={{ color: "#111", background: "#fff" }}>{opt}</option>)}
+                </select>
+                <span style={{ position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: accent, fontWeight: 900, fontSize: "11px" }}>▾</span>
+            </div>
+        ) : isArea ? (
+            <textarea name={name} placeholder={placeholder || label} rows={3} value={formData[name] || ""} onChange={e => handleInputChange(name, e.target.value)} style={{ ...inputBaseStyle, resize: "vertical", minHeight: "84px" }} required={required} />
+        ) : (
+            <input type={type} name={name} placeholder={placeholder || label} value={formData[name] || ""} onChange={e => handleInputChange(name, e.target.value)} style={inputBaseStyle} required={required} />
+        );
+        return (
+            <div key={name + idx} style={{ gridColumn: isWide ? "1 / -1" : "auto", display: "flex", flexDirection: "column", gap: "5px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: labelColor, fontFamily: fontStyle, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                    {label}{!required && <span style={{ fontWeight: 400, opacity: 0.5, marginLeft: "4px", textTransform: "none" }}>(optional)</span>}
+                </label>
+                {fieldEl}
+            </div>
+        );
+    };
+
+    const formBody = (
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            {formError && <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontSize: "13px", fontFamily: fontStyle, border: "1px solid rgba(239,68,68,0.25)" }}>⚠ {formError}</div>}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "13px" }}>
+                {fields.map((field, idx) => renderField(field, idx))}
+            </div>
+            <button type="submit" disabled={submitting} className="sp-btn-base" style={{ background: submitting ? "rgba(100,100,100,0.35)" : `linear-gradient(135deg, ${accent}, ${accent}cc)`, color: "#fff", padding: "16px", justifyContent: "center", borderRadius: "14px", width: "100%", fontSize: "15px", fontFamily: fontStyle, fontWeight: 800, boxShadow: submitting ? "none" : DS.shadow.colored(accent), cursor: submitting ? "not-allowed" : "pointer", marginTop: "4px" }}>
+                {submitting ? <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}><span style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "sp-spin 0.7s linear infinite", display: "inline-block" }} />Submitting…</span> : (props.submitText || "Submit Order →")}
+            </button>
+            <p style={{ textAlign: "center", fontSize: "11px", color: tc, opacity: 0.4, fontFamily: fontStyle }}>🔒 Saved to Firebase · Never shared</p>
+        </form>
+    );
+
+    if (submitted) {
+        return (
+            <section style={{ padding: "80px 56px", background: bg }}>
+                <div style={{ maxWidth: "520px", margin: "0 auto", textAlign: "center", padding: "64px 48px", borderRadius: "36px", background: cardBg, backdropFilter: "blur(24px)", border: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.xl }}>
+                    <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", margin: "0 auto 24px", boxShadow: DS.shadow.colored(accent) }}>✓</div>
+                    <h3 style={{ fontSize: "1.7rem", fontWeight: 900, color: tc, marginBottom: "12px", fontFamily: fontStyle, letterSpacing: "-0.02em" }}>Order Received! 🎉</h3>
+                    <p style={{ color: tc, opacity: 0.65, lineHeight: 1.7, fontFamily: fontStyle }}>Thank you! We&apos;ve received your details and will confirm shortly.</p>
+                    <button onClick={() => { setSubmitted(false); setFormData(fields.reduce((a, f) => ({ ...a, [f.name]: "" }), {})); }} style={{ marginTop: "28px", padding: "12px 28px", borderRadius: "100px", background: `${accent}20`, color: accent, border: `1.5px solid ${accent}40`, fontWeight: 700, fontSize: "14px", cursor: "pointer", fontFamily: fontStyle }}>Submit Another</button>
+                </div>
+            </section>
+        );
+    }
+
+    if (variant === "Split Left Text") {
+        return (
+            <section style={{ padding: "96px 56px", background: bg, position: "relative", overflow: "hidden" }}>
+                <GlowBlob color={accent} style={{ top: "-10%", right: "-5%", width: "500px", height: "500px", opacity: 0.4 }} />
+                <div className="sp-grid-halves" style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "72px", alignItems: "start", position: "relative", zIndex: 1 }}>
+                    <div style={{ paddingTop: "24px" }}>
+                        <div className="sp-badge" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30`, marginBottom: "20px", fontFamily: fontStyle, display: "inline-flex", gap: "6px", alignItems: "center" }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: accent }} />Quick Order</div>
+                        <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle, lineHeight: 1.1 }}>{props.heading || "Place Your Order"}</h2>
+                        <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.68, lineHeight: 1.78, marginBottom: "36px", fontFamily: fontStyle }}>{props.description || "Fill in the details below and we'll confirm your order in minutes."}</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                            {[["⚡", "Instant Confirmation"], ["🔒", "Secure & Private"], ["💬", "Direct Updates"]].map(([icon, text]) => (
+                                <div key={text} style={{ display: "flex", alignItems: "center", gap: "12px", color: tc, fontFamily: fontStyle, fontSize: "14px", fontWeight: 600, opacity: 0.8 }}>
+                                    <span style={{ width: "36px", height: "36px", borderRadius: "10px", background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>{icon}</span>{text}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div style={{ background: cardBg, backdropFilter: "blur(24px)", padding: "44px", borderRadius: "32px", border: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.xl }}>{formBody}</div>
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <section style={{ padding: "96px 56px", background: bg, position: "relative", overflow: "hidden" }}>
+            <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "700px", height: "700px", opacity: 0.35 }} />
+            <div style={{ position: "relative", zIndex: 1, maxWidth: "680px", margin: "0 auto" }}>
+                <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                    <div className="sp-badge" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30`, marginBottom: "16px", fontFamily: fontStyle, gap: "6px", alignItems: "center", display: "inline-flex" }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: accent }} />Quick Order</div>
+                    <h2 style={{ fontSize: "2rem", fontWeight: 900, color: tc, fontFamily: fontStyle, letterSpacing: "-0.03em", marginBottom: "10px" }}>{props.heading || "Submit Your Order"}</h2>
+                    {props.description && <p style={{ color: tc, opacity: 0.6, fontFamily: fontStyle, lineHeight: 1.7 }}>{props.description}</p>}
+                </div>
+                <div style={{ background: cardBg, backdropFilter: "blur(24px)", padding: "52px 48px", borderRadius: "36px", border: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.xl }}>{formBody}</div>
+            </div>
+        </section>
+    );
+};
+
 // ─── Section Registry ──────────────────────────────────────────────────────────
 export const SECTION_MAP = {
     Navbar: NavbarSection,
@@ -1105,6 +1242,7 @@ export const SECTION_MAP = {
     Gallery: GallerySection,
     CTA: CTASection,
     ContactForm: ContactFormSection,
+    DynamicForm: DynamicFormSection,
     Footer: FooterSection,
 };
 
@@ -1174,6 +1312,22 @@ export default function PublicSiteRenderer() {
         }
         if (siteData.website?.name) document.title = siteData.website.name;
     }, [siteData]);
+
+    // ── Track this browser tab as a live visitor ──────────────────────────────
+    // Must be called before any early returns (Rules of Hooks)
+    const _trackedWebsiteId = siteData?.website?._id || siteData?.pages?.[0]?.websiteId || searchParams.get("websiteId");
+    useEffect(() => {
+        if (!_trackedWebsiteId) return;
+        const visitorSocket = io(`${window.location.protocol}//${window.location.hostname}:5000/visitors`, {
+            transports: ["websocket", "polling"],
+        });
+        visitorSocket.on("connect", () => {
+            visitorSocket.emit("visitor:join", { websiteId: _trackedWebsiteId });
+        });
+        return () => {
+            visitorSocket.disconnect();
+        };
+    }, [_trackedWebsiteId]);
 
     if (loading) return <LoadingScreen />;
     if (error) return <ErrorScreen message={error} />;

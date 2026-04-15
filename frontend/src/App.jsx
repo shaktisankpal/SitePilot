@@ -9,6 +9,7 @@ import LoginPage from "./features/auth/LoginPage.jsx";
 import RegisterPage from "./features/auth/RegisterPage.jsx";
 import DashboardPage from "./features/dashboard/DashboardPage.jsx";
 import WebsitesPage from "./features/dashboard/WebsitesPage.jsx";
+import AnalyticsPage from "./features/dashboard/AnalyticsPage.jsx";
 import BuilderPage from "./features/builder/BuilderPage.jsx";
 import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
 import SettingsPage from "./features/settings/SettingsPage.jsx";
@@ -75,6 +76,7 @@ export default function App() {
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/websites" element={<WebsitesPage />} />
+            <Route path="/websites/:websiteId/analytics" element={<AnalyticsPage />} />
             <Route path="/websites/:websiteId/builder" element={<BuilderPage />} />
             <Route path="/websites/:websiteId/builder/:pageId" element={<BuilderPage />} />
             <Route path="/ai" element={<AIGeneratorPage />} />

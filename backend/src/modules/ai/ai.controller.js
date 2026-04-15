@@ -23,7 +23,7 @@ const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
 });
 
-const VALID_SECTION_TYPES = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer"];
+const VALID_SECTION_TYPES = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "DynamicForm", "Navbar", "Footer"];
 
 // ─── Bad Image Query Filter ────────────────────────────────────────────────────
 const BAD_IMAGE_QUERIES = [
@@ -260,6 +260,28 @@ async function postProcessAIOutput(layout, businessType) {
                     if (typeof f === "object" && f !== null) return f.name || f.label || "message";
                     return String(f);
                 });
+            }
+
+            // ── Normalise DynamicForm fields ────────────────────────────────────
+            if (section.type === "DynamicForm") {
+                // Qwen may output under 'fields' or 'dynamicFields' — normalise to 'dynamicFields'
+                const rawFields = section.props.dynamicFields || section.props.fields;
+                if (Array.isArray(rawFields) && rawFields.length > 0) {
+                    section.props.dynamicFields = rawFields.map(f => {
+                        // If it's just a string like "name" – convert to object
+                        if (typeof f === "string") return { name: f, label: f.charAt(0).toUpperCase() + f.slice(1), type: "text" };
+                        // Ensure all required keys exist
+                        return {
+                            name: f.name || f.label?.toLowerCase().replace(/\s+/g, "_") || "field",
+                            label: f.label || f.name || "Field",
+                            type: f.type || "text",
+                            ...(f.options ? { options: f.options } : {}),
+                            ...(f.placeholder ? { placeholder: f.placeholder } : {}),
+                            ...(f.required !== undefined ? { required: f.required } : { required: true }),
+                        };
+                    });
+                    delete section.props.fields; // avoid confusion
+                }
             }
 
             if (section.type === "Gallery" && Array.isArray(section.props.items)) {
@@ -587,6 +609,7 @@ SECTION VARIANTS (assign intelligently):
 - Gallery: "Modern Grid" | "Horizontal Scroll" | "Masonry Column" | "Bento Grid"
 - CTA: "Centered Large" | "Floating Pill" | "Split Screen CTA" | "Dark Banner"
 - ContactForm: "Left Text Right Form" | "Centered Card"
+- DynamicForm: "Card Based" | "Split Left Text"
 - Footer: "Multi-Column Mock" | "Simple Centered" | "Ultra Minimal"
 
 CONTENT RULES:
@@ -598,6 +621,32 @@ CONTENT RULES:
 - CTA: conversion-focused copy with a compelling subheading
 - ContactForm: include fields relevant to the business (e.g., phone for medical, budget for agencies)
 - CONTACT FORM FIELDS (CRITICAL): The 'fields' property MUST be a flat array of STRING primitives (e.g. ["name", "email", "phone", "message"]), NEVER an array of objects.
+- DYNAMIC FORM (CRITICAL — READ CAREFULLY):
+  * Use 'dynamicFields' key (NOT 'fields') inside DynamicForm props.
+  * MUST be an array of field objects, each with: name, label, type, and optionally options (for select), placeholder, required.
+  * Field types allowed: "text", "email", "tel", "number", "select", "textarea", "date"
+  * Generate 5-8 fields that are HYPER-SPECIFIC to the actual business. Think about what a real customer of THIS business would order or enquire about.
+  * Example for a Juice Bar:
+    dynamicFields: [
+      {"name":"customer_name","label":"Your Name","type":"text","placeholder":"e.g. Rahul Sharma","required":true},
+      {"name":"phone","label":"Phone Number","type":"tel","placeholder":"+91 9876543210","required":true},
+      {"name":"juice_type","label":"Choose Your Juice","type":"select","options":["Fresh Orange","Watermelon","Mixed Fruit","Green Detox","ABC Juice","Pomegranate"],"required":true},
+      {"name":"size","label":"Size","type":"select","options":["Small (250ml)","Medium (500ml)","Large (750ml)"],"required":true},
+      {"name":"quantity","label":"Quantity","type":"number","placeholder":"1","required":true},
+      {"name":"add_ons","label":"Add-ons","type":"select","options":["None","Chia Seeds","Honey","Ginger Shot","Protein Boost"],"required":false},
+      {"name":"delivery_time","label":"Preferred Delivery Time","type":"select","options":["Morning (8am-12pm)","Afternoon (12pm-4pm)","Evening (4pm-8pm)"],"required":true},
+      {"name":"special_instructions","label":"Special Instructions","type":"textarea","placeholder":"Allergies, preferences...","required":false}
+    ]
+  * Example for a Salon:
+    dynamicFields: [
+      {"name":"name","label":"Full Name","type":"text","required":true},
+      {"name":"phone","label":"Phone","type":"tel","required":true},
+      {"name":"service","label":"Service","type":"select","options":["Haircut","Hair Color","Facial","Manicure","Pedicure","Waxing","Bridal Package"],"required":true},
+      {"name":"stylist","label":"Preferred Stylist","type":"select","options":["Any Available","Senior Stylist","Junior Stylist"],"required":false},
+      {"name":"appointment_date","label":"Appointment Date","type":"date","required":true},
+      {"name":"notes","label":"Special Requests","type":"textarea","required":false}
+    ]
+  * NEVER generate generic fields like just name/email/message for a DynamicForm — those belong in ContactForm.
 
 Return ONLY valid JSON in this exact structure (no markdown, no explanation):
 
@@ -620,6 +669,7 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
             "items": [],
             "text": "...",
             "fields": ["name", "email", "message"],
+            "dynamicFields": [{"name": "quantity", "label": "Quantity", "type": "number"}],
             "variant": "...",
             "bgColor": "#hex",
             "textColor": "#hex",
@@ -635,7 +685,7 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
 MANDATORY PAGE RULES:
 - Every page MUST start with Navbar and end with Footer
 - Generate exactly 3 pages: Home, About, Contact
-- Home page MUST include: Navbar, Hero, Text, Gallery, CTA, ContactForm or just CTA, Footer
+- Home page MUST include: Navbar, Hero, Text, Gallery, CTA, DynamicForm, Footer
 - About page: Navbar, Hero or Text, Text, Gallery (team/values), Footer
 - Contact page: Navbar, ContactForm, Footer
 
