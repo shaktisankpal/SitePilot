@@ -13,6 +13,7 @@ import connectDB from "./config/db.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { initializeSockets } from "./sockets/collaboration.socket.js";
+import { initializeVisitorSockets } from "./sockets/visitor.socket.js";
 import { registry, websitePageViewsTotal, websitePublishTotal, aiUsageTotal, tenantWebsitesTotal } from "./utils/metrics.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -56,6 +57,7 @@ const io = new Server(httpServer, {
 });
 
 initializeSockets(io);
+initializeVisitorSockets(io);
 
 // Security middleware
 app.use(
