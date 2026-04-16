@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../services/api.js";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
@@ -11,6 +11,108 @@ import {
 import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
 import { updateTenantBranding } from "../../store/slices/authSlice.js";
 import { TEMPLATES } from "../../utils/templates.js";
+
+// ML section name → builder feature name
+// Covers every key the Flask RandomForest model can return
+const ML_SECTION_MAP = {
+    // Hero variants
+    hero_banner:        "Hero Banner",
+    hero:               "Hero Banner",
+
+    // Service / product
+    service_cards:      "Service Cards",
+    product_grid:       "Service Cards",
+
+    // Team
+    team_section:       "Team Section",
+    team:               "Team Section",
+
+    // Gallery
+    gallery:            "Gallery",
+    gallery_section:    "Gallery",
+
+    // Testimonials
+    testimonials:       "Testimonials",
+
+    // FAQ
+    faq:                "FAQ",
+
+    // Pricing
+    pricing_table:      "Pricing Table",
+    pricing:            "Pricing Table",
+
+    // Contact
+    contact_form:       "Contact Form",
+    contact_section:    "Contact Form",
+
+    // Newsletter
+    newsletter:         "Newsletter",
+
+    // Blog
+    blog_preview:       "Blog Preview",
+    blog_section:       "Blog Preview",
+
+    // Stats
+    stats_counter:      "Stats Counter",
+    stats:              "Stats Counter",
+
+    // CTA
+    call_to_action:     "Call to Action",
+    cta:                "Call to Action",
+    booking_section:    "Call to Action",
+
+    // Implicit layout elements — map to nearest equivalent
+    navbar:             "Hero Banner",
+    footer:             "Contact Form",
+};
+
+// ── Hidden ML input quality mappings ─────────────────────────────────────────
+
+// Base template name → ML business_type feature
+const TEMPLATE_TO_BUSINESS_TYPE = {
+    "Modern Minimalist":    "startup",
+    "Vibrant SaaS":         "saas",
+    "Dark Web3":            "startup",
+    "Elegant Corporate":    "business_clients",
+    "Restaurant & Food":    "restaurant",
+    "Bold Creative Agency": "portfolio",
+};
+
+// UI tone label → ML experience_level feature
+const TONE_TO_EXPERIENCE = {
+    "Professional": "intermediate",
+    "Friendly":     "beginner",
+    "Bold":         "advanced",
+    "Minimalist":   "intermediate",
+    "Playful":      "beginner",
+    "Luxury":       "advanced",
+};
+
+// UI audience label → ML target_audience feature
+const AUDIENCE_MAP = {
+    "General Public": "general_public",
+    "Businesses":     "business_clients",
+    "Developers":     "developers",
+    "Creatives":      "members",
+    "Students":       "students",
+    "Executives":     "investors",
+};
+
+// UI purpose label → ML goal feature
+const PURPOSE_TO_GOAL = {
+    "Sell products":      "sales",
+    "Generate leads":     "lead_generation",
+    "Build brand":        "branding",
+    "Showcase portfolio": "portfolio_showcase",
+    "Allow bookings":     "booking",
+    "Share content":      "content_delivery",
+    "Educate users":      "education",
+    "Promote events":     "awareness",
+};
+
+const PURPOSES = Object.keys(PURPOSE_TO_GOAL);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
     "Hero Banner", "Service Cards", "Team Section", "Gallery", "Testimonials",
@@ -37,14 +139,21 @@ export default function AIGeneratorPage() {
         theme: "Light",
         primaryColor: tenant?.branding?.primaryColor || "#6366f1",
         secondaryColor: tenant?.branding?.secondaryColor || "#8b5cf6",
-        baseTemplateSections: null
+        baseTemplateSections: null,
+        websitePurpose: "Build brand",   // new — Website Purpose dropdown
+        selectedTemplateName: null,       // tracks template name for ML business_type mapping
     });
     const [loading, setLoading] = useState(false);
+    const [mlPredicting, setMlPredicting] = useState(false);
+    const [mlPredicted, setMlPredicted] = useState(false);
+    const [mlElapsed, setMlElapsed] = useState(0);
     const [activeModel, setActiveModel] = useState(null);
     const [result, setResult] = useState(null);
     const [activePageIdx, setActivePageIdx] = useState(0);
     const [inputLanguage, setInputLanguage] = useState("en");
     const [isListening, setIsListening] = useState(false);
+    const mlDebounceRef = useRef(null);
+    const mlTimerRef = useRef(null);
 
     const TRANSLATION_LANGUAGES = [
         { code: "en", label: "English" },
@@ -53,12 +162,96 @@ export default function AIGeneratorPage() {
     ];
 
     const toggleFeature = (f) => {
+        setMlPredicted(false); // user manually overriding
         setForm((p) => ({
             ...p,
             features: p.features.includes(f) ? p.features.filter((x) => x !== f) : [...p.features, f],
         }));
     };
 
+    // ── Auto ML Prediction (live layout suggestions while typing) ─────────────
+    useEffect(() => {
+        // Don't fire until the user has typed something meaningful
+        if (!form.businessType.trim()) {
+            setMlPredicted(false);
+            return;
+        }
+
+        // Clear any pending debounce
+        if (mlDebounceRef.current) clearTimeout(mlDebounceRef.current);
+
+        mlDebounceRef.current = setTimeout(async () => {
+            setMlPredicting(true);
+            setMlElapsed(0);
+
+            // Elapsed-seconds ticker for the loading badge
+            mlTimerRef.current = setInterval(
+                () => setMlElapsed((s) => s + 1),
+                1000
+            );
+
+            try {
+                // ── Build structured ML payload from hidden mappings ──────────
+                const payload = {
+                    // concept: raw user text
+                    concept: form.businessType.trim(),
+
+                    // business_type: derived from selected template (falls back to raw text)
+                    businessType: TEMPLATE_TO_BUSINESS_TYPE[form.selectedTemplateName] || form.businessType.trim(),
+
+                    // tone → experience_level
+                    tone: TONE_TO_EXPERIENCE[form.tone] || "intermediate",
+
+                    // audience → normalised ML value
+                    targetAudience: AUDIENCE_MAP[form.targetAudience] || "general_public",
+
+                    // purpose → goal
+                    goal: PURPOSE_TO_GOAL[form.websitePurpose] || "branding",
+                };
+
+                const res = await fetch("http://localhost:5050/generate-layout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!res.ok) throw new Error(`ML service responded ${res.status}`);
+
+                const data = await res.json();
+
+                // Flask response: { success: true, components: ["hero_banner", ...] }
+                if (!data.success) throw new Error("ML service returned success=false");
+
+                const sections = Array.isArray(data.components) ? data.components : [];
+
+                // Deduplicate while preserving order
+                const mapped = [
+                    ...new Set(
+                        sections
+                            .map((key) => ML_SECTION_MAP[key])
+                            .filter(Boolean)
+                    ),
+                ];
+
+                if (mapped.length > 0) {
+                    setForm((prev) => ({ ...prev, features: mapped }));
+                    setMlPredicted(true);
+                }
+            } catch (err) {
+                // Silently degrade — user can still pick blocks manually
+                console.warn("ML layout recommender unavailable:", err.message);
+                setMlPredicted(false);
+            } finally {
+                setMlPredicting(false);
+                clearInterval(mlTimerRef.current);
+            }
+        }, 600); // 600 ms debounce
+
+        return () => {
+            clearTimeout(mlDebounceRef.current);
+            clearInterval(mlTimerRef.current);
+        };
+    }, [form.businessType, form.tone, form.targetAudience, form.websitePurpose, form.selectedTemplateName]);
     const handleVoiceInput = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -200,7 +393,7 @@ export default function AIGeneratorPage() {
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Pick A Base Template</label>
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxHeight: "200px", overflowY: "auto", paddingRight: 8 }}>
                                         {TEMPLATES.map((tmpl) => (
-                                            <div key={tmpl.id} onClick={() => setForm(p => ({ ...p, baseTemplateSections: tmpl.sections, theme: tmpl.themeSelected }))} style={{
+                                            <div key={tmpl.id} onClick={() => setForm(p => ({ ...p, baseTemplateSections: tmpl.sections, theme: tmpl.themeSelected, selectedTemplateName: tmpl.name }))} style={{
                                                 display: "flex", gap: 12, alignItems: "center", padding: "12px", borderRadius: "12px", cursor: "pointer",
                                                 border: form.baseTemplateSections === tmpl.sections ? "2px solid var(--color-primary)" : "1px solid rgba(255,255,255,0.1)",
                                                 background: form.baseTemplateSections === tmpl.sections ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.02)",
@@ -289,6 +482,25 @@ export default function AIGeneratorPage() {
                                     </div>
                                 </div>
 
+                                {/* Website Purpose — feeds ML goal feature */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                                    <div style={{ position: "relative" }}>
+                                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                                            Website Purpose
+                                        </label>
+                                        <select
+                                            value={form.websitePurpose}
+                                            onChange={(e) => setForm((p) => ({ ...p, websitePurpose: e.target.value }))}
+                                            style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
+                                        >
+                                            {PURPOSES.map((p) => (
+                                                <option key={p} value={p} style={{ background: "#1e293b", color: "#fff" }}>{p}</option>
+                                            ))}
+                                        </select>
+                                        <div style={{ position: "absolute", right: 16, bottom: 16, pointerEvents: "none", opacity: 0.4 }}><ChevronDown size={16} /></div>
+                                    </div>
+                                </div>
+
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                                     <div>
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Primary Color</label>
@@ -332,9 +544,21 @@ export default function AIGeneratorPage() {
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 32 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
                                 <h3 style={{ fontWeight: 700, fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Required Blocks</h3>
-                                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 100, color: "var(--color-primary)" }}>
-                                    {form.features.length} selected
-                                </span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    {mlPredicting && (
+                                        <span title="BART classifier runs on CPU — takes ~30-40s" style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", background: "rgba(99,102,241,0.15)", color: "var(--color-primary)", padding: "5px 10px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5 }}>
+                                            <Loader2 size={10} className="animate-spin" /> AI predicting... {mlElapsed}s
+                                        </span>
+                                    )}
+                                    {mlPredicted && !mlPredicting && (
+                                        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", background: "rgba(16,185,129,0.12)", color: "#10b981", padding: "5px 10px", borderRadius: 100, display: "flex", alignItems: "center", gap: 5 }}>
+                                            <Sparkles size={10} /> AI predicted
+                                        </span>
+                                    )}
+                                    <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 100, color: "var(--color-primary)" }}>
+                                        {form.features.length} selected
+                                    </span>
+                                </div>
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                                 {FEATURES.map((f) => {

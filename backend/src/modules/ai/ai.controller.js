@@ -1,5 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Ollama } from "ollama";
+import { Agent, fetch as undiciFetch } from "undici";
+
+// Create Ollama client with no timeout — needed for CPU inference (qwen3.5:4b can take 5–15 min)
+const ollamaFetch = (url, opts) => undiciFetch(url, {
+    ...opts,
+    dispatcher: new Agent({ headersTimeout: 0, bodyTimeout: 0, connectTimeout: 30000 })
+});
+const ollama = new Ollama({ fetch: ollamaFetch });
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
@@ -10,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 import FirebaseAgent from "../../agents/firebaseAgent.js";
 import { aiUsageTotal } from "../../utils/metrics.js";
 import { searchUnsplash, searchUnsplashBatch } from "../../services/unsplash.service.js";
+import axios from "axios";
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -534,17 +543,146 @@ const inputSchema = Joi.object({
  * POST /api/ai/generate-layout
  */
 export const generateLayout = async (req, res) => {
+
     console.log("📥 [AI] Received request:", { body: req.body });
 
     const { error, value } = inputSchema.validate(req.body);
+
     if (error) {
         console.error("❌ [AI] Validation error:", error.details[0].message);
-        return res.status(400).json({ success: false, message: error.details[0].message });
+        return res.status(400).json({
+            success: false,
+            message: error.details[0].message
+        });
     }
 
-    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor, theme, baseTemplateSections, preferredModel } = value;
+    let {
+        businessType,
+        tone,
+        targetAudience,
+        features,
+        websiteId,
+        primaryColor,
+        secondaryColor,
+        theme,
+        baseTemplateSections,
+        preferredModel
+    } = value;
 
-    // Verify website ownership if provided
+
+    // ==========================================
+    // STEP 1: CALL ML LAYOUT RECOMMENDER SERVICE
+    // ==========================================
+
+    let recommendedSections = [];
+
+    try {
+
+        const mlResponse = await axios.post(
+            "http://localhost:5050/generate-layout",
+            {
+                businessType,
+                tone,
+                targetAudience
+            }
+        );
+
+        /**
+         * Flask response format:
+         * {
+         *   success: true,
+         *   components: [...]
+         * }
+         */
+
+        if (mlResponse.data?.components) {
+
+            recommendedSections = mlResponse.data.components;
+
+        }
+
+        console.log("🤖 ML Recommended Sections:", recommendedSections);
+
+    } catch (err) {
+
+        console.warn("⚠️ ML recommender unavailable — fallback to manual features");
+
+    }
+
+
+    // ==========================================
+    // STEP 2: MAP ML OUTPUT → BUILDER FEATURES
+    // ==========================================
+
+    /**
+     * ML model outputs
+     * Example:
+     * hero_banner
+     * gallery
+     * testimonials
+     * call_to_action
+     *
+     * Builder expects:
+     * Hero
+     * Gallery
+     * CTA
+     */
+
+    const sectionMapping = {
+
+        hero_banner: "Hero",
+        hero: "Hero",
+
+        gallery: "Gallery",
+        gallery_section: "Gallery",
+
+        testimonials: "Gallery", // map testimonials into gallery-style showcase section
+
+        call_to_action: "CTA",
+        cta: "CTA",
+
+        contact_form: "ContactForm",
+        contact_section: "ContactForm",
+
+        navbar: "Navbar",
+
+        footer: "Footer",
+
+        blog_section: "Text",
+
+        product_grid: "Gallery",
+
+        booking_section: "ContactForm"
+    };
+
+
+    // Convert ML output → builder section list
+
+    const mlFeatures = recommendedSections
+        .map(section => sectionMapping[section])
+        .filter(Boolean);
+
+
+    // ==========================================
+    // STEP 3: AUTO-USE ML FEATURES IF AVAILABLE
+    // ==========================================
+
+    if (mlFeatures.length > 0) {
+
+        console.log("✅ Using ML predicted layout features:", mlFeatures);
+
+        features = mlFeatures;
+
+    } else {
+
+        console.log("⚠️ ML returned empty layout — using manual user selections");
+
+    }
+
+    // ==========================================
+    // STEP 4: VERIFY WEBSITE OWNERSHIP
+    // ==========================================
+
     let website = null;
     if (websiteId) {
         website = await Website.findOne({ _id: websiteId, tenantId: req.tenantId });
@@ -699,7 +837,7 @@ COLOR RULES:
     let aiResponse = null;
     let success = true;
     let errorMessage = null;
-    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen3.5:4b (Ollama)";
+    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen:4b (Ollama)";
 
     try {
         let text = "";
@@ -710,22 +848,24 @@ COLOR RULES:
             console.log("🔵 [AI] Successfully used Pro AI for content generation.");
         } else {
             try {
-                console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
-                const r = await ollamaClient.chat({
-                    model: 'qwen3.5:4b',
+                //console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
+                //const r = await ollamaClient.chat({
+                  //  model: 'qwen3.5:4b',
+                console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen:4b)...");
+                const r = await ollama.chat({
+                    model: 'qwen:4b',
                     messages: [
                         { role: 'system', content: 'You are an expert AI website generator and elite copywriter. You MUST generate unique, engaging content perfectly tailored to the requested business type. NEVER blindly copy placeholder text from templates.' },
                         { role: 'user', content: prompt }
                     ],
                     format: 'json',
-                    think: false,
                     options: {
-                        num_predict: 8192,
+                        num_predict: 5000,
                         num_ctx: 8192,
                         temperature: 0.1
                     }
                 });
-                text = r.message.content;
+                text = r.message.content || '';
                 console.log("🟢 [AI] Successfully used Basic AI for content generation.");
             } catch (ollamaErr) {
                 console.warn("⚠️ [AI] Basic AI failed, falling back to Pro AI...");
@@ -842,12 +982,12 @@ COLOR RULES:
                 console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
 
                 const firebaseAgent = new FirebaseAgent();
-                
+
                 // Get tenant info for human-readable slugs
                 const tenant = await Tenant.findById(req.tenantId);
                 const tenantSlug = tenant?.slug || req.tenantId.toString();
                 const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || website._id.toString();
-                
+
                 const deploymentContext = {
                     tenantId: req.tenantId.toString(),
                     siteId: website._id.toString(),
@@ -953,18 +1093,18 @@ export const chatWithWebsite = async (req, res) => {
             return `Page: ${page.title} (${page.slug})
 Sections:
 ${(page.layoutConfig?.sections || []).map(s => {
-    const p = s.props || {};
-    // Extract textual content to form the context
-    let content = `- [${s.type} Section]:`;
-    if (p.heading) content += ` Heading: "${p.heading}"`;
-    if (p.subheading) content += ` Subheading: "${p.subheading}"`;
-    if (p.description) content += ` Description: "${p.description}"`;
-    if (p.text) content += ` Text: "${p.text}"`;
-    if (p.items && Array.isArray(p.items)) {
-        content += ` Items: ` + p.items.map(i => `(Title: ${i.title}, Desc: ${i.description})`).join(', ');
-    }
-    return content;
-}).join('\n')}
+                const p = s.props || {};
+                // Extract textual content to form the context
+                let content = `- [${s.type} Section]:`;
+                if (p.heading) content += ` Heading: "${p.heading}"`;
+                if (p.subheading) content += ` Subheading: "${p.subheading}"`;
+                if (p.description) content += ` Description: "${p.description}"`;
+                if (p.text) content += ` Text: "${p.text}"`;
+                if (p.items && Array.isArray(p.items)) {
+                    content += ` Items: ` + p.items.map(i => `(Title: ${i.title}, Desc: ${i.description})`).join(', ');
+                }
+                return content;
+            }).join('\n')}
 `;
         }).join('\n\n');
 
@@ -984,22 +1124,25 @@ ${siteContext}
 `;
 
         try {
-            console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
-            const r = await ollamaClient.chat({
-                model: 'qwen3.5:4b',
+            //console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
+            //const r = await ollamaClient.chat({
+              //  model: 'qwen3.5:4b',
+            console.log("🤖 [AI Chat] Attempting answer with qwen:4b...");
+            const r = await ollama.chat({
+                model: 'qwen:4b',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }
                 ],
-                think: false,
                 options: {
-                    num_predict: 1024,
-                    num_ctx: 8192,
+                    num_predict: 512,
+                    num_ctx: 4096,
                     temperature: 0.2
                 }
             });
-            console.log("🟢 [AI Chat] Answer generated via qwen3.5:4b.");
-            return res.json({ success: true, answer: r.message.content });
+            const answer = r.message.content || '';
+            console.log("🟢 [AI Chat] Answer generated via qwen:4b.");
+            return res.json({ success: true, answer });
         } catch (ollamaErr) {
             console.warn("⚠️ [AI Chat] Ollama failure, falling back to Gemini...");
             const result = await model.generateContent(systemPrompt + "\\n\\nUser Question: " + question);
