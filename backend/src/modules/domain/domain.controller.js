@@ -5,6 +5,7 @@ import Page from "../builder/page.model.js";
 import Deployment from "../deployment/deployment.model.js";
 import { v4 as uuidv4 } from "uuid";
 import { websitePageViewsTotal } from "../../utils/metrics.js";
+import firebaseService from "../../agents/services/firebaseService.js";
 
 /**
  * GET /api/domains
@@ -150,15 +151,31 @@ export const getPublicPage = async (req, res) => {
     const { websiteId, websiteSlug } = req.query;
 
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    
+    // Handle subdomain patterns: website-slug.tenant-slug.localhost
+    let extractedWebsiteSlug = null;
     if (!tenant && slugOrDomain.includes('.localhost')) {
-        const defaultSlug = slugOrDomain.split('.')[0];
-        tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+        const parts = slugOrDomain.split('.');
+        if (parts.length >= 3) {
+            // Pattern: website-slug.tenant-slug.localhost
+            extractedWebsiteSlug = parts[0];
+            const tenantSlug = parts[1];
+            tenant = await Tenant.findOne({ slug: tenantSlug, isActive: true }).lean();
+        } else if (parts.length === 2) {
+            // Pattern: tenant-slug.localhost
+            const defaultSlug = parts[0];
+            tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+        }
     }
+    
     let website = null;
 
     if (tenant) {
         if (websiteId) {
             website = await Website.findOne({ _id: websiteId, tenantId: tenant._id, status: "published" }).lean();
+        }
+        if (!website && extractedWebsiteSlug) {
+            website = await Website.findOne({ slug: extractedWebsiteSlug, tenantId: tenant._id, status: "published" }).lean();
         }
         if (!website && websiteSlug) {
             website = await Website.findOne({ slug: websiteSlug, tenantId: tenant._id, status: "published" }).lean();
@@ -204,11 +221,14 @@ export const getPublicPage = async (req, res) => {
 
     if (!page) return res.status(404).json({ success: false, message: "Page not found" });
 
-    // Track page view
+    // Track page view — Prometheus + Firebase
     websitePageViewsTotal.inc({
         tenantId: tenant.name || tenant._id.toString(),
         websiteId: website.name || website._id.toString()
     });
+    const _tenantSlug = tenant.slug || tenant._id.toString();
+    const _websiteSlug = website.slug || website._id.toString();
+    firebaseService.incrementPageView(_tenantSlug, _websiteSlug); // fire-and-forget
 
     res.json({ success: true, tenant: { branding: tenant.branding }, page });
 };
@@ -225,10 +245,24 @@ export const getPublicSite = async (req, res) => {
 
     // 1. Try direct tenant slug lookup
     let tenant = await Tenant.findOne({ slug: slugOrDomain, isActive: true }).lean();
+    
+    // Handle subdomain patterns: website-slug.tenant-slug.localhost
+    let extractedWebsiteSlug = null;
     if (!tenant && slugOrDomain.includes('.localhost')) {
-        const defaultSlug = slugOrDomain.split('.')[0];
-        tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+        const parts = slugOrDomain.split('.');
+        if (parts.length >= 3) {
+            // Pattern: website-slug.tenant-slug.localhost
+            extractedWebsiteSlug = parts[0];
+            const tenantSlug = parts[1];
+            tenant = await Tenant.findOne({ slug: tenantSlug, isActive: true }).lean();
+            console.log(`🔍 [Public API] Extracted website slug: ${extractedWebsiteSlug}, tenant slug: ${tenantSlug}`);
+        } else if (parts.length === 2) {
+            // Pattern: tenant-slug.localhost
+            const defaultSlug = parts[0];
+            tenant = await Tenant.findOne({ slug: defaultSlug, isActive: true }).lean();
+        }
     }
+    
     let website = null;
 
     if (tenant) {
@@ -244,7 +278,19 @@ export const getPublicSite = async (req, res) => {
                 console.log(`✅ [Public API] Found website by websiteId: ${websiteId}`);
             }
         }
-        // Priority 2: If websiteSlug is provided, fetch by slug
+        // Priority 2: If extractedWebsiteSlug from subdomain pattern, use that
+        if (!website && extractedWebsiteSlug) {
+            website = await Website.findOne({
+                slug: extractedWebsiteSlug,
+                tenantId: tenant._id,
+                status: "published",
+            }).lean();
+
+            if (website) {
+                console.log(`✅ [Public API] Found website by extracted subdomain slug: ${extractedWebsiteSlug}`);
+            }
+        }
+        // Priority 3: If websiteSlug is provided, fetch by slug
         if (!website && websiteSlug) {
             website = await Website.findOne({
                 slug: websiteSlug,
@@ -256,7 +302,7 @@ export const getPublicSite = async (req, res) => {
                 console.log(`✅ [Public API] Found website by websiteSlug: ${websiteSlug}`);
             }
         }
-        // Priority 3: Try to use the route param as website slug
+        // Priority 4: Try to use the route param as website slug
         if (!website) {
             website = await Website.findOne({
                 slug: slugOrDomain,
@@ -275,7 +321,7 @@ export const getPublicSite = async (req, res) => {
                     .lean();
 
                 if (website) {
-                    console.log(`⚠️ [Public API] Fallback to latest published website: ${website._id}`);
+                    console.log(`⚠️ [Public API] Fallback to latest published website:: ${website._id}`);
                 }
             }
         }
@@ -340,11 +386,14 @@ export const getPublicSite = async (req, res) => {
 
     console.log(`📄 [Public API] Returning ${pages?.length || 0} pages for website ${website._id} (slug: ${website.slug || 'N/A'}, Version: ${deployment?.version || 'N/A'})`);
 
-    // Track page view for the whole site
+    // Track page view — Prometheus + Firebase
     websitePageViewsTotal.inc({
         tenantId: tenant.name || tenant._id.toString(),
         websiteId: website.name || website._id.toString()
     });
+    const tSlug = tenant.slug || tenant._id.toString();
+    const wSlug = website.slug || website._id.toString();
+    firebaseService.incrementPageView(tSlug, wSlug); // fire-and-forget
 
     res.json({
         success: true,

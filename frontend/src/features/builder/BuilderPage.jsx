@@ -160,6 +160,69 @@ export default function BuilderPage() {
         const res = await dispatch(saveDraft({ websiteId, pageId: currentPage._id, layoutConfig: currentPage.layoutConfig }));
         if (saveDraft.fulfilled.match(res)) toast.success("Draft saved ✓"); else toast.error("Save failed");
     };
+
+    const generateAILayout = async () => {
+
+        try {
+
+            const promptText = prompt("Describe your website");
+
+            if (!promptText) return;
+
+            const res = await fetch(
+                "http://localhost:5000/api/layout",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        prompt: promptText
+                    })
+                }
+            );
+
+            const components = await res.json();
+
+            if (!components || components.length === 0) {
+
+                toast.error("AI could not generate layout");
+
+                return;
+
+            }
+
+            const newSections = components.map((component, index) => {
+
+                const mappedType = mapComponentName(component);
+
+                return {
+
+                    id: uuidv4(),
+
+                    type: mappedType,
+
+                    props: getDefaultProps(mappedType),
+
+                    order: index
+
+                };
+
+            });
+
+            dispatch(updateLocalSections(newSections));
+
+            toast.success("AI layout generated successfully 🚀");
+
+        } catch (err) {
+
+            console.error(err);
+
+            toast.error("AI layout generation failed");
+
+        }
+
+    };
     // Publish is now handled via PublishModal
 
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
@@ -318,6 +381,7 @@ export default function BuilderPage() {
                                                                 >
                                                                     <SectionEditor
                                                                         section={section}
+                                                                        pages={pages}
                                                                         onChange={(props) => {
                                                                             dispatch(updateSectionProps({ sectionId: section.id, props }));
                                                                             broadcastUpdate(
@@ -520,7 +584,7 @@ export default function BuilderPage() {
                                                                     canEdit && dispatch(setSelectedSection(section.id));
                                                                 }}
                                                             >
-                                                                <Component props={section.props || {}} branding={tenant?.branding} />
+                                                                <Component props={section.props || {}} branding={tenant?.branding} websiteId={websiteId} allPages={pages} currentPage={currentPage} />
                                                             </div>
                                                         )}
                                                     </Draggable>
@@ -624,6 +688,21 @@ export default function BuilderPage() {
             </div >
         </DragDropContext >
     );
+}
+
+function mapComponentName(name) {
+
+    const mapping = {
+
+        navbar: "Navbar",
+        hero: "Hero",
+        footer: "Footer",
+        gallery_section: "Gallery",
+        contact_section: "ContactForm"
+
+    };
+
+    return mapping[name] || "Text";
 }
 
 function getDefaultProps(type) {

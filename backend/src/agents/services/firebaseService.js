@@ -332,6 +332,54 @@ class FirebaseService {
     }
 
     /**
+     * Increment total page view counter for a site
+     * @param {string} tenantSlug
+     * @param {string} websiteSlug
+     */
+    async incrementPageView(tenantSlug, websiteSlug) {
+        try {
+            const db = this.getFirestore();
+            const analyticsRef = db
+                .collection('tenants').doc(tenantSlug)
+                .collection('sites').doc(websiteSlug)
+                .collection('analytics').doc('totals');
+            await analyticsRef.set(
+                {
+                    totalPageViews: admin.firestore.FieldValue.increment(1),
+                    lastViewAt: admin.firestore.FieldValue.serverTimestamp(),
+                },
+                { merge: true }
+            );
+        } catch (err) {
+            // Non-fatal — don't crash the page request
+            console.warn('[Firebase] incrementPageView failed:', err.message);
+        }
+    }
+
+    /**
+     * Get analytics totals for a site
+     * @param {string} tenantSlug
+     * @param {string} websiteSlug
+     * @returns {{ totalPageViews: number }}
+     */
+    async getAnalyticsTotals(tenantSlug, websiteSlug) {
+        try {
+            const db = this.getFirestore();
+            const doc = await db
+                .collection('tenants').doc(tenantSlug)
+                .collection('sites').doc(websiteSlug)
+                .collection('analytics').doc('totals')
+                .get();
+            if (!doc.exists) return { totalPageViews: 0 };
+            const data = doc.data();
+            return { totalPageViews: data.totalPageViews || 0 };
+        } catch (err) {
+            console.warn('[Firebase] getAnalyticsTotals failed:', err.message);
+            return { totalPageViews: 0 };
+        }
+    }
+
+    /**
      * Check Firebase quota usage
      */
     async checkQuotaUsage() {
