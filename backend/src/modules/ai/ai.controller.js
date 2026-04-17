@@ -7,7 +7,10 @@ const ollamaFetch = (url, opts) => undiciFetch(url, {
     ...opts,
     dispatcher: new Agent({ headersTimeout: 0, bodyTimeout: 0, connectTimeout: 30000 })
 });
-const ollama = new Ollama({ fetch: ollamaFetch });
+const ollama = new Ollama({
+    fetch: ollamaFetch,
+    host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'
+});
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
@@ -25,7 +28,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Configure Ollama client with host from environment
 const ollamaClient = new Ollama({
-    host: process.env.OLLAMA_HOST || 'http://localhost:11434'
+    host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'
 });
 
 const model = genAI.getGenerativeModel({
@@ -371,7 +374,12 @@ async function postProcessAIOutput(layout, businessType) {
 /**
  * Build a minimal fallback layout if AI completely fails
  */
-function buildFallbackLayout(businessType, tone, targetAudience) {
+function buildFallbackLayout(businessType, tone, targetAudience, theme = "Light", primaryColor = "#6366f1", secondaryColor = "#ffffff") {
+    const isDark = theme.toLowerCase() === "dark";
+    const bg = isDark ? "#111827" : "#ffffff";
+    const tc = isDark ? "#ffffff" : "#111827";
+    const accent = primaryColor;
+
     return {
         pages: [
             {
@@ -384,9 +392,9 @@ function buildFallbackLayout(businessType, tone, targetAudience) {
                             brand: businessType,
                             links: ["Home", "About", "Services", "Contact"],
                             variant: "Full Width Solid",
-                            bgColor: "#ffffff",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            bgColor: bg,
+                            textColor: tc,
+                            accentColor: accent,
                         },
                     },
                     {
@@ -397,9 +405,9 @@ function buildFallbackLayout(businessType, tone, targetAudience) {
                             ctaText: "Get Started",
                             ctaLink: "#contact",
                             variant: "Split Text Left",
-                            bgColor: "#ffffff",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            bgColor: bg,
+                            textColor: tc,
+                            accentColor: accent,
                             backgroundImageQuery: `${businessType} professional photography`,
                         },
                     },
@@ -409,9 +417,9 @@ function buildFallbackLayout(businessType, tone, targetAudience) {
                             heading: "About Us",
                             description: `We are a ${tone} company focused on delivering excellence to ${targetAudience}.`,
                             variant: "Centered Standard",
-                            bgColor: "#f9fafb",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            bgColor: isDark ? "#1f2937" : "#f9fafb",
+                            textColor: tc,
+                            accentColor: accent,
                         },
                     },
                     {
@@ -424,9 +432,9 @@ function buildFallbackLayout(businessType, tone, targetAudience) {
                                 { title: "Service Three", description: "Tailored to your needs.", imageQuery: `${businessType} modern workspace` },
                             ],
                             variant: "Modern Grid",
-                            bgColor: "#ffffff",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            bgColor: bg,
+                            textColor: tc,
+                            accentColor: accent,
                         },
                     },
                     {
@@ -437,73 +445,38 @@ function buildFallbackLayout(businessType, tone, targetAudience) {
                             ctaText: "Contact Us Today",
                             ctaLink: "#contact",
                             variant: "Centered Large",
-                            bgColor: "#ffffff",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            bgColor: bg,
+                            textColor: tc,
+                            accentColor: accent,
                         },
                     },
                     {
                         type: "ContactForm",
                         props: {
-                            heading: "Get In Touch",
-                            fields: ["name", "email", "phone", "message"],
-                            variant: "Left Text Right Form",
-                            bgColor: "#f9fafb",
-                            textColor: "#111827",
-                            accentColor: "#6366f1",
+                            heading: "Get in Touch",
+                            variant: "Split Info Left",
+                            bgColor: isDark ? "#1f2937" : "#f9fafb",
+                            textColor: tc,
+                            accentColor: accent,
                         },
                     },
                     {
                         type: "Footer",
                         props: {
-                            text: `© ${new Date().getFullYear()} ${businessType}. All rights reserved.`,
-                            variant: "Multi-Column Mock",
-                            bgColor: "#111827",
-                            textColor: "#9ca3af",
-                            accentColor: "#6366f1",
+                            brand: businessType,
+                            copyright: `© ${new Date().getFullYear()} ${businessType}.`,
+                            variant: "Minimal Simple",
+                            bgColor: bg,
+                            textColor: tc,
+                            accentColor: accent,
                         },
-                    },
-                ],
-            },
-            {
-                title: "About",
-                slug: "about",
-                sections: [
-                    {
-                        type: "Navbar",
-                        props: { brand: businessType, links: ["Home", "About", "Services", "Contact"], variant: "Full Width Solid", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
-                    },
-                    {
-                        type: "Text",
-                        props: { heading: "Our Story", description: `Founded with a mission to serve ${targetAudience}, we are dedicated to excellence.`, variant: "Left Aligned Big", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
-                    },
-                    {
-                        type: "Footer",
-                        props: { text: `© ${new Date().getFullYear()} ${businessType}.`, variant: "Simple Centered", bgColor: "#111827", textColor: "#9ca3af", accentColor: "#6366f1" },
-                    },
-                ],
-            },
-            {
-                title: "Contact",
-                slug: "contact",
-                sections: [
-                    {
-                        type: "Navbar",
-                        props: { brand: businessType, links: ["Home", "About", "Services", "Contact"], variant: "Full Width Solid", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
-                    },
-                    {
-                        type: "ContactForm",
-                        props: { heading: "Contact Us", fields: ["name", "email", "message"], variant: "Centered Card", bgColor: "#ffffff", textColor: "#111827", accentColor: "#6366f1" },
-                    },
-                    {
-                        type: "Footer",
-                        props: { text: `© ${new Date().getFullYear()} ${businessType}.`, variant: "Simple Centered", bgColor: "#111827", textColor: "#9ca3af", accentColor: "#6366f1" },
                     },
                 ],
             },
         ],
     };
 }
+
 
 // ─── Joi Schemas ───────────────────────────────────────────────────────────────
 const aiLayoutSchema = Joi.object({
@@ -579,7 +552,7 @@ export const generateLayout = async (req, res) => {
     try {
 
         const mlResponse = await axios.post(
-            "http://localhost:5050/generate-layout",
+            "http://127.0.0.1:5050/generate-layout",
             {
                 businessType,
                 tone,
@@ -837,7 +810,7 @@ COLOR RULES:
     let aiResponse = null;
     let success = true;
     let errorMessage = null;
-    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen:4b (Ollama)";
+    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen2.5:3b";
 
     try {
         let text = "";
@@ -848,25 +821,30 @@ COLOR RULES:
             console.log("🔵 [AI] Successfully used Pro AI for content generation.");
         } else {
             try {
-                //console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
-                //const r = await ollamaClient.chat({
-                  //  model: 'qwen3.5:4b',
-                console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen:4b)...");
+                console.log("🤖 [AI] Attempting generation with Smart-Balanced AI (Ollama qwen2.5:3b)...");
                 const r = await ollama.chat({
-                    model: 'qwen:4b',
+                    model: 'qwen2.5:3b',
                     messages: [
-                        { role: 'system', content: 'You are an expert AI website generator and elite copywriter. You MUST generate unique, engaging content perfectly tailored to the requested business type. NEVER blindly copy placeholder text from templates.' },
+                        {
+                            role: 'system',
+                            content: `You are an expert AI website generator. 
+                            CRITICAL: You MUST use the requested Theme (${theme}). 
+                            - If Dark: use dark backgrounds (#0f172a) and white text. 
+                            - If Light: use white backgrounds and dark text.
+                            - Ensure every page has a unique 'slug' (home, about, contact).
+                            - Never use placeholder text.`
+                        },
                         { role: 'user', content: prompt }
                     ],
                     format: 'json',
                     options: {
-                        num_predict: 5000,
+                        num_predict: 4096,
                         num_ctx: 8192,
-                        temperature: 0.1
+                        temperature: 0.2
                     }
                 });
                 text = r.message.content || '';
-                console.log("🟢 [AI] Successfully used Basic AI for content generation.");
+                console.log("🟢 [AI] Successfully used Original AI for content generation.");
             } catch (ollamaErr) {
                 console.warn("⚠️ [AI] Basic AI failed, falling back to Pro AI...");
                 console.warn("⚠️ [AI] Basic AI Error:", ollamaErr.message);
@@ -894,14 +872,14 @@ COLOR RULES:
             console.error("❌ [AI] Failed to parse JSON, using fallback layout. Error:", parseErr.message);
             console.error("📄 [AI] Raw Output Length:", text?.length);
             console.error("📄 [AI] Raw JSON Snippet:", jsonStr?.substring(0, 1000) + (jsonStr?.length > 1000 ? "..." : ""));
-            parsed = buildFallbackLayout(businessType, tone, targetAudience);
+            parsed = buildFallbackLayout(businessType, tone, targetAudience, theme, primaryColor, secondaryColor);
         }
 
         // Validate structure
         const { error: valErr, value: validated } = aiLayoutSchema.validate(parsed);
         if (valErr) {
             console.error(`⚠️ [AI] Layout validation failed: ${valErr.details[0].message}, using fallback`);
-            parsed = buildFallbackLayout(businessType, tone, targetAudience);
+            parsed = buildFallbackLayout(businessType, tone, targetAudience, theme, primaryColor, secondaryColor);
             const { value: fallbackValidated } = aiLayoutSchema.validate(parsed);
             aiResponse = await postProcessAIOutput(fallbackValidated, businessType);
         } else {
@@ -1124,12 +1102,9 @@ ${siteContext}
 `;
 
         try {
-            //console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
-            //const r = await ollamaClient.chat({
-              //  model: 'qwen3.5:4b',
-            console.log("🤖 [AI Chat] Attempting answer with qwen:4b...");
+            console.log("🤖 [AI Chat] Attempting answer with qwen2.5:3b...");
             const r = await ollama.chat({
-                model: 'qwen:4b',
+                model: 'qwen2.5:3b',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }

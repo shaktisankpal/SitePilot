@@ -127,8 +127,11 @@ export const deleteWebsite = async (req, res) => {
     const website = await Website.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!website) return res.status(404).json({ success: false, message: "Website not found" });
 
-    // Cascade delete pages
+    // Cascade delete pages and release domains
     await Page.deleteMany({ websiteId: website._id, tenantId: req.tenantId });
+    const Domain = (await import("../domain/domain.model.js")).default;
+    await Domain.updateMany({ websiteId: website._id }, { $unset: { websiteId: "" } });
+    
     await website.deleteOne();
 
     await logActivity({
@@ -183,6 +186,9 @@ export const publishWebsite = async (req, res) => {
     let linkedDomain = null;
 
     if (domainId) {
+        // Clear previous domain links for this website
+        await Domain.updateMany({ websiteId: website._id }, { $unset: { websiteId: "" } });
+
         const domain = await Domain.findOne({ _id: domainId, tenantId: req.tenantId, verified: true });
         if (domain) {
             domain.websiteId = website._id;

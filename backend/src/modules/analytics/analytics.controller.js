@@ -119,31 +119,26 @@ export const getWebsiteAnalytics = async (req, res) => {
             try {
                 // Ask Qwen to analyze the form submissions
                 const prompt = `
-You are an advanced data analytics AI. Given the following form submissions from a business website, generate a structured analytics insight report. Think about what the business is and what kind of metrics make sense (e.g. juices sold, popular flavors, etc).
-
-Form Submissions Data: 
-${JSON.stringify(submissions.slice(0, 100))} // Limit to 100 for token limits
-
-Return a JSON object matching this structure EXACTLY. No markdown formatting, just raw JSON:
-{
-  "summary": "A 2 sentence summary of business performance.",
-  "insights": [
-    { "label": "Most Popular X", "value": "Result", "insightText": "Detailed insight" }
-  ]
-}
+Analyze these form submissions and give me exactly 3 bullet-point insights about business trends.
+Data: ${JSON.stringify(submissions.slice(0, 50))}
+Return JSON: { "summary": "2 sentences", "insights": [{ "label": "Title", "value": "Metric", "insightText": "Short text" }] }
 `;
-                console.log(`🧠 [Qwen AI] Initializing analysis on ${submissions.length} Firebase records...`);
+                console.log(`🧠 [Qwen AI] Generating Lightning-Fast Insights on ${submissions.length} records...`);
                 const result = await ollamaClient.chat({
-                    model: 'qwen3.5:4b',
+                    model: 'qwen2.5:3b',
                     messages: [
-                        { role: 'system', content: 'You are an advanced data analytics AI. You output strictly in JSON.' },
+                        { role: 'system', content: 'You are a fast data analyzer. Return raw JSON only.' },
                         { role: 'user', content: prompt }
                     ],
                     format: 'json',
-                    think: false,
-                    options: { temperature: 0.1 }
+                    options: { 
+                        temperature: 0.1,
+                        num_predict: 500, // Speed limit
+                        num_ctx: 2048 
+                    }
                 });
                 const responseText = result.message.content;
+                console.log(`✅ [Qwen AI] Successfully derived insights with Smart-Balanced AI!`);
                 let jsonStr = responseText;
                 const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
                 if (jsonMatch) jsonStr = jsonMatch[1];

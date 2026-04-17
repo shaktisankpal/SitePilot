@@ -59,6 +59,13 @@ const authSlice = createSlice({
                 localStorage.setItem("sp_tenant", JSON.stringify(state.tenant));
             }
         },
+        updateTenantIdentity: (state, action) => {
+            if (state.tenant) {
+                state.tenant.name = action.payload.name;
+                state.tenant.slug = action.payload.slug;
+                localStorage.setItem("sp_tenant", JSON.stringify(state.tenant));
+            }
+        },
     },
     extraReducers: (builder) => {
         const handleFulfilled = (state, action) => {
@@ -89,5 +96,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { logout, clearError, updateTenantBranding } = authSlice.actions;
+export const { logout, clearError, updateTenantBranding, updateTenantIdentity } = authSlice.actions;
 export default authSlice.reducer;

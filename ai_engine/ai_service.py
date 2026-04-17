@@ -4,6 +4,17 @@ import joblib
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import warnings
+import os
+
+# Suppress InconsistentVersionWarning from joblib and sklearn
+warnings.filterwarnings("ignore", category=UserWarning)
+# Suppress HuggingFace symlink warnings on Windows
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+# Suppress unauthenticated request warnings
+os.environ["HUGGINGFACE_HUB_TOKEN"] = "" 
+import logging
+logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
 
 
 app = Flask(__name__)

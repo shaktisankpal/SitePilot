@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getMe, updateTenantBranding } from "../../store/slices/authSlice.js";
+import { getMe, updateTenantBranding, updateTenantIdentity } from "../../store/slices/authSlice.js";
 import api from "../../services/api.js";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import toast from "react-hot-toast";
@@ -31,9 +31,11 @@ export default function SettingsPage() {
     const [users, setUsers] = useState([]);
     const [domains, setDomains] = useState([]);
     const [branding, setBranding] = useState(tenant?.branding || {});
+    const [identity, setIdentity] = useState({ name: tenant?.name || "", slug: tenant?.slug || "" });
     const [inviteForm, setInviteForm] = useState({ name: "", email: "", password: "", role: "EDITOR" });
     const [newDomain, setNewDomain] = useState("");
     const [saving, setSaving] = useState(false);
+    const [savingIdentity, setSavingIdentity] = useState(false);
 
     const isOwner = user?.role === "OWNER";
     const isAdmin = ["OWNER", "ADMIN"].includes(user?.role);
@@ -55,6 +57,23 @@ export default function SettingsPage() {
             toast.success("Branding updated! ✨");
         } catch (err) { toast.error(err.response?.data?.message || "Update failed"); }
         setSaving(false);
+    };
+
+    const handleSaveIdentity = async () => {
+        setSavingIdentity(true);
+        try {
+            const res = await api.put("/tenant", identity);
+            dispatch(updateTenantIdentity({ name: res.data.tenant.name, slug: res.data.tenant.slug }));
+            setIdentity({ name: res.data.tenant.name, slug: res.data.tenant.slug });
+            const updated = res.data.websitesUpdated;
+            toast.success(
+                `Workspace updated! 🚀` +
+                (updated > 0 ? ` ${updated} site domain${updated > 1 ? 's' : ''} updated too.` : '')
+            );
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update workspace details");
+        }
+        setSavingIdentity(false);
     };
 
     const handleInvite = async (e) => {
@@ -154,29 +173,51 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                                    {/* Workspace Name (read-only) */}
+                                    {/* Workspace Name */}
                                     <div style={{ paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Workspace Name</label>
-                                        <div style={{
-                                            padding: "14px 18px", borderRadius: 14, background: "var(--bg-input)",
-                                            border: "1px solid var(--border-color)", color: "var(--text-primary)",
-                                            fontSize: 16, fontWeight: 700,
-                                        }}>
-                                            {tenant?.name || "My Workspace"}
-                                        </div>
+                                        <input
+                                            value={identity.name}
+                                            onChange={(e) => setIdentity({ ...identity, name: e.target.value })}
+                                            disabled={!isOwner}
+                                            style={{
+                                                ...inputStyle,
+                                                fontSize: 16, fontWeight: 700,
+                                            }}
+                                            placeholder="My Workspace"
+                                        />
                                     </div>
 
-                                    {/* Workspace Slug (read-only) */}
+                                    {/* Workspace Slug */}
                                     <div style={{ paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                         <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Workspace Slug</label>
-                                        <div style={{
-                                            padding: "14px 18px", borderRadius: 14, background: "var(--bg-input)",
-                                            border: "1px solid var(--border-color)", color: "var(--text-secondary)",
-                                            fontSize: 15, fontFamily: "'JetBrains Mono', monospace",
-                                        }}>
-                                            {tenant?.slug || "—"}
-                                        </div>
+                                        <input
+                                            value={identity.slug}
+                                            onChange={(e) => setIdentity({ ...identity, slug: e.target.value })}
+                                            disabled={!isOwner}
+                                            style={{
+                                                ...inputStyle,
+                                                fontSize: 15, fontFamily: "'JetBrains Mono', monospace",
+                                                color: "var(--text-secondary)"
+                                            }}
+                                            placeholder="my-workspace"
+                                        />
+                                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>This is your unique identifier. Only lowercase letters, numbers, and hyphens allowed.</p>
                                     </div>
+
+                                    {isOwner && (
+                                        <button
+                                            onClick={handleSaveIdentity}
+                                            disabled={savingIdentity || !identity.name.trim() || !identity.slug.trim()}
+                                            style={{
+                                                padding: "14px 28px", borderRadius: 14, border: "none", cursor: "pointer",
+                                                background: "var(--color-primary)", color: "#000", fontWeight: 700, fontSize: 15,
+                                                alignSelf: "flex-start", opacity: (savingIdentity || !identity.name.trim() || !identity.slug.trim()) ? 0.7 : 1
+                                            }}
+                                        >
+                                            {savingIdentity ? "Saving..." : "Save Details"}
+                                        </button>
+                                    )}
 
                                     {/* Info about component-level styling */}
                                     <div style={{

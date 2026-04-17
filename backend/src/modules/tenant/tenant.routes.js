@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import { getTenant, updateBranding, uploadLogo } from "./tenant.controller.js";
+import { getTenant, updateBranding, uploadLogo, updateTenant } from "./tenant.controller.js";
 import { authChain, requireRole } from "../../middleware/auth.middleware.js";
 
 const storage = multer.diskStorage({
@@ -24,6 +24,7 @@ const upload = multer({
 const router = express.Router();
 
 router.get("/", authChain, getTenant);
+router.put("/", authChain, requireRole("OWNER"), updateTenant);
 router.put("/branding", authChain, requireRole("OWNER"), updateBranding);
 router.post("/logo", authChain, requireRole("OWNER"), upload.single("logo"), uploadLogo);
 
