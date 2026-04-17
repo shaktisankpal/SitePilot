@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import {
     Globe, Plus, Pencil, Trash2, Rocket, ExternalLink,
     CheckCircle, Clock, X, Loader2, Link as LinkIcon, FolderDot,
-    LayoutTemplate, Zap, ArrowRight
+    LayoutTemplate, Zap, ArrowRight, BarChart2
 } from "lucide-react";
 import { TEMPLATES } from "../../utils/templates.js";
 import PublishModal from "../builder/PublishModal.jsx";
@@ -282,6 +282,13 @@ export default function WebsitesPage() {
                                                 <ExternalLink size={14} />
                                             </a>
                                         )}
+                                        <Link to={`/websites/${site._id}/analytics`} style={{
+                                            padding: "5px 12px", borderRadius: 100, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em",
+                                            display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+                                            background: "rgba(245, 158, 11, 0.12)", color: "#f59e0b", border: "1px solid rgba(245, 158, 11, 0.3)"
+                                        }}>
+                                            <BarChart2 size={12} strokeWidth={3} /> Analytics
+                                        </Link>
                                     </div>
                                 </div>
 

@@ -73,7 +73,7 @@ export default function PublishModal({ websiteId, onClose }) {
                 width: "100%", maxWidth: 480, padding: 36, borderRadius: 24,
                 background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.1)",
                 boxShadow: "0 24px 48px rgba(0,0,0,0.5)", position: "relative",
-                overflow: "hidden",
+                overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column",
             }}>
                 {/* Top accent bar */}
                 <div style={{
@@ -114,7 +114,7 @@ export default function PublishModal({ websiteId, onClose }) {
                 </div>
 
                 {/* Domain Selection */}
-                <div style={{ marginBottom: 28 }}>
+                <div style={{ marginBottom: 28, flex: 1, overflowY: "auto", minHeight: 0 }}>
                     <label style={{
                         display: "block", fontSize: 12, fontWeight: 800,
                         textTransform: "uppercase", letterSpacing: "0.1em",
@@ -139,7 +139,13 @@ export default function PublishModal({ websiteId, onClose }) {
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{
+                            display: "flex", flexDirection: "column", gap: 8,
+                            maxHeight: 320, overflowY: "auto",
+                            paddingRight: 4,
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "rgba(99,102,241,0.4) transparent",
+                        }}>
                             {/* Default option */}
                             <button
                                 onClick={() => setSelectedDomainId("")}
