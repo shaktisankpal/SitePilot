@@ -10,7 +10,7 @@ async function run() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected!');
 
-        const domainToDelete = 'atharvaworkspace.localhost/blockchain';
+        const domainToDelete = 'blockchain.localhost';
         console.log(`Searching for domain: ${domainToDelete}`);
         
         const result = await Domain.deleteMany({ domain: domainToDelete.toLowerCase() });

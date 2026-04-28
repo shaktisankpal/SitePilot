@@ -14,6 +14,7 @@ const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview", // Note: Using 3-flash-preview as standard in this project, this aligns with the available Gemini high performance models
 });
 
+// Create Ollama client with no timeout for CPU inference
 const ollamaClient = new Ollama({
     host: process.env.OLLAMA_HOST || 'http://localhost:11434'
 });
@@ -125,7 +126,7 @@ Return JSON: { "summary": "2 sentences", "insights": [{ "label": "Title", "value
 `;
                 console.log(`🧠 [Qwen AI] Generating Lightning-Fast Insights on ${submissions.length} records...`);
                 const result = await ollamaClient.chat({
-                    model: 'qwen2.5:3b',
+                    model: 'qwen2.5:1.5b',
                     messages: [
                         { role: 'system', content: 'You are a fast data analyzer. Return raw JSON only.' },
                         { role: 'user', content: prompt }

@@ -1,15 +1,23 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Ollama } from "ollama";
-import { Agent, fetch as undiciFetch } from "undici";
+import http from 'http';
+import https from 'https';
 
-// Create Ollama client with no timeout — needed for CPU inference (qwen3.5:4b can take 5–15 min)
-const ollamaFetch = (url, opts) => undiciFetch(url, {
-    ...opts,
-    dispatcher: new Agent({ headersTimeout: 0, bodyTimeout: 0, connectTimeout: 30000 })
-});
+// Set undici (fetch) timeouts to 30 minutes for Ollama CPU inference
+process.env.UNDICI_CONNECT_TIMEOUT = '1800000'; // 30 minutes
+process.env.UNDICI_HEADERS_TIMEOUT = '1800000'; // 30 minutes  
+process.env.UNDICI_BODY_TIMEOUT = '1800000'; // 30 minutes
+
+// Increase Node.js HTTP timeout for Ollama (CPU inference can take 5-15 minutes)
+http.globalAgent.maxSockets = Infinity;
+https.globalAgent.maxSockets = Infinity;
+http.globalAgent.keepAlive = true;
+https.globalAgent.keepAlive = true;
+
+// Create Ollama client with extended timeout for CPU inference (30 minutes)
 const ollama = new Ollama({
-    fetch: ollamaFetch,
-    host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'
+    host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434',
+    // Ollama library uses fetch internally, we need to handle timeout at request level
 });
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
@@ -810,7 +818,7 @@ COLOR RULES:
     let aiResponse = null;
     let success = true;
     let errorMessage = null;
-    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen2.5:3b";
+    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen3.5:4b";
 
     try {
         let text = "";
@@ -821,9 +829,12 @@ COLOR RULES:
             console.log("🔵 [AI] Successfully used Pro AI for content generation.");
         } else {
             try {
-                console.log("🤖 [AI] Attempting generation with Smart-Balanced AI (Ollama qwen2.5:3b)...");
-                const r = await ollama.chat({
-                    model: 'qwen2.5:3b',
+                console.log("🤖 [AI] Attempting generation with Smart-Balanced AI (Ollama qwen2.5:1.5b)...");
+                console.log("⏱️  [AI] Timeout set to 10 minutes (CPU inference is slow)...");
+                
+                // Add 10-minute timeout for Ollama (CPU is very slow)
+                const ollamaPromise = ollama.chat({
+                    model: 'qwen2.5:1.5b',
                     messages: [
                         {
                             role: 'system',
@@ -832,7 +843,8 @@ COLOR RULES:
                             - If Dark: use dark backgrounds (#0f172a) and white text. 
                             - If Light: use white backgrounds and dark text.
                             - Ensure every page has a unique 'slug' (home, about, contact).
-                            - Never use placeholder text.`
+                            - Never use placeholder text.
+                            - Respond ONLY with valid JSON, no thinking process, no explanations.`
                         },
                         { role: 'user', content: prompt }
                     ],
@@ -840,9 +852,18 @@ COLOR RULES:
                     options: {
                         num_predict: 4096,
                         num_ctx: 8192,
-                        temperature: 0.2
-                    }
+                        temperature: 0.2,
+                        stop: ['Thinking', 'thinking', '<think>', '</think>']
+                    },
+                    stream: false
                 });
+                
+                // Race between Ollama and timeout (10 minutes for slow CPU)
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Ollama timeout after 10 minutes')), 600000)
+                );
+                
+                const r = await Promise.race([ollamaPromise, timeoutPromise]);
                 text = r.message.content || '';
                 console.log("🟢 [AI] Successfully used Original AI for content generation.");
             } catch (ollamaErr) {
@@ -1102,9 +1123,9 @@ ${siteContext}
 `;
 
         try {
-            console.log("🤖 [AI Chat] Attempting answer with qwen2.5:3b...");
+            console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
             const r = await ollama.chat({
-                model: 'qwen2.5:3b',
+                model: 'qwen3.5:4b',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }

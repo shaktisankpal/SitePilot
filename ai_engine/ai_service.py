@@ -6,15 +6,24 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import warnings
 import os
+import sys
 
-# Suppress InconsistentVersionWarning from joblib and sklearn
-warnings.filterwarnings("ignore", category=UserWarning)
-# Suppress HuggingFace symlink warnings on Windows
+# Suppress all warnings
+warnings.filterwarnings("ignore")
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-# Suppress unauthenticated request warnings
-os.environ["HUGGINGFACE_HUB_TOKEN"] = "" 
+os.environ["HUGGINGFACE_HUB_TOKEN"] = ""
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# Suppress HuggingFace and transformers logging
 import logging
+logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
+logging.getLogger("transformers.configuration_utils").setLevel(logging.ERROR)
+logging.getLogger("transformers.modeling_utils").setLevel(logging.CRITICAL)
+
+# Suppress Flask development server warning
+import click
+click.disable_unicode_literals_warning = True
 
 
 app = Flask(__name__)
@@ -35,8 +44,12 @@ encoders = joblib.load("label_encoders.pkl")
 
 model_name = "cross-encoder/nli-MiniLM2-L6-H768"
 
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-nli_model = AutoModelForSequenceClassification.from_pretrained(model_name)
+# Suppress download warnings
+import transformers
+transformers.logging.set_verbosity_error()
+
+tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=False)
+nli_model = AutoModelForSequenceClassification.from_pretrained(model_name, local_files_only=False)
 
 
 ############################################
@@ -360,5 +373,10 @@ def generate_layout():
 ############################################
 
 if __name__ == "__main__":
-
-    app.run(port=5050)
+    # Suppress Flask development server warning
+    import sys
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
+    
+    print("✅ ML Service running on http://127.0.0.1:5050")
+    app.run(port=5050, debug=False)
