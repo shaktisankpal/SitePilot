@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../../services/api.js";
 import ChatWidget from "./ChatWidget.jsx";
+import { initEngagementTracker } from "./engagementTracker.js";
 
 // ─── Design System ─────────────────────────────────────────────────────────────
 const DS = {
@@ -16,9 +17,9 @@ const DS = {
     },
     spacing: { xs: "8px", sm: "16px", md: "24px", lg: "40px", xl: "64px", xxl: "100px", section: "120px" },
     font: {
-        h1: "clamp(3rem, 6vw, 5rem)",
-        h2: "clamp(2.2rem, 4vw, 3.2rem)",
-        h3: "clamp(1.4rem, 2.5vw, 1.8rem)",
+        h1: "clamp(3.2rem, 7vw, 6rem)",
+        h2: "clamp(2.4rem, 4.8vw, 3.9rem)",
+        h3: "clamp(1.4rem, 2.5vw, 1.9rem)",
         body: "1.05rem",
         sm: "0.9rem",
     },
@@ -123,13 +124,81 @@ const FALLBACK_PHOTO_MAP = {
     abstract: "photo-1557683316-973673baf926",
     nature: "photo-1501854140801-50d01698950b",
     city: "photo-1477959858617-67f85cf4f1df",
+    // ── Food / restaurant ──
+    pizza: "photo-1513104890138-7c749659a591",
+    margherita: "photo-1574071318508-1cdbab80d002",
+    pasta: "photo-1551183053-bf91a1d81141",
+    burger: "photo-1568901346375-23c9450c58cd",
+    salad: "photo-1512621776951-a57141f2eefd",
+    sushi: "photo-1579871494447-9811cf80d66c",
+    steak: "photo-1546964124-0cce460f38ef",
+    dessert: "photo-1551024601-bec78aea704b",
+    cocktail: "photo-1514362545857-3bc16c4c7d1b",
+    wine: "photo-1510812431401-41d2bd2722f3",
+    ramen: "photo-1569718212165-3a8278d5f624",
+    seafood: "photo-1559737558-2f5a35f4523b",
+    oven: "photo-1574894709920-11b28e7367e3",
+    truffle: "photo-1476124369491-e7addf5db371",
+    vegan: "photo-1512621776951-a57141f2eefd",
+    dish: "photo-1559339352-11d035aa65de",
+    // ── Fitness ──
+    running: "photo-1571008887538-b36bb32f4571",
+    weightlifting: "photo-1534438327276-14e5300c3a48",
+    hiit: "photo-1517838277536-f5f99be501cd",
+    treadmill: "photo-1534258936925-c58bed479fcb",
+    stretching: "photo-1599901860904-17e6ed7083a0",
+    pilates: "photo-1518611012118-696072aa579a",
+    "fitness coaching": "photo-1571388208497-71bedc66e932",
+    smartwatch: "photo-1523275335684-37898b6baf30",
+    "group fitness": "photo-1518310383802-640c2de311b2",
+    // ── Fashion / clothing ──
+    blazer: "photo-1591047139829-d91aecb6caea",
+    hoodie: "photo-1556821840-3a63f95609a7",
+    sneakers: "photo-1542291026-7eec264c27ff",
+    knitwear: "photo-1576566588028-4147f3842f27",
+    streetwear: "photo-1523398002811-999ca8dec234",
+    cargo: "photo-1517445312882-bc9910d016b7",
+    jacket: "photo-1551028719-00167b16eac5",
+    trousers: "photo-1473966968600-fa801b869a1a",
+    tshirt: "photo-1521572163474-6864f9cf17ab",
+    beanie: "photo-1576871337632-b9aef4c17ab9",
+    // ── Corporate / tech ──
+    handshake: "photo-1521791136064-7986c2920216",
+    skyline: "photo-1496564203457-11bb12075d90",
+    consulting: "photo-1542744173-8e7e53415bb0",
+    analytics: "photo-1551288049-bebda4e38f71",
+    dashboard: "photo-1551288049-bebda4e38f71",
+    security: "photo-1563013544-824ae1b704d3",
+    waves: "photo-1550684376-efcbd6e3f031",
 };
 
+// A diverse, attractive pool used to give *distinct* fallbacks to unmapped queries
+// (so a gallery never repeats the same photo across cards).
+const GENERIC_POOL = [
+    "photo-1486406146926-c627a92ad1ab", "photo-1497366754035-f200968a6e72",
+    "photo-1517048676732-d65bc937f952", "photo-1522202176988-66273c2fd55f",
+    "photo-1531973576160-7125cd663d86", "photo-1542744095-fcf48d80b0fd",
+    "photo-1556761175-5973dc0f32e7", "photo-1497215728101-856f4ea42174",
+    "photo-1551434678-e076c223a692", "photo-1460925895917-afdab827c52f",
+    "photo-1454165804606-c3d57bc86b40", "photo-1504384308090-c894fdcc538d",
+];
+
+function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+    return h;
+}
+
 function getStaticFallbackUrl(query, width, height) {
-    if (!query) return buildPhotoUrl("photo-1497366216548-37526070297c", width, height);
-    const lower = (query || "").toLowerCase();
-    const matched = Object.keys(FALLBACK_PHOTO_MAP).find(k => lower.includes(k));
-    const photoId = matched ? FALLBACK_PHOTO_MAP[matched] : "photo-1497366216548-37526070297c";
+    const lower = (query || "").toLowerCase().trim();
+    if (!lower) return buildPhotoUrl(GENERIC_POOL[0], width, height);
+    // Prefer the longest matching keyword (so "fitness coaching" wins over "fit").
+    const matched = Object.keys(FALLBACK_PHOTO_MAP)
+        .filter(k => lower.includes(k))
+        .sort((a, b) => b.length - a.length)[0];
+    if (matched) return buildPhotoUrl(FALLBACK_PHOTO_MAP[matched], width, height);
+    // Unmapped → deterministic distinct image from the pool (varies per query, stable per query).
+    const photoId = GENERIC_POOL[hashStr(lower) % GENERIC_POOL.length];
     return buildPhotoUrl(photoId, width, height);
 }
 
@@ -204,13 +273,37 @@ function loadFont(fontName) {
     if (!fontName || LOADED_FONTS.has(fontName)) return;
     LOADED_FONTS.add(fontName);
     const encodedFont = fontName.replace(/ /g, "+");
+    // Request upright + italic at a conservative discrete weight set (400-700) that EVERY
+    // Google family supports. The old loader requested 300-900, so Google returned a 400 for
+    // the whole stylesheet whenever a family lacked a weight (Playfair has no 300; Space Grotesk
+    // and Cormorant cap at 700) and the font silently dropped to a generic fallback.
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@300;400;500;600;700;800;900&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${encodedFont}:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap`;
     document.head.appendChild(link);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
+
+// Serif display families read as "editorial / premium" and must NOT be rendered at
+// heavy 900 weights — they look chunky and cheap. We detect them and render headings
+// at an elegant 500-600 with normal tracking, the way the reference designs do.
+const SERIF_KEYWORDS = ["playfair", "cormorant", "lora", "merriweather", "dm serif", "instrument serif", "libre baskerville", "garamond", "crimson", "spectral", "fraunces", "bodoni", "didot", "noto serif", "source serif", "pt serif", "serif"];
+function isSerif(font) {
+    if (!font) return false;
+    const f = font.toLowerCase();
+    return SERIF_KEYWORDS.some(s => f.includes(s));
+}
+// Heading typography that adapts to the chosen font family.
+function headingType(font) {
+    const serif = isSerif(font);
+    return {
+        fontWeight: serif ? 600 : 800,
+        letterSpacing: serif ? "-0.005em" : "-0.03em",
+        lineHeight: serif ? 1.08 : 1.05,
+    };
+}
+
 function isLightText(textColor) {
     if (!textColor) return false;
     const c = textColor.toLowerCase().trim();
@@ -224,6 +317,43 @@ function isLightText(textColor) {
         return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
     }
     return false;
+}
+
+// ─── Auto-contrast system ────────────────────────────────────────────────────────
+// Guarantees text stays readable on any background — even if a template, the AI, or a
+// manual edit produces a clashing bg/text combo (e.g. dark text on a dark section).
+const NAMED_COLORS = { white: "#ffffff", black: "#000000", transparent: "#ffffff" };
+function hexToRgb(color) {
+    if (!color) return null;
+    let c = String(color).toLowerCase().trim();
+    if (NAMED_COLORS[c]) c = NAMED_COLORS[c];
+    if (!c.startsWith("#")) return null;            // skip gradients / rgb() / unknown
+    c = c.slice(1);
+    if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    if (c.length !== 6) return null;
+    return { r: parseInt(c.slice(0, 2), 16), g: parseInt(c.slice(2, 4), 16), b: parseInt(c.slice(4, 6), 16) };
+}
+function relLuminance(color) {
+    const rgb = hexToRgb(color);
+    if (!rgb) return 0.5;
+    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(rgb.r) + 0.7152 * f(rgb.g) + 0.0722 * f(rgb.b);
+}
+function contrastRatio(a, b) {
+    const la = relLuminance(a), lb = relLuminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+// Is this background dark enough to need light text on top?
+function isDarkBg(bg) {
+    const rgb = hexToRgb(bg);
+    if (!rgb) return false; // unknown/transparent → treat as light surface
+    return relLuminance(bg) < 0.42;
+}
+// Returns a text color guaranteed readable on `bg`. Keeps the preferred color when it
+// already has acceptable contrast; otherwise flips to white or near-black.
+function readableText(bg, preferred) {
+    if (preferred && contrastRatio(bg, preferred) >= 3) return preferred;
+    return isDarkBg(bg) ? "#ffffff" : "#14181d";
 }
 
 // ─── Global CSS ────────────────────────────────────────────────────────────────
@@ -297,11 +427,13 @@ img { max-width: 100%; height: auto; display: block; }
 `;
 
 // ─── Decorative Blobs ──────────────────────────────────────────────────────────
+// Kept very subtle. Heavy colored radial glows are the #1 "AI-generated" tell; the
+// reference designs use clean, calm backgrounds. This adds at most a whisper of tint.
 const GlowBlob = ({ color, style = {} }) => (
     <div style={{
         position: "absolute", borderRadius: "50%", pointerEvents: "none", zIndex: 0,
-        background: `radial-gradient(circle, ${color}35 0%, transparent 70%)`,
-        filter: "blur(72px)", ...style,
+        background: `radial-gradient(circle, ${color}12 0%, transparent 68%)`,
+        filter: "blur(90px)", ...style,
     }} />
 );
 
@@ -309,8 +441,8 @@ const GlowBlob = ({ color, style = {} }) => (
 const NavbarSection = ({ props, branding, allPages, currentPage, onPageChange }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Full Width Solid";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
@@ -463,12 +595,16 @@ const NavbarSection = ({ props, branding, allPages, currentPage, onPageChange })
 const HeroSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Split Text Left";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
     const fontStyle = `"${font}", "Plus Jakarta Sans", sans-serif`;
+    const hType = headingType(font);
+    const serif = isSerif(font);
+    // Editorial serif headlines read best with a roomier corner radius on the button.
+    const btnRadius = props.buttonStyle === "sharp" ? "6px" : "100px";
 
     // Image: AI-generated sites have a resolved URL in backgroundImage.
     // For templates using keywords, useUnsplashImage fetches via the proxy.
@@ -477,26 +613,67 @@ const HeroSection = ({ props, branding }) => {
         : (props.backgroundImageQuery || props.backgroundImage || "professional workspace");
     const heroImgUrl = useUnsplashImage(heroQuery, 1400, 900);
 
-    const Badge = () => (
-        <div className="sp-badge sp-animate-up" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30`, marginBottom: "20px", animationDelay: "0.05s", fontFamily: fontStyle }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: accent, display: "inline-block" }} />
-            Now Available
+    // Refined eyebrow — a thin uppercase label with a leading rule, the way premium
+    // editorial sites mark sections. Only shown when the template/AI provides one;
+    // leading with just the headline (no salesy "Now Available" pill) reads more premium.
+    const eyebrowText = props.eyebrow || props.badge;
+    const Badge = () => !eyebrowText ? null : (
+        <div className="sp-animate-up" style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "22px", animationDelay: "0.05s" }}>
+            <span style={{ width: "28px", height: "1.5px", background: accent, display: "inline-block" }} />
+            <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accent, fontFamily: fontStyle }}>
+                {eyebrowText}
+            </span>
         </div>
     );
 
     const CTARow = () => (
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", marginTop: "36px" }}>
+        <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center", marginTop: "38px" }}>
             {props.ctaText && (
-                <a href={props.ctaLink || "#"} className="sp-btn-base sp-animate-up" style={{ background: accent, color: light ? "#000" : "#fff", padding: "16px 36px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent), animationDelay: "0.35s" }}>
+                <a href={props.ctaLink || "#"} className="sp-btn-base sp-animate-up" style={{ background: accent, color: light ? "#0a0a0a" : "#fff", padding: "15px 34px", borderRadius: btnRadius, fontSize: "15px", fontWeight: 600, fontFamily: fontStyle, boxShadow: `0 10px 30px ${accent}33`, animationDelay: "0.35s" }}>
                     {props.ctaText}
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
                 </a>
             )}
-            <a href="#learn" className="sp-btn-base sp-animate-up" style={{ background: "transparent", color: tc, padding: "16px 32px", border: `2px solid ${light ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)"}`, borderRadius: "100px", fontSize: "15px", fontFamily: fontStyle, animationDelay: "0.45s" }}>
-                Learn More
-            </a>
+            {props.secondaryCtaText !== null && (
+                <a href={props.secondaryCtaLink || "#learn"} className="sp-btn-base sp-animate-up" style={{ background: "transparent", color: tc, padding: "15px 30px", border: `1.5px solid ${light ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.16)"}`, borderRadius: btnRadius, fontSize: "15px", fontWeight: 600, fontFamily: fontStyle, animationDelay: "0.45s" }}>
+                    {props.secondaryCtaText || "Learn More"}
+                </a>
+            )}
         </div>
     );
+
+    if (variant === "Editorial Centered") {
+        return (
+            <section className="sp-section-pad" style={{ position: "relative", padding: "96px 56px 0", background: bg, overflow: "hidden" }}>
+                <div style={{ maxWidth: "1000px", margin: "0 auto", textAlign: "center" }}>
+                    {eyebrowText && (
+                        <div className="sp-animate-up" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 18px", borderRadius: "100px", border: `1px solid ${light ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.14)"}`, marginBottom: "32px" }}>
+                            <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em", color: tc, opacity: 0.85, fontFamily: fontStyle }}>{eyebrowText}</span>
+                        </div>
+                    )}
+                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)", fontWeight: hType.fontWeight, color: tc, marginBottom: "28px", lineHeight: 1.02, letterSpacing: hType.letterSpacing, fontFamily: fontStyle, animationDelay: "0.1s" }}>
+                        {props.heading || "Experience the Difference"}
+                    </h1>
+                    {props.subheading && (
+                        <p className="sp-animate-up" style={{ fontSize: "1.18rem", color: tc, opacity: 0.7, lineHeight: 1.7, maxWidth: "600px", margin: "0 auto", fontFamily: fontStyle, animationDelay: "0.2s" }}>
+                            {props.subheading}
+                        </p>
+                    )}
+                    {props.ctaText && (
+                        <div className="sp-animate-up" style={{ marginTop: "36px", display: "flex", justifyContent: "center", animationDelay: "0.3s" }}>
+                            <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: light ? "#0a0a0a" : "#fff", padding: "16px 40px", borderRadius: serif ? "6px" : "100px", fontSize: "15px", fontWeight: 600, fontFamily: fontStyle, boxShadow: `0 10px 30px ${accent}33` }}>
+                                {props.ctaText}
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                            </a>
+                        </div>
+                    )}
+                </div>
+                <div className="sp-animate-scale" style={{ maxWidth: "1240px", margin: "64px auto 0", borderRadius: serif ? "10px" : "28px", overflow: "hidden", aspectRatio: "16/8", boxShadow: DS.shadow.xl, animationDelay: "0.25s" }}>
+                    <img src={heroImgUrl} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager" />
+                </div>
+            </section>
+        );
+    }
 
     if (variant === "Centered Image Bg") {
         return (
@@ -504,13 +681,13 @@ const HeroSection = ({ props, branding }) => {
                 <div style={{ position: "relative", borderRadius: "40px", overflow: "hidden", minHeight: "90vh", display: "flex", alignItems: "flex-end", padding: "60px 6%" }}>
                     <img src={heroImgUrl} alt="Hero background" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} loading="eager" />
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.1) 80%, transparent)", zIndex: 1 }} />
-                    <div style={{ position: "relative", zIndex: 2, maxWidth: "700px" }}>
+                    <div style={{ position: "relative", zIndex: 2, maxWidth: "720px" }}>
                         <Badge />
-                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.15s" }}>
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: hType.fontWeight, color: "#fff", marginBottom: "20px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle, textShadow: "0 2px 28px rgba(0,0,0,0.45)", animationDelay: "0.15s" }}>
                             {props.heading || "Design That Speaks"}
                         </h1>
                         {props.subheading && (
-                            <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: "rgba(255,255,255,0.82)", lineHeight: 1.75, maxWidth: "520px", fontFamily: fontStyle, animationDelay: "0.25s" }}>
+                            <p className="sp-animate-up" style={{ fontSize: "1.18rem", color: "rgba(255,255,255,0.9)", lineHeight: 1.7, maxWidth: "540px", fontFamily: fontStyle, textShadow: "0 1px 16px rgba(0,0,0,0.4)", animationDelay: "0.25s" }}>
                                 {props.subheading}
                             </p>
                         )}
@@ -530,23 +707,21 @@ const HeroSection = ({ props, branding }) => {
                     <div className="sp-img-zoom sp-animate-scale" style={{ borderRadius: "28px", overflow: "hidden", aspectRatio: "4/5", boxShadow: DS.shadow.xl, position: "relative" }}>
                         <img src={heroImgUrl} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager"
                             onError={e => { e.target.src = getImageUrl("professional", 800, 1000); }} />
-                        {/* Floating card */}
-                        <div style={{ position: "absolute", bottom: "24px", left: "-20px", background: light ? "rgba(10,15,30,0.92)" : "rgba(255,255,255,0.96)", backdropFilter: "blur(16px)", padding: "14px 20px", borderRadius: "16px", boxShadow: DS.shadow.lg, display: "flex", gap: "12px", alignItems: "center", border: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}` }}>
-                            <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: `${accent}22`, display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontSize: "18px" }}>✦</div>
-                            <div>
-                                <p style={{ fontSize: "11px", color: tc, opacity: 0.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: fontStyle }}>Trusted By</p>
-                                <p style={{ fontSize: "15px", fontWeight: 800, color: tc, fontFamily: fontStyle }}>5,000+ Clients</p>
+                        {props.statValue !== null && (
+                            <div style={{ position: "absolute", bottom: "24px", left: "-20px", background: light ? "rgba(12,14,20,0.86)" : "rgba(255,255,255,0.96)", backdropFilter: "blur(16px)", padding: "16px 22px", borderRadius: "18px", boxShadow: DS.shadow.lg, border: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}` }}>
+                                <p style={{ fontSize: "26px", fontWeight: 800, color: tc, fontFamily: fontStyle, lineHeight: 1, letterSpacing: "-0.02em" }}>{props.statValue || "5,000+"}</p>
+                                <p style={{ fontSize: "12px", color: tc, opacity: 0.6, fontFamily: fontStyle, marginTop: "4px" }}>{props.statLabel || "Happy clients"}</p>
                             </div>
-                        </div>
+                        )}
                     </div>
                     {/* Text */}
                     <div>
                         <Badge />
-                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.15s" }}>
+                        <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: hType.fontWeight, color: tc, marginBottom: "20px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle, animationDelay: "0.15s" }}>
                             {props.heading || "Built For The Future"}
                         </h1>
                         {props.subheading && (
-                            <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: tc, opacity: 0.72, lineHeight: 1.78, fontFamily: fontStyle, animationDelay: "0.25s" }}>
+                            <p className="sp-animate-up" style={{ fontSize: "1.18rem", color: tc, opacity: 0.72, lineHeight: 1.72, fontFamily: fontStyle, animationDelay: "0.25s" }}>
                                 {props.subheading}
                             </p>
                         )}
@@ -566,33 +741,36 @@ const HeroSection = ({ props, branding }) => {
                 {/* Text */}
                 <div>
                     <Badge />
-                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: 900, color: tc, marginBottom: "18px", lineHeight: "1.05", letterSpacing: "-0.03em", fontFamily: fontStyle, animationDelay: "0.1s" }}>
+                    <h1 className="sp-hero-h1 sp-animate-up" style={{ fontSize: DS.font.h1, fontWeight: hType.fontWeight, color: tc, marginBottom: "20px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle, animationDelay: "0.1s" }}>
                         {props.heading || "The Future Is Here"}
                     </h1>
                     {props.subheading && (
-                        <p className="sp-animate-up" style={{ fontSize: "1.15rem", color: tc, opacity: 0.72, lineHeight: 1.78, maxWidth: "480px", fontFamily: fontStyle, animationDelay: "0.2s" }}>
+                        <p className="sp-animate-up" style={{ fontSize: "1.18rem", color: tc, opacity: 0.72, lineHeight: 1.72, maxWidth: "500px", fontFamily: fontStyle, animationDelay: "0.2s" }}>
                             {props.subheading}
                         </p>
                     )}
                     <CTARow />
-                    {/* Stars / social proof */}
-                    <div className="sp-animate-up" style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "40px", paddingTop: "28px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`, animationDelay: "0.55s" }}>
-                        <div style={{ display: "flex" }}>
-                            {["😊", "🤩", "👏", "⭐"].map((e, i) => (
-                                <div key={i} style={{ width: "34px", height: "34px", borderRadius: "50%", background: `hsl(${i * 55}, 60%, 55%)`, border: `2px solid ${bg}`, marginLeft: i > 0 ? "-8px" : "0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>{e}</div>
-                            ))}
+                    {/* Social proof — avatar cluster + rating. Hidden when socialProof === null. */}
+                    {props.socialProof !== null && (
+                        <div className="sp-animate-up" style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "42px", paddingTop: "30px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`, animationDelay: "0.55s" }}>
+                            <div style={{ display: "flex" }}>
+                                {[0, 1, 2, 3].map((i) => (
+                                    <div key={i} style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${bg}`, marginLeft: i > 0 ? "-13px" : "0", boxShadow: DS.shadow.sm }}>
+                                        <img src={getImageUrl(["portrait person", "smiling woman", "professional man", "happy customer"][i], 80, 80)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <div style={{ color: "#f5a623", fontSize: "13px", letterSpacing: "2px" }}>★★★★★</div>
+                                <p style={{ fontSize: "13px", color: tc, opacity: 0.65, marginTop: "3px", fontFamily: fontStyle, fontWeight: 500 }}>{props.socialProof || "Loved by 5,000+ members"}</p>
+                            </div>
                         </div>
-                        <div>
-                            <div style={{ color: "#f59e0b", fontSize: "13px" }}>★★★★★</div>
-                            <p style={{ fontSize: "12px", color: tc, opacity: 0.55, marginTop: "2px", fontFamily: fontStyle }}>Loved by thousands</p>
-                        </div>
-                    </div>
+                    )}
                 </div>
                 {/* Image */}
-                <div className="sp-img-zoom sp-animate-scale" style={{ borderRadius: "28px", overflow: "hidden", aspectRatio: "4/5", boxShadow: DS.shadow.xl, position: "relative", animationDelay: "0.15s" }}>
+                <div className="sp-img-zoom sp-animate-scale" style={{ borderRadius: serif ? "8px" : "28px", overflow: "hidden", aspectRatio: "4/5", boxShadow: DS.shadow.xl, position: "relative", animationDelay: "0.15s" }}>
                     <img src={heroImgUrl} alt="Hero" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="eager"
                         onError={e => { e.target.src = getImageUrl("professional", 800, 1000); }} />
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "5px", background: `linear-gradient(to right, ${accent}, ${accent}66)` }} />
                 </div>
             </div>
         </section>
@@ -602,18 +780,19 @@ const HeroSection = ({ props, branding }) => {
 // ─── TEXT SECTION ──────────────────────────────────────────────────────────────
 const TextSection = ({ props, branding }) => {
     const bg = props.bgColor || "#f9fafb";
-    const tc = props.textColor || "#111827";
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Centered Standard";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
     const fontStyle = `"${font}", "Inter", sans-serif`;
+    const hType = headingType(font);
 
     const Chip = ({ text }) => (
-        <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}28`, marginBottom: "18px", fontFamily: fontStyle }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: accent }} />
-            {text}
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+            <span style={{ width: "26px", height: "1.5px", background: accent }} />
+            <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accent, fontFamily: fontStyle }}>{props.eyebrow || text}</span>
         </div>
     );
 
@@ -625,11 +804,11 @@ const TextSection = ({ props, branding }) => {
                     <div>
                         <Chip text="About Us" />
                         {props.heading && (
-                            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>
+                            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: tc, lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>
                                 {props.heading}
                             </h2>
                         )}
-                        <div style={{ width: "52px", height: "4px", background: `linear-gradient(to right, ${accent}, ${accent}55)`, borderRadius: "2px", marginTop: "24px" }} />
+                        <div style={{ width: "52px", height: "3px", background: accent, borderRadius: "2px", marginTop: "26px" }} />
                     </div>
                     <div>
                         <div style={{ position: "relative", background: light ? "rgba(255,255,255,0.05)" : "#fff", padding: "40px", borderRadius: "24px", border: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"}`, boxShadow: DS.shadow.lg }}>
@@ -657,7 +836,7 @@ const TextSection = ({ props, branding }) => {
                     <div style={{ position: "relative", background: light ? "rgba(255,255,255,0.04)" : "#fff", padding: "64px 56px", borderRadius: "40px", boxShadow: DS.shadow.xl, textAlign: "center", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}` }}>
                         <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "3px", background: `linear-gradient(to right, transparent, ${accent}, transparent)`, borderRadius: "2px" }} />
                         <Chip text="Why Us" />
-                        {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
+                        {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: tc, marginBottom: "20px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>{props.heading}</h2>}
                         {props.description && <p style={{ fontSize: "1.08rem", lineHeight: "1.85", color: tc, opacity: 0.72, maxWidth: "580px", margin: "0 auto", fontFamily: fontStyle }}>{props.description}</p>}
                         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", marginTop: "32px" }}>
                             {["Premium Quality", "24/7 Support", "Proven Results", "Expert Team"].map(f => (
@@ -675,7 +854,7 @@ const TextSection = ({ props, branding }) => {
         <section className="sp-section-pad" style={{ position: "relative", padding: "100px 56px", background: bg }}>
             <div style={{ maxWidth: "720px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
                 <Chip text="Our Mission" />
-                {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "20px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
+                {props.heading && <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: tc, marginBottom: "20px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>{props.heading}</h2>}
                 {props.description && <p style={{ fontSize: "1.1rem", lineHeight: "1.85", color: tc, opacity: 0.72, fontFamily: fontStyle }}>{props.description}</p>}
             </div>
         </section>
@@ -686,24 +865,32 @@ const TextSection = ({ props, branding }) => {
 const GallerySection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Modern Grid";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
     const fontStyle = `"${font}", "Inter", sans-serif`;
+    const hType = headingType(font);
+    const serif = isSerif(font);
+    const cardRadius = serif ? "10px" : "18px";
 
     const items = (props.items || []).map((item, i) => {
         if (typeof item === "string") return { title: item, description: "Premium quality and craftsmanship.", imageQuery: item };
-        return { title: item?.title || `Item ${i + 1}`, description: item?.description || "Premium quality.", imageQuery: item?.imageQuery || item?.title || "professional" };
+        return { title: item?.title || `Item ${i + 1}`, description: item?.description || "Premium quality.", imageQuery: item?.imageQuery || item?.title || "professional", price: item?.price, image: item?.image };
     });
 
     const SectionHeader = () => props.heading ? (
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-            <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}28`, marginBottom: "14px", fontFamily: fontStyle }}>Our Work</div>
-            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>
+        <div style={{ textAlign: "center", marginBottom: "54px", maxWidth: "640px", marginLeft: "auto", marginRight: "auto" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                <span style={{ width: "24px", height: "1.5px", background: accent }} />
+                <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accent, fontFamily: fontStyle }}>{props.eyebrow || "Our Work"}</span>
+                <span style={{ width: "24px", height: "1.5px", background: accent }} />
+            </div>
+            <h2 className="sp-hero-h2 sp-animate-up" style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: tc, lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>
                 {props.heading}
             </h2>
+            {props.subheading && <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.65, lineHeight: 1.7, marginTop: "16px", fontFamily: fontStyle }}>{props.subheading}</p>}
         </div>
     ) : null;
 
@@ -713,28 +900,22 @@ const GallerySection = ({ props, branding }) => {
         const imgQuery = item.image && item.image.startsWith("http")
             ? item.image
             : (item.imageQuery || item.title || "professional");
-        const img = useUnsplashImage(imgQuery, 640, 480);
+        const img = useUnsplashImage(imgQuery, 720, 560);
         return (
-            <div className="sp-card-lift sp-img-zoom sp-animate-scale" style={{ background: light ? "rgba(255,255,255,0.04)" : "#fff", borderRadius: "20px", overflow: "hidden", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`, boxShadow: DS.shadow.md, animationDelay: `${idx * 0.07}s` }}>
-                <div style={{ height: "210px", overflow: "hidden", position: "relative" }}>
+            <div className="sp-card-lift sp-img-zoom sp-animate-scale" style={{ background: light ? "rgba(255,255,255,0.035)" : "#fff", borderRadius: cardRadius, overflow: "hidden", border: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}`, boxShadow: light ? "0 1px 2px rgba(0,0,0,0.3)" : "0 6px 24px rgba(0,0,0,0.06)", animationDelay: `${idx * 0.07}s` }}>
+                <div style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative" }}>
                     <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy"
-                        onError={e => { e.target.src = getStaticFallbackUrl("professional workspace", 640, 480); }} />
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 55%, rgba(0,0,0,0.35))" }} />
-                    <div style={{ position: "absolute", top: "12px", left: "12px", width: "30px", height: "30px", borderRadius: "8px", background: accent, color: light ? "#000" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "12px", boxShadow: DS.shadow.sm }}>
-                        {String(idx + 1).padStart(2, "0")}
-                    </div>
+                        onError={e => { e.target.src = getStaticFallbackUrl("professional workspace", 720, 560); }} />
                 </div>
-                <div style={{ padding: "22px" }}>
-                    <h3 style={{ fontSize: "1rem", fontWeight: 700, color: tc, marginBottom: "6px", fontFamily: fontStyle }}>{item.title}</h3>
-                    <p style={{ fontSize: "13px", color: tc, opacity: 0.6, lineHeight: "1.65", fontFamily: fontStyle }}>{item.description}</p>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "18px", paddingTop: "14px", borderTop: `1px solid ${light ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"}` }}>
-                        <div style={{ color: "#f59e0b", fontSize: "11px" }}>★★★★★</div>
-                        <a href="#" style={{ fontSize: "12px", color: accent, fontWeight: 700, textDecoration: "none", fontFamily: fontStyle }}>View →</a>
+                <div style={{ padding: "24px 24px 26px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px" }}>
+                        <h3 style={{ fontSize: serif ? "1.3rem" : "1.1rem", fontWeight: serif ? 600 : 700, color: tc, fontFamily: fontStyle, letterSpacing: serif ? "0" : "-0.01em", lineHeight: 1.25 }}>{item.title}</h3>
+                        {item.price && <span style={{ fontSize: "1.05rem", fontWeight: 700, color: accent, fontFamily: fontStyle, whiteSpace: "nowrap" }}>{item.price}</span>}
                     </div>
+                    <p style={{ fontSize: "14px", color: tc, opacity: 0.62, lineHeight: "1.7", fontFamily: fontStyle, marginTop: "10px" }}>{item.description}</p>
                 </div>
             </div>
         );
-
     };
 
     if (variant === "Horizontal Scroll" || variant === "Horizontal Flex") {
@@ -783,11 +964,10 @@ const GallerySection = ({ props, branding }) => {
                                 <div key={i} className="sp-card-lift sp-img-zoom" style={{ gridColumn: big || wide ? "span 2" : "span 1", gridRow: big ? "span 2" : "span 1", borderRadius: "22px", overflow: "hidden", position: "relative", boxShadow: DS.shadow.lg }}>
                                     <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} loading="lazy"
                                         onError={e => { e.target.src = getImageUrl("professional", 900, 600); }} />
-                                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)" }} />
-                                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px" }}>
-                                        <span className="sp-badge" style={{ background: accent, color: light ? "#000" : "#fff", marginBottom: "8px", fontFamily: fontStyle }}>Featured</span>
-                                        <h3 style={{ color: "#fff", fontSize: big ? "1.5rem" : "1rem", fontWeight: 800, fontFamily: fontStyle }}>{item.title}</h3>
-                                        {big && <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "13px", marginTop: "6px", fontFamily: fontStyle }}>{item.description}</p>}
+                                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)" }} />
+                                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "26px" }}>
+                                        <h3 style={{ color: "#fff", fontSize: big ? "1.7rem" : "1.15rem", fontWeight: serif ? 600 : 700, fontFamily: fontStyle, letterSpacing: serif ? "0" : "-0.01em", lineHeight: 1.2, textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}>{item.title}</h3>
+                                        {big && <p style={{ color: "rgba(255,255,255,0.88)", fontSize: "14px", marginTop: "8px", lineHeight: 1.6, fontFamily: fontStyle, maxWidth: "440px", textShadow: "0 1px 10px rgba(0,0,0,0.45)" }}>{item.description}</p>}
                                     </div>
                                 </div>
                             );
@@ -811,12 +991,71 @@ const GallerySection = ({ props, branding }) => {
         );
     }
 
+    if (variant === "Polaroid Strip") {
+        const rot = [-5, 3, -3, 4, -4, 2];
+        return (
+            <section className="sp-section-pad" style={{ padding: "96px 56px", background: bg, overflow: "hidden" }}>
+                <div style={{ maxWidth: "1320px", margin: "0 auto" }}>
+                    <SectionHeader />
+                    <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px", paddingTop: "20px" }}>
+                        {items.slice(0, 6).map((item, i) => {
+                            const img = resolveItemImage(item, 360, 440);
+                            return (
+                                <div key={i} className="sp-animate-scale" style={{ background: "#fff", padding: "12px 12px 16px", borderRadius: "4px", boxShadow: "0 14px 34px rgba(0,0,0,0.18)", transform: `rotate(${rot[i % rot.length]}deg)`, transition: "transform 0.3s ease", marginTop: i % 2 ? "26px" : "0", animationDelay: `${i * 0.08}s`, cursor: "pointer" }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = "rotate(0deg) scale(1.04)"; e.currentTarget.style.zIndex = "2"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = `rotate(${rot[i % rot.length]}deg)`; e.currentTarget.style.zIndex = "1"; }}>
+                                    <div style={{ width: "190px", height: "230px", overflow: "hidden", borderRadius: "2px" }}>
+                                        <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                                    </div>
+                                    <p style={{ textAlign: "center", marginTop: "12px", fontSize: "15px", fontWeight: serif ? 600 : 700, color: "#222", fontFamily: fontStyle }}>{item.title}</p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (variant === "Editorial Showcase") {
+        return (
+            <section className="sp-section-pad" style={{ padding: "100px 56px", background: bg }}>
+                <div style={{ maxWidth: "1180px", margin: "0 auto" }}>
+                    <SectionHeader />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "90px" }}>
+                        {items.slice(0, 4).map((item, i) => {
+                            const img = resolveItemImage(item, 720, 560);
+                            const flip = i % 2 === 1;
+                            return (
+                                <div key={i} className="sp-grid-halves" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "64px", alignItems: "center", direction: flip ? "rtl" : "ltr" }}>
+                                    <div className="sp-img-zoom sp-animate-scale" style={{ direction: "ltr", borderRadius: serif ? "6px" : "20px", overflow: "hidden", aspectRatio: "5/4", boxShadow: DS.shadow.lg }}>
+                                        <img src={img} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                                    </div>
+                                    <div style={{ direction: "ltr" }}>
+                                        <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accent, fontFamily: fontStyle }}>{item.price ? "Signature" : `0${i + 1}`}</span>
+                                        <h3 style={{ fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: hType.fontWeight, color: tc, fontFamily: fontStyle, letterSpacing: hType.letterSpacing, lineHeight: 1.12, margin: "12px 0 16px" }}>{item.title}</h3>
+                                        <p style={{ fontSize: "1.05rem", color: tc, opacity: 0.68, lineHeight: 1.85, fontFamily: fontStyle }}>{item.description}</p>
+                                        {item.price && <p style={{ fontSize: "1.3rem", fontWeight: 700, color: accent, marginTop: "20px", fontFamily: fontStyle }}>{item.price}</p>}
+                                        <a href="#" style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "24px", fontSize: "14px", fontWeight: 600, color: tc, textDecoration: "none", borderBottom: `1.5px solid ${accent}`, paddingBottom: "3px", fontFamily: fontStyle }}>
+                                            Discover more
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
     // Modern Grid (default)
     return (
-        <section className="sp-section-pad" style={{ padding: "96px 56px", background: bg }}>
+        <section className="sp-section-pad" style={{ padding: "100px 56px", background: bg }}>
             <div style={{ maxWidth: "1320px", margin: "0 auto" }}>
                 <SectionHeader />
-                <div className="sp-grid-thirds" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "22px" }}>
+                <div className="sp-grid-thirds" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "26px" }}>
                     {items.map((item, i) => <GridCard key={i} item={item} idx={i} />)}
                 </div>
             </div>
@@ -828,26 +1067,24 @@ const GallerySection = ({ props, branding }) => {
 const CTASection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Centered Large";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
     const fontStyle = `"${font}", "Inter", sans-serif`;
+    const hType = headingType(font);
 
     if (variant === "Floating Pill") {
         return (
             <section style={{ padding: "48px 56px", background: bg }}>
-                <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "26px 40px", borderRadius: "100px", background: `linear-gradient(135deg, ${accent}, ${accent}bb)`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "24px", boxShadow: DS.shadow.colored(accent), flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🚀</div>
-                        <div>
-                            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#fff", fontFamily: fontStyle, letterSpacing: "-0.02em" }}>{props.heading || "Ready to dive in?"}</h2>
-                            {props.subheading && <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px", fontFamily: fontStyle }}>{props.subheading}</p>}
-                        </div>
+                <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "32px 44px", borderRadius: "28px", background: accent, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "24px", boxShadow: `0 20px 50px ${accent}33`, flexWrap: "wrap" }}>
+                    <div>
+                        <h2 style={{ fontSize: "1.6rem", fontWeight: hType.fontWeight, color: light ? "#0a0a0a" : "#fff", fontFamily: fontStyle, letterSpacing: hType.letterSpacing }}>{props.heading || "Ready to dive in?"}</h2>
+                        {props.subheading && <p style={{ color: light ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.85)", fontSize: "15px", fontFamily: fontStyle, marginTop: "6px" }}>{props.subheading}</p>}
                     </div>
                     {props.ctaText && (
-                        <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: "#fff", color: accent, padding: "14px 36px", borderRadius: "100px", fontSize: "15px", fontFamily: fontStyle, boxShadow: "0 8px 20px rgba(0,0,0,0.15)", flexShrink: 0 }}>
+                        <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: light ? "#0a0a0a" : "#fff", color: light ? "#fff" : accent, padding: "15px 38px", borderRadius: "100px", fontSize: "15px", fontWeight: 600, fontFamily: fontStyle, boxShadow: "0 8px 20px rgba(0,0,0,0.15)", flexShrink: 0 }}>
                             {props.ctaText}
                         </a>
                     )}
@@ -862,14 +1099,12 @@ const CTASection = ({ props, branding }) => {
                 <div className="sp-grid-halves" style={{ flex: "1 1 50%", padding: "88px 72px", background: `linear-gradient(140deg, ${accent} 0%, ${accent}aa 100%)`, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                     <GlowBlob color="rgba(255,255,255,0.25)" style={{ top: "-40%", right: "-10%", width: "400px", height: "400px", filter: "blur(40px)" }} />
                     <div style={{ position: "relative", zIndex: 1 }}>
-                        {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", lineHeight: "1.1", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
-                        {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.85)", lineHeight: 1.72, fontFamily: fontStyle }}>{props.subheading}</p>}
+                        {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: light ? "#0a0a0a" : "#fff", marginBottom: "18px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>{props.heading}</h2>}
+                        {props.subheading && <p style={{ fontSize: "1.08rem", color: light ? "rgba(0,0,0,0.72)" : "rgba(255,255,255,0.88)", lineHeight: 1.72, fontFamily: fontStyle }}>{props.subheading}</p>}
                     </div>
                 </div>
                 <div style={{ flex: "1 1 50%", padding: "88px 72px", display: "flex", alignItems: "center", justifyContent: "center", background: light ? "#111" : "#f9fafb", position: "relative" }}>
-                    <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "400px", height: "400px" }} />
                     <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "360px", width: "100%" }}>
-                        <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: `${accent}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", color: accent, fontSize: "24px" }}>✦</div>
                         {props.ctaText && (
                             <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "18px 0", borderRadius: "14px", width: "100%", justifyContent: "center", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent), fontSize: "16px" }}>
                                 {props.ctaText}
@@ -888,8 +1123,8 @@ const CTASection = ({ props, branding }) => {
                 <GlowBlob color={accent} style={{ top: "50%", left: "15%", transform: "translateY(-50%)", width: "500px", height: "500px" }} />
                 <GlowBlob color={accent} style={{ top: "50%", right: "5%", transform: "translateY(-50%)", width: "300px", height: "300px", opacity: 0.5 }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
-                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: "#fff", marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
-                    {props.subheading && <p style={{ fontSize: "1.05rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.72, marginBottom: "32px", fontFamily: fontStyle }}>{props.subheading}</p>}
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: "#fff", marginBottom: "18px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>{props.heading}</h2>}
+                    {props.subheading && <p style={{ fontSize: "1.08rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.72, marginBottom: "34px", fontFamily: fontStyle }}>{props.subheading}</p>}
                     {props.ctaText && (
                         <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: "#fff", padding: "16px 40px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent) }}>
                             {props.ctaText}
@@ -906,9 +1141,13 @@ const CTASection = ({ props, branding }) => {
             <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "72px 56px", borderRadius: "40px", background: light ? "rgba(255,255,255,0.03)" : "#f4f4f6", border: `1px solid ${light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`, textAlign: "center", position: "relative", overflow: "hidden", boxShadow: light ? "0 40px 80px rgba(0,0,0,0.4)" : DS.shadow.xl, zIndex: 1 }}>
                 <GlowBlob color={accent} style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "700px", height: "700px" }} />
                 <div style={{ position: "relative", zIndex: 1, maxWidth: "600px", margin: "0 auto" }}>
-                    <div className="sp-badge" style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}25`, marginBottom: "20px", fontFamily: fontStyle }}>Take Action</div>
-                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: 900, color: tc, marginBottom: "18px", letterSpacing: "-0.03em", fontFamily: fontStyle }}>{props.heading}</h2>}
-                    {props.subheading && <p style={{ fontSize: "1.08rem", color: tc, opacity: 0.72, lineHeight: 1.75, marginBottom: "36px", fontFamily: fontStyle }}>{props.subheading}</p>}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "22px" }}>
+                        <span style={{ width: "24px", height: "1.5px", background: accent }} />
+                        <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accent, fontFamily: fontStyle }}>{props.eyebrow || "Get Started"}</span>
+                        <span style={{ width: "24px", height: "1.5px", background: accent }} />
+                    </div>
+                    {props.heading && <h2 style={{ fontSize: DS.font.h2, fontWeight: hType.fontWeight, color: tc, marginBottom: "18px", lineHeight: hType.lineHeight, letterSpacing: hType.letterSpacing, fontFamily: fontStyle }}>{props.heading}</h2>}
+                    {props.subheading && <p style={{ fontSize: "1.1rem", color: tc, opacity: 0.72, lineHeight: 1.75, marginBottom: "38px", fontFamily: fontStyle }}>{props.subheading}</p>}
                     <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
                         {props.ctaText && (
                             <a href={props.ctaLink || "#"} className="sp-btn-base" style={{ background: accent, color: light ? "#000" : "#fff", padding: "16px 40px", borderRadius: "100px", fontSize: "16px", fontFamily: fontStyle, boxShadow: DS.shadow.colored(accent) }}>
@@ -935,8 +1174,8 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Left Text Right Form";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
@@ -1042,8 +1281,8 @@ const ContactFormSection = ({ props, branding, websiteId }) => {
 const FooterSection = ({ props, branding }) => {
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#0f172a";
-    const tc = props.textColor || "#9ca3af";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#9ca3af");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Simple Centered";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
@@ -1113,8 +1352,8 @@ const DynamicFormSection = ({ props, branding, websiteId }) => {
 
     const accent = props.accentColor || branding?.primaryColor || "#6366f1";
     const bg = props.bgColor || "#ffffff";
-    const tc = props.textColor || "#111827";
-    const light = isLightText(tc);
+    const tc = readableText(bg, props.textColor || "#111827");
+    const light = isDarkBg(bg);
     const variant = props.variant || "Card Based";
     const font = props.fontFamily || branding?.font || "Inter";
     useEffect(() => { loadFont(font); }, [font]);
@@ -1329,6 +1568,13 @@ export default function PublicSiteRenderer() {
         };
     }, [_trackedWebsiteId]);
 
+    // ── Engagement tracker (per-section dwell, scroll, CTA clicks, form funnel) ──
+    useEffect(() => {
+        if (!_trackedWebsiteId) return;
+        const cleanup = initEngagementTracker({ websiteId: _trackedWebsiteId, pageId: currentPage?._id });
+        return cleanup;
+    }, [_trackedWebsiteId, currentPage?._id]);
+
     if (loading) return <LoadingScreen />;
     if (error) return <ErrorScreen message={error} />;
 
@@ -1372,7 +1618,13 @@ export default function PublicSiteRenderer() {
                     />;
                 }
 
-                return <Component key={section.id} props={section.props || {}} branding={branding} websiteId={websiteId} />;
+                // Wrap content sections so the engagement tracker can observe them.
+                // (Navbar is excluded above to preserve its sticky positioning.)
+                return (
+                    <div key={section.id} data-sp-sec={section.id} data-sp-type={section.type}>
+                        <Component props={section.props || {}} branding={branding} websiteId={websiteId} />
+                    </div>
+                );
             })}
 
             {sections.length === 0 && (

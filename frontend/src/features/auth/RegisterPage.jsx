@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { register } from "../../store/slices/authSlice.js";
 import toast from "react-hot-toast";
-import { Zap, Eye, EyeOff, ArrowRight, Rocket } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Rocket, Sparkles, Globe, ShieldCheck } from "lucide-react";
+import AuthShowcase from "./AuthShowcase.jsx";
 
 export default function RegisterPage() {
     const dispatch = useDispatch();
@@ -40,133 +41,141 @@ export default function RegisterPage() {
     };
 
     const labelStyle = {
-        display: "block", marginBottom: 10, fontSize: 12, fontWeight: 700,
-        textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-secondary)",
+        display: "block", marginBottom: 8, fontSize: 12.5, fontWeight: 600,
+        letterSpacing: "0.01em", color: "var(--text-secondary)", fontFamily: "var(--font-display)",
     };
 
     return (
         <div style={{
             minHeight: "calc(100vh - 68px)", display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "80px 20px", background: "var(--bg-base)"
+            padding: "108px 20px 60px", background: "var(--bg-base)", position: "relative", overflow: "hidden",
         }}>
-            {/* Card */}
-            <div className="animate-fade-in saas-card" style={{
-                width: "100%", maxWidth: 460, margin: "0 auto", position: "relative"
+            <div className="sz-mesh sz-mesh-soft" style={{ opacity: 0.6 }} />
+            <div className="animate-fade-in sz-auth-grid" style={{
+                width: "100%", maxWidth: 1020, display: "grid", position: "relative", zIndex: 1,
+                gridTemplateColumns: "1fr 1.05fr", borderRadius: 26, overflow: "hidden",
+                border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-elevated)",
+                background: "var(--glass-bg-strong)", backdropFilter: "blur(30px) saturate(1.6)",
+                WebkitBackdropFilter: "blur(30px) saturate(1.6)", minHeight: 640,
             }}>
-                {/* Logo */}
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
-                    <div style={{
-                        width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-color)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-                    }}>
-                        <Zap size={24} color="var(--text-primary)" />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>Sitezy.ai</h1>
-                        <p style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>Workspace Setup</p>
-                    </div>
-                </div>
+                {/* ── Left: branded showcase ── */}
+                <AuthShowcase
+                    eyebrow="Get started free"
+                    title="Launch your first site in minutes."
+                    subtitle="Spin up a workspace, describe your idea, and let AI build the first draft for you."
+                    bullets={[
+                        { icon: <Sparkles size={15} />, text: "No credit card required" },
+                        { icon: <Globe size={15} />, text: "Free subdomain + SSL included" },
+                        { icon: <ShieldCheck size={15} />, text: "Your data, fully isolated" },
+                    ]}
+                />
 
-                {/* Heading */}
-                <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)", marginBottom: 8 }}>Create your workspace</h2>
-                <p style={{ fontSize: 15, color: "var(--text-secondary)", marginBottom: 36 }}>Get started with your AI-powered website builder</p>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    <div>
-                        <label style={labelStyle}>Workspace Name</label>
-                        <input
-                            className="saas-input"
-                            name="tenantName" value={formData.tenantName} onChange={handleChange}
-                            placeholder="Acme Corp" required style={{ width: "100%" }}
-                        />
+                {/* ── Right: form ── */}
+                <div style={{ padding: "44px 48px 40px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div className="sz-badge" style={{ alignSelf: "flex-start", marginBottom: 20 }}>
+                        <Rocket size={13} /> Create workspace
                     </div>
 
-                    <div>
-                        <label style={labelStyle}>Workspace ID (auto-generated)</label>
-                        <input
-                            className="saas-input"
-                            name="tenantSlug" value={formData.tenantSlug} onChange={handleChange}
-                            placeholder="acmecorp" required maxLength={20}
-                            style={{ width: "100%", fontFamily: "'JetBrains Mono', monospace" }}
-                        />
-                    </div>
+                    <h2 className="font-display" style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)", marginBottom: 6 }}>
+                        Create your account
+                    </h2>
+                    <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 26 }}>
+                        Your AI-powered website builder is one step away.
+                    </p>
 
-                    <div>
-                        <label style={labelStyle}>Full Name</label>
-                        <input
-                            className="saas-input"
-                            name="name" value={formData.name} onChange={handleChange}
-                            placeholder="John Doe" required style={{ width: "100%" }}
-                        />
-                    </div>
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                                <label style={labelStyle}>Workspace name</label>
+                                <input
+                                    className="saas-input"
+                                    name="tenantName" value={formData.tenantName} onChange={handleChange}
+                                    placeholder="Acme Corp" required style={{ width: "100%" }}
+                                />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Workspace ID</label>
+                                <input
+                                    className="saas-input"
+                                    name="tenantSlug" value={formData.tenantSlug} onChange={handleChange}
+                                    placeholder="acmecorp" required maxLength={20}
+                                    style={{ width: "100%", fontFamily: "var(--font-mono)" }}
+                                />
+                            </div>
+                        </div>
 
-                    <div>
-                        <label style={labelStyle}>Email Address</label>
-                        <input
-                            className="saas-input"
-                            name="email" type="email" value={formData.email} onChange={handleChange}
-                            placeholder="john@acmecorp.com" required style={{ width: "100%" }}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={labelStyle}>Password</label>
-                        <div style={{ position: "relative" }}>
+                        <div>
+                            <label style={labelStyle}>Full name</label>
                             <input
                                 className="saas-input"
-                                name="password" type={showPassword ? "text" : "password"}
-                                value={formData.password} onChange={handleChange}
-                                placeholder="Min 6 characters" required
-                                style={{ width: "100%", paddingRight: 52 }}
+                                name="name" value={formData.name} onChange={handleChange}
+                                placeholder="John Doe" required style={{ width: "100%" }}
                             />
-                            <button
-                                type="button" onClick={() => setShowPassword(!showPassword)}
-                                style={{
-                                    position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
-                                    color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer",
-                                    padding: 4,
-                                }}
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
                         </div>
-                    </div>
 
-                    {error && (
-                        <div style={{
-                            padding: "12px 14px", borderRadius: 8,
-                            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
-                            color: "#f87171", fontSize: 13, fontWeight: 500,
-                        }}>
-                            {error}
+                        <div>
+                            <label style={labelStyle}>Email address</label>
+                            <input
+                                className="saas-input"
+                                name="email" type="email" value={formData.email} onChange={handleChange}
+                                placeholder="john@acmecorp.com" required style={{ width: "100%" }}
+                            />
                         </div>
-                    )}
 
-                    <button type="submit" disabled={loading} className="saas-button" style={{
-                        width: "100%", padding: "12px 0", fontSize: 14, marginTop: 8,
-                        opacity: loading ? 0.7 : 1, cursor: loading ? "not-allowed" : "pointer"
-                    }}>
-                        {loading ? (
-                            <span style={{
-                                width: 16, height: 16, border: "2px solid rgba(0,0,0,0.3)",
-                                borderTopColor: "#000", borderRadius: "50%", display: "inline-block",
-                                animation: "spin 1s linear infinite",
-                            }} />
-                        ) : (
-                            <>Create Workspace <ArrowRight size={16} style={{ marginLeft: 8 }} /></>
+                        <div>
+                            <label style={labelStyle}>Password</label>
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    className="saas-input"
+                                    name="password" type={showPassword ? "text" : "password"}
+                                    value={formData.password} onChange={handleChange}
+                                    placeholder="Min 6 characters" required
+                                    style={{ width: "100%", paddingRight: 52 }}
+                                />
+                                <button
+                                    type="button" onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                                        color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer",
+                                        padding: 4, display: "flex",
+                                    }}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div style={{
+                                padding: "11px 14px", borderRadius: 8,
+                                background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
+                                color: "#f87171", fontSize: 13, fontWeight: 500,
+                            }}>
+                                {error}
+                            </div>
                         )}
-                    </button>
-                </form>
 
-                <p style={{ textAlign: "center", marginTop: 24, fontSize: 14, color: "var(--text-muted)" }}>
-                    Already have a workspace?{" "}
-                    <Link to="/login" style={{ color: "var(--text-primary)", textDecoration: "none", fontWeight: 600 }}>
-                        Sign in
-                    </Link>
-                </p>
+                        <button type="submit" disabled={loading} className="saas-button" style={{
+                            width: "100%", padding: "13px 0", fontSize: 14.5, marginTop: 4,
+                        }}>
+                            {loading ? (
+                                <span className="animate-spin" style={{
+                                    width: 16, height: 16, border: "2px solid rgba(255,255,255,0.35)",
+                                    borderTopColor: "#fff", borderRadius: "50%", display: "inline-block",
+                                }} />
+                            ) : (
+                                <>Create workspace <ArrowRight size={16} /></>
+                            )}
+                        </button>
+                    </form>
+
+                    <p style={{ textAlign: "center", marginTop: 22, fontSize: 14, color: "var(--text-muted)" }}>
+                        Already have a workspace?{" "}
+                        <Link to="/login" style={{ color: "#5eead4", textDecoration: "none", fontWeight: 600 }}>
+                            Sign in
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );

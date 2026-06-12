@@ -78,7 +78,7 @@ export default function PublishModal({ websiteId, onClose }) {
                 {/* Top accent bar */}
                 <div style={{
                     position: "absolute", top: 0, left: 0, right: 0, height: 3,
-                    background: "linear-gradient(90deg, #10b981, #34d399, #6366f1)",
+                    background: "linear-gradient(90deg, #10b981, #34d399, #14b8a6)",
                 }} />
 
                 {/* Header */}
@@ -144,7 +144,7 @@ export default function PublishModal({ websiteId, onClose }) {
                             maxHeight: 320, overflowY: "auto",
                             paddingRight: 4,
                             scrollbarWidth: "thin",
-                            scrollbarColor: "rgba(99,102,241,0.4) transparent",
+                            scrollbarColor: "rgba(20,184,166,0.4) transparent",
                         }}>
                             {/* Default option */}
                             <button
@@ -152,9 +152,9 @@ export default function PublishModal({ websiteId, onClose }) {
                                 style={{
                                     display: "flex", alignItems: "center", gap: 12,
                                     padding: "14px 16px", borderRadius: 14,
-                                    background: !selectedDomainId ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.02)",
+                                    background: !selectedDomainId ? "rgba(20,184,166,0.08)" : "rgba(255,255,255,0.02)",
                                     border: !selectedDomainId
-                                        ? "2px solid rgba(99,102,241,0.4)"
+                                        ? "2px solid rgba(20,184,166,0.4)"
                                         : "1px solid rgba(255,255,255,0.06)",
                                     cursor: "pointer", textAlign: "left", width: "100%",
                                     color: "var(--text-primary)",
@@ -174,7 +174,7 @@ export default function PublishModal({ websiteId, onClose }) {
                                     </p>
                                 </div>
                                 {!selectedDomainId && (
-                                    <CheckCircle size={18} style={{ color: "#6366f1" }} />
+                                    <CheckCircle size={18} style={{ color: "#14b8a6" }} />
                                 )}
                             </button>
 

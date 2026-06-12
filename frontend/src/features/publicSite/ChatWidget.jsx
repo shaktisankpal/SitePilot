@@ -34,7 +34,7 @@ export default function ChatWidget({ websiteId, branding, brandName = "AI Assist
     const messagesEndRef = useRef(null);
 
     // Styling constants
-    const primaryColor = branding?.primaryColor || "#6366f1";
+    const primaryColor = branding?.primaryColor || "#14b8a6";
     // Unified Dark Theme
     const chatboxBg = "#1f1f22";
     const bg = "#131316"; // Dark window background

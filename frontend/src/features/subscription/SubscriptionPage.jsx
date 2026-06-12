@@ -32,9 +32,9 @@ const PlanCard = ({ plan, currentPlan, onSelect, loading }) => {
 
     const planColors = {
         FREE: "#71717a",
-        BASIC: "#6366f1",
-        PRO: "#ec4899",
-        ENTERPRISE: "#f59e0b",
+        BASIC: "#38bdf8",
+        PRO: "#10b981",
+        ENTERPRISE: "#fbbf24",
     };
 
     const color = planColors[plan.name];
@@ -400,17 +400,17 @@ const SubscriptionPage = () => {
                             gap: 8,
                             padding: "8px 16px",
                             borderRadius: 100,
-                            background: "rgba(99,102,241,0.1)",
-                            border: "1px solid rgba(99,102,241,0.2)",
+                            background: "rgba(20,184,166,0.1)",
+                            border: "1px solid rgba(20,184,166,0.25)",
                             marginBottom: 20,
                         }}
                     >
-                        <CreditCard size={16} style={{ color: "#818cf8" }} />
+                        <CreditCard size={16} style={{ color: "#5eead4" }} />
                         <span
                             style={{
                                 fontSize: 13,
                                 fontWeight: 700,
-                                color: "#818cf8",
+                                color: "#5eead4",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.05em",
                             }}

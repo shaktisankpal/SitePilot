@@ -71,7 +71,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                     planType: plan.name,
                 },
                 theme: {
-                    color: "#6366f1",
+                    color: "#14b8a6",
                 },
                 modal: {
                     ondismiss: function () {
@@ -163,7 +163,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                             alignItems: "center",
                             justifyContent: "center",
                             margin: "0 auto 20px",
-                            boxShadow: "0 8px 24px rgba(99,102,241,0.3)",
+                            boxShadow: "0 8px 24px rgba(20,184,166,0.3)",
                         }}
                     >
                         <CreditCard size={32} color="white" strokeWidth={2} />
@@ -259,7 +259,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                     onMouseEnter={(e) => {
                         if (!loading) {
                             e.currentTarget.style.transform = "translateY(-2px)";
-                            e.currentTarget.style.boxShadow = "0 8px 24px rgba(99,102,241,0.4)";
+                            e.currentTarget.style.boxShadow = "0 8px 24px rgba(20,184,166,0.4)";
                         }
                     }}
                     onMouseLeave={(e) => {

@@ -11,7 +11,7 @@ import { getSocket, connectSocket } from "../../services/socket.js";
 import toast from "react-hot-toast";
 import {
     ArrowLeft, Plus, Trash2, GripVertical, Rocket, Save,
-    Users, Pencil, FileText, Eye, Loader2, LayoutGrid, Globe, History, GitCommitHorizontal,
+    Users, Pencil, FileText, Eye, Loader2, LayoutGrid, Globe, History, GitCommitHorizontal, Gauge,
     Monitor, Tablet, Smartphone, Maximize, Minimize
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
@@ -19,14 +19,15 @@ import SectionEditor from "./SectionEditor.jsx";
 import { SECTION_MAP, globalResponsiveCss } from "../publicSite/PublicSiteRenderer.jsx";
 import ChatPanel from "./ChatPanel.jsx";
 import VersionPanel from "./VersionPanel.jsx";
+import SeoPanel from "./SeoPanel.jsx";
 import PublishModal from "./PublishModal.jsx";
 
 const SECTION_TYPES = ["Hero", "Navbar", "Footer", "Text", "Gallery", "CTA", "ContactForm", "Button", "Image", "Spacer"];
 
 const SECTION_COLORS = {
-    Hero: "#6366f1", Navbar: "#0ea5e9", Footer: "#64748b",
-    Text: "#10b981", Gallery: "#f59e0b", CTA: "#ec4899", ContactForm: "#8b5cf6",
-    Button: "#f43f5e", Image: "#8b5cf6", Spacer: "#cbd5e1"
+    Hero: "#2dd4bf", Navbar: "#0ea5e9", Footer: "#64748b",
+    Text: "#10b981", Gallery: "#f59e0b", CTA: "#f472b6", ContactForm: "#38bdf8",
+    Button: "#fb7185", Image: "#06b6d4", Spacer: "#94a3b8"
 };
 
 export default function BuilderPage() {
@@ -39,6 +40,7 @@ export default function BuilderPage() {
     const autoSaveRef = useRef(null);
     const canvasRef = useRef(null);
     const [showVersionPanel, setShowVersionPanel] = useState(false);
+    const [showSeoPanel, setShowSeoPanel] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [previewWidth, setPreviewWidth] = useState("100%");
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -160,6 +162,69 @@ export default function BuilderPage() {
         const res = await dispatch(saveDraft({ websiteId, pageId: currentPage._id, layoutConfig: currentPage.layoutConfig }));
         if (saveDraft.fulfilled.match(res)) toast.success("Draft saved ✓"); else toast.error("Save failed");
     };
+
+    const generateAILayout = async () => {
+
+        try {
+
+            const promptText = prompt("Describe your website");
+
+            if (!promptText) return;
+
+            const res = await fetch(
+                "http://localhost:5000/api/layout",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        prompt: promptText
+                    })
+                }
+            );
+
+            const components = await res.json();
+
+            if (!components || components.length === 0) {
+
+                toast.error("AI could not generate layout");
+
+                return;
+
+            }
+
+            const newSections = components.map((component, index) => {
+
+                const mappedType = mapComponentName(component);
+
+                return {
+
+                    id: uuidv4(),
+
+                    type: mappedType,
+
+                    props: getDefaultProps(mappedType),
+
+                    order: index
+
+                };
+
+            });
+
+            dispatch(updateLocalSections(newSections));
+
+            toast.success("AI layout generated successfully 🚀");
+
+        } catch (err) {
+
+            console.error(err);
+
+            toast.error("AI layout generation failed");
+
+        }
+
+    };
     // Publish is now handled via PublishModal
 
     const canPublish = ["OWNER", "ADMIN"].includes(user?.role);
@@ -217,8 +282,8 @@ export default function BuilderPage() {
                                     <div key={page._id} onClick={() => handlePageSelect(page)} style={{
                                         display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
                                         cursor: "pointer", transition: "all 0.15s ease",
-                                        background: active ? "rgba(99,102,241,0.12)" : "transparent",
-                                        border: active ? "1px solid rgba(99,102,241,0.25)" : "1px solid transparent",
+                                        background: active ? "rgba(20,184,166,0.14)" : "transparent",
+                                        border: active ? "1px solid rgba(20,184,166,0.3)" : "1px solid transparent",
                                     }}>
                                         <FileText size={14} style={{ color: active ? "var(--color-primary)" : "rgba(255,255,255,0.3)", flexShrink: 0 }} />
                                         <span style={{
@@ -370,7 +435,7 @@ export default function BuilderPage() {
                             <button onClick={() => setPreviewWidth("768px")} style={{ background: previewWidth === "768px" ? "rgba(255,255,255,0.1)" : "transparent", color: previewWidth === "768px" ? "white" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Tablet size={14} /></button>
                             <button onClick={() => setPreviewWidth("375px")} style={{ background: previewWidth === "375px" ? "rgba(255,255,255,0.1)" : "transparent", color: previewWidth === "375px" ? "white" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}><Smartphone size={14} /></button>
                             <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
-                            <button onClick={() => setIsFullscreen(!isFullscreen)} title="Presentation Mode" style={{ background: isFullscreen ? "rgba(99,102,241,0.2)" : "transparent", color: isFullscreen ? "#818cf8" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                            <button onClick={() => setIsFullscreen(!isFullscreen)} title="Presentation Mode" style={{ background: isFullscreen ? "rgba(20,184,166,0.2)" : "transparent", color: isFullscreen ? "#5eead4" : "rgba(255,255,255,0.4)", border: "none", borderRadius: "6px", padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}>
                                 {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                             </button>
                         </div>
@@ -396,13 +461,23 @@ export default function BuilderPage() {
                                     </div>
                                 </div>
                             )}
-                            {/* Version History button */}
-                            <button onClick={() => setShowVersionPanel(!showVersionPanel)} style={{
+                            {/* SEO & Insights button */}
+                            <button onClick={() => { setShowSeoPanel((v) => !v); setShowVersionPanel(false); }} style={{
                                 display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
                                 borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                                background: showVersionPanel ? "rgba(99,102,241,0.12)" : "var(--bg-input)",
-                                border: showVersionPanel ? "1px solid rgba(99,102,241,0.3)" : "1px solid var(--border-color)",
-                                color: showVersionPanel ? "#818cf8" : "var(--text-primary)",
+                                background: showSeoPanel ? "rgba(20,184,166,0.14)" : "var(--bg-input)",
+                                border: showSeoPanel ? "1px solid rgba(20,184,166,0.3)" : "1px solid var(--border-color)",
+                                color: showSeoPanel ? "#5eead4" : "var(--text-primary)",
+                            }}>
+                                <Gauge size={14} /> SEO
+                            </button>
+                            {/* Version History button */}
+                            <button onClick={() => { setShowVersionPanel((v) => !v); setShowSeoPanel(false); }} style={{
+                                display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+                                borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                background: showVersionPanel ? "rgba(20,184,166,0.14)" : "var(--bg-input)",
+                                border: showVersionPanel ? "1px solid rgba(20,184,166,0.3)" : "1px solid var(--border-color)",
+                                color: showVersionPanel ? "#5eead4" : "var(--text-primary)",
                             }}>
                                 <History size={14} /> History
                             </button>
@@ -552,6 +627,14 @@ export default function BuilderPage() {
                     </div>
                 </div >
 
+                {/* ====== SEO & INSIGHTS — Inline Panel ====== */}
+                <SeoPanel
+                    websiteId={websiteId}
+                    pageId={pageId}
+                    open={showSeoPanel}
+                    onClose={() => setShowSeoPanel(false)}
+                />
+
                 {/* ====== VERSION HISTORY — Inline Panel ====== */}
                 < VersionPanel
                     websiteId={websiteId}
@@ -627,6 +710,21 @@ export default function BuilderPage() {
     );
 }
 
+function mapComponentName(name) {
+
+    const mapping = {
+
+        navbar: "Navbar",
+        hero: "Hero",
+        footer: "Footer",
+        gallery_section: "Gallery",
+        contact_section: "ContactForm"
+
+    };
+
+    return mapping[name] || "Text";
+}
+
 function getDefaultProps(type) {
     const defaults = {
         Hero: { heading: "Welcome", subheading: "Your tagline here", ctaText: "Get Started", ctaLink: "#" },
@@ -636,7 +734,7 @@ function getDefaultProps(type) {
         Gallery: { heading: "Our Gallery", items: ["Image 1", "Image 2", "Image 3"] },
         CTA: { heading: "Ready to start?", subheading: "Join us today.", ctaText: "Get Started", ctaLink: "#" },
         ContactForm: { heading: "Contact Us", fields: ["name", "email", "message"] },
-        Button: { text: "Click Me", link: "#", align: "center", bgColor: "transparent", accentColor: "#6366f1", textColor: "#ffffff" },
+        Button: { text: "Click Me", link: "#", align: "center", bgColor: "transparent", accentColor: "#14b8a6", textColor: "#ffffff" },
         Image: { src: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1000", alt: "Descriptive label", align: "center", bgColor: "transparent" },
         Spacer: { height: "80px", bgColor: "transparent" }
     };

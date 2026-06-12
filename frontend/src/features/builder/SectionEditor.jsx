@@ -100,7 +100,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                         }
                     }}
                     title="Overwrite links with your currently created pages"
-                    style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "4px", color: "#818cf8", fontSize: "10px", padding: "4px 8px", cursor: "pointer", fontWeight: 700 }}
+                    style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: "4px", color: "#5eead4", fontSize: "10px", padding: "4px 8px", cursor: "pointer", fontWeight: 700 }}
                 >
                     Auto-Fill Pages
                 </button>
@@ -242,7 +242,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                     placeholder="https://..." style={{ ...inputStyle, flex: 1, marginTop: 0 }}
                 />
                 <label style={{
-                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "6px", color: "var(--color-primary)", cursor: uploading ? "wait" : "pointer", padding: "0 10px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap"
+                    background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: "6px", color: "var(--color-primary)", cursor: uploading ? "wait" : "pointer", padding: "0 10px", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap"
                 }}>
                     {uploading ? <Loader2 size={12} className="animate-spin" /> : "Upload"}
                     <input type="file" accept="image/*" onChange={(e) => handleImageUpload(key, e.target.files[0])} style={{ display: "none" }} disabled={uploading} />
@@ -300,7 +300,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
         </div>
     );
 
-    const renderColorField = (label, key, defaultVal = "#6366f1") => {
+    const renderColorField = (label, key, defaultVal = "#14b8a6") => {
         const { hex, alpha } = parseColor(props[key], defaultVal);
         return (
             <div key={key} style={{ marginTop: 8 }}>
@@ -387,7 +387,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                     <select
                         value={props.variant || opts[0]}
                         onChange={(e) => handleChange("variant", e.target.value)}
-                        style={{ ...inputStyle, marginTop: 0, appearance: "none", cursor: "pointer", paddingRight: 28, background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "14px", fontWeight: "600" }}
+                        style={{ ...inputStyle, marginTop: 0, appearance: "none", cursor: "pointer", paddingRight: 28, background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.2)", fontSize: "14px", fontWeight: "600" }}
                     >
                         {opts.map((v) => <option key={v} value={v} style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>{v}</option>)}
                     </select>
@@ -423,8 +423,8 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                     renderColorField("Background Color", "bgColor", "#0a0a14")
                 )}
                 {renderColorField("Text Color", "textColor", "#f0f0ff")}
-                {renderColorField("Accent Color", "accentColor", "#6366f1")}
-                {renderColorField("Secondary Color", "secondaryColor", "#8b5cf6")}
+                {renderColorField("Accent Color", "accentColor", "#14b8a6")}
+                {renderColorField("Secondary Color", "secondaryColor", "#0ea5e9")}
                 {renderFontField()}
             </div>
         );

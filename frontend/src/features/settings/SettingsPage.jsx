@@ -11,9 +11,9 @@ import {
 
 const ROLE_COLORS = {
     OWNER: { bg: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "rgba(251,191,36,0.25)" },
-    ADMIN: { bg: "rgba(99,102,241,0.12)", color: "#818cf8", border: "rgba(99,102,241,0.25)" },
+    ADMIN: { bg: "rgba(56,189,248,0.12)", color: "#38bdf8", border: "rgba(56,189,248,0.25)" },
     EDITOR: { bg: "rgba(16,185,129,0.12)", color: "#34d399", border: "rgba(16,185,129,0.25)" },
-    DEVELOPER: { bg: "rgba(236,72,153,0.12)", color: "#f472b6", border: "rgba(236,72,153,0.25)" },
+    DEVELOPER: { bg: "rgba(34,211,238,0.12)", color: "#22d3ee", border: "rgba(34,211,238,0.25)" },
 };
 const ROLE_ICONS = { OWNER: Crown, ADMIN: Shield, EDITOR: Pencil, DEVELOPER: Code2 };
 
@@ -181,12 +181,12 @@ export default function SettingsPage() {
                                     {/* Info about component-level styling */}
                                     <div style={{
                                         padding: "20px 24px", borderRadius: 16,
-                                        background: "rgba(99,102,241,0.06)",
-                                        border: "1px solid rgba(99,102,241,0.2)",
+                                        background: "rgba(20,184,166,0.06)",
+                                        border: "1px solid rgba(20,184,166,0.22)",
                                     }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                                            <LayoutTemplate size={18} style={{ color: "#818cf8" }} />
-                                            <span style={{ fontSize: 14, fontWeight: 700, color: "#818cf8" }}>Per-Component Styling</span>
+                                            <LayoutTemplate size={18} style={{ color: "#5eead4" }} />
+                                            <span style={{ fontSize: 14, fontWeight: 700, color: "#5eead4" }}>Per-Component Styling</span>
                                         </div>
                                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
                                             Colors, fonts, and styling are now configured per-component directly in the <strong style={{ color: "var(--text-primary)" }}>Website Builder</strong>.
@@ -208,7 +208,7 @@ export default function SettingsPage() {
                         {isAdmin && (
                             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 36 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-                                    <div style={{ padding: 10, borderRadius: 12, background: "rgba(99,102,241,0.12)", color: "#818cf8" }}>
+                                    <div style={{ padding: 10, borderRadius: 12, background: "rgba(20,184,166,0.12)", color: "#5eead4" }}>
                                         <Users size={22} strokeWidth={2.5} />
                                     </div>
                                     <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Invite Member</h3>

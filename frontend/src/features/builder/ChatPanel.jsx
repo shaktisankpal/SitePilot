@@ -102,10 +102,10 @@ export default function ChatPanel({ websiteId }) {
                 style={{
                     position: "fixed", bottom: 24, right: 24, zIndex: 999,
                     width: 56, height: 56, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    background: "linear-gradient(135deg, #14b8a6, #0ea5e9)",
                     border: "none", cursor: "pointer", display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 8px 32px rgba(99,102,241,0.5)",
+                    boxShadow: "0 8px 32px rgba(20,184,166,0.5)",
                     transition: "transform 0.2s ease",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
@@ -141,17 +141,17 @@ export default function ChatPanel({ websiteId }) {
             <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px",
-                background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))",
+                background: "linear-gradient(135deg, rgba(20,184,166,0.15), rgba(16,185,129,0.15))",
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <MessageCircle size={18} style={{ color: "#818cf8" }} />
+                    <MessageCircle size={18} style={{ color: "#5eead4" }} />
                     <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                         Team Chat
                     </span>
                     <span style={{
                         fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100,
-                        background: "rgba(99,102,241,0.2)", color: "#818cf8",
+                        background: "rgba(20,184,166,0.2)", color: "#5eead4",
                     }}>
                         LIVE
                     </span>
@@ -191,13 +191,13 @@ export default function ChatPanel({ websiteId }) {
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                                     <div style={{
                                         width: 18, height: 18, borderRadius: "50%",
-                                        background: msg.color || "#6366f1",
+                                        background: msg.color || "#14b8a6",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         fontSize: 9, fontWeight: 800, color: "white",
                                     }}>
                                         {msg.userName?.[0]?.toUpperCase()}
                                     </div>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: msg.color || "#818cf8" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: msg.color || "#5eead4" }}>
                                         {msg.userName}
                                     </span>
                                 </div>
@@ -205,7 +205,7 @@ export default function ChatPanel({ websiteId }) {
                             <div style={{
                                 maxWidth: "80%", padding: "10px 14px", borderRadius: 16,
                                 background: isMe
-                                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                    ? "linear-gradient(135deg, #14b8a6, #0ea5e9)"
                                     : "rgba(255,255,255,0.06)",
                                 color: isMe ? "white" : "var(--text-primary)",
                                 fontSize: 14, lineHeight: 1.5, wordBreak: "break-word",
@@ -250,7 +250,7 @@ export default function ChatPanel({ websiteId }) {
                     style={{
                         width: 40, height: 40, borderRadius: 12,
                         background: draft.trim()
-                            ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                            ? "linear-gradient(135deg, #14b8a6, #0ea5e9)"
                             : "rgba(255,255,255,0.05)",
                         border: "none", cursor: draft.trim() ? "pointer" : "default",
                         display: "flex", alignItems: "center", justifyContent: "center",

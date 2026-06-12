@@ -73,7 +73,7 @@ export default function VersionPanel({ websiteId, pageId, open, onClose }) {
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <History size={15} style={{ color: "#818cf8" }} />
+                    <History size={15} style={{ color: "#5eead4" }} />
                     <h3 style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                         Version History
                     </h3>
@@ -89,7 +89,7 @@ export default function VersionPanel({ websiteId, pageId, open, onClose }) {
             {/* Create Commit */}
             <div style={{
                 padding: "14px 16px", borderBottom: "1px solid var(--border-color)",
-                background: "rgba(99,102,241,0.04)", flexShrink: 0,
+                background: "rgba(20,184,166,0.04)", flexShrink: 0,
             }}>
                 <label style={{
                     fontSize: 10, fontWeight: 800, textTransform: "uppercase",
@@ -116,7 +116,7 @@ export default function VersionPanel({ websiteId, pageId, open, onClose }) {
                         style={{
                             padding: "9px 14px", borderRadius: 10, border: "none",
                             background: commitMsg.trim()
-                                ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                ? "linear-gradient(135deg, #14b8a6, #0ea5e9)"
                                 : "rgba(255,255,255,0.05)",
                             color: commitMsg.trim() ? "white" : "rgba(255,255,255,0.2)",
                             cursor: commitMsg.trim() ? "pointer" : "default",
@@ -156,10 +156,10 @@ export default function VersionPanel({ websiteId, pageId, open, onClose }) {
                                 <div key={commit._id} style={{
                                     borderRadius: 12, overflow: "hidden",
                                     border: isFirst
-                                        ? "1px solid rgba(99,102,241,0.3)"
+                                        ? "1px solid rgba(20,184,166,0.3)"
                                         : "1px solid rgba(255,255,255,0.06)",
                                     background: isFirst
-                                        ? "rgba(99,102,241,0.06)"
+                                        ? "rgba(20,184,166,0.06)"
                                         : "rgba(255,255,255,0.02)",
                                 }}>
                                     <button
@@ -173,8 +173,8 @@ export default function VersionPanel({ websiteId, pageId, open, onClose }) {
                                         {/* Version badge */}
                                         <span style={{
                                             fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6,
-                                            background: isFirst ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)",
-                                            color: isFirst ? "#818cf8" : "rgba(255,255,255,0.4)",
+                                            background: isFirst ? "rgba(20,184,166,0.2)" : "rgba(255,255,255,0.06)",
+                                            color: isFirst ? "#5eead4" : "rgba(255,255,255,0.4)",
                                             flexShrink: 0,
                                         }}>
                                             v{commit.version}

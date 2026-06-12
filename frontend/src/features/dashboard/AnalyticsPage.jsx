@@ -47,12 +47,12 @@ export default function AnalyticsPage() {
                     </Link>
                     <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                            <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                            <h1 className="font-display" style={{ fontSize: 34, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
                                 {analytics?.businessName ? `${analytics.businessName} Analytics` : "Project Analytics"}
                             </h1>
                             <span style={{
-                                padding: "4px 10px", borderRadius: 100, background: "rgba(99,102,241,0.15)",
-                                color: "var(--color-primary)", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4
+                                padding: "4px 10px", borderRadius: 100, background: "rgba(20,184,166,0.15)",
+                                color: "#5eead4", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, border: "1px solid rgba(20,184,166,0.28)"
                             }}>
                                 <Sparkles size={12} /> AI Powered
                             </span>
@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
                             </div>
 
                             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 24, padding: 24, display: "flex", alignItems: "center", gap: 20 }}>
-                                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(56,189,248,0.12)", color: "#38bdf8", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <FileText size={28} />
                                 </div>
                                 <div>
@@ -116,11 +116,11 @@ export default function AnalyticsPage() {
 
                         {/* AI Insights Section */}
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 32, padding: 40, position: "relative", overflow: "hidden" }}>
-                            <div style={{ position: "absolute", top: 0, right: 0, width: "100%", height: "100%", background: "radial-gradient(circle at top right, rgba(99,102,241,0.08), transparent 50%)", pointerEvents: "none" }} />
-                            
+                            <div style={{ position: "absolute", top: 0, right: 0, width: "100%", height: "100%", background: "radial-gradient(circle at top right, rgba(20,184,166,0.1), transparent 50%)", pointerEvents: "none" }} />
+
                             <div style={{ position: "relative", zIndex: 1 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(99,102,241,0.15)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(20,184,166,0.15)", color: "#5eead4", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                         <TrendingUp size={24} />
                                     </div>
                                     <div>

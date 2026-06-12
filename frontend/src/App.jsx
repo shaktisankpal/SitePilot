@@ -15,6 +15,7 @@ import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
 import SettingsPage from "./features/settings/SettingsPage.jsx";
 import SubscriptionPage from "./features/subscription/SubscriptionPage.jsx";
 import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
+import TemplatePreviewPage from "./features/publicSite/TemplatePreviewPage.jsx";
 import HomePage from "./features/home/HomePage.jsx";
 
 export default function App() {
@@ -67,6 +68,10 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Route>
+
+          {/* Dev-only template preview (no backend) */}
+          <Route path="/preview" element={<TemplatePreviewPage />} />
+          <Route path="/preview/:templateId" element={<TemplatePreviewPage />} />
 
           {/* Public site rendering (no shared layout) */}
           <Route path="/site/:tenantSlug" element={<PublicSiteRenderer />} />

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api.js";
+import Logo from "../components/Logo.jsx";
 
 const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -54,7 +55,9 @@ export default function DashboardLayout({ children }) {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "0 40px",
-                background: "var(--bg-surface)",
+                background: "rgba(11,11,16,0.8)",
+                backdropFilter: "blur(20px) saturate(1.6)",
+                WebkitBackdropFilter: "blur(20px) saturate(1.6)",
                 borderBottom: "1px solid var(--border-color)",
                 position: "sticky",
                 top: 0,
@@ -64,18 +67,7 @@ export default function DashboardLayout({ children }) {
                     {/* Logo & Tenant */}
                     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                         <Link to="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-                            <div style={{
-                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                background: "var(--bg-card)",
-                                border: "1px solid var(--border-color)",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                            }}>
-                                <Zap size={16} color="var(--text-primary)" />
-                            </div>
-                            <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                                Sitezy.ai
-                            </span>
+                            <Logo size={32} fontSize={18} wordColor="var(--text-primary)" />
                         </Link>
 
                         {tenant && (
@@ -92,15 +84,15 @@ export default function DashboardLayout({ children }) {
                             <Link to="/subscription" style={{ textDecoration: "none" }}>
                                 <div style={{
                                     display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 100,
-                                    background: planType === "PRO" ? "rgba(236, 72, 153, 0.15)" :
-                                        planType === "ENTERPRISE" ? "rgba(245, 158, 11, 0.15)" :
-                                            planType === "BASIC" ? "rgba(99, 102, 241, 0.15)" : "rgba(255,255,255,0.05)",
-                                    border: `1px solid ${planType === "PRO" ? "rgba(236, 72, 153, 0.3)" :
-                                        planType === "ENTERPRISE" ? "rgba(245, 158, 11, 0.3)" :
-                                            planType === "BASIC" ? "rgba(99, 102, 241, 0.3)" : "var(--border-color)"}`,
-                                    color: planType === "PRO" ? "#ec4899" :
-                                        planType === "ENTERPRISE" ? "#f59e0b" :
-                                            planType === "BASIC" ? "#818cf8" : "var(--text-secondary)",
+                                    background: planType === "PRO" ? "rgba(56, 189, 248, 0.15)" :
+                                        planType === "ENTERPRISE" ? "rgba(251, 191, 36, 0.15)" :
+                                            planType === "BASIC" ? "rgba(20, 184, 166, 0.15)" : "rgba(255,255,255,0.05)",
+                                    border: `1px solid ${planType === "PRO" ? "rgba(56, 189, 248, 0.32)" :
+                                        planType === "ENTERPRISE" ? "rgba(251, 191, 36, 0.32)" :
+                                            planType === "BASIC" ? "rgba(20, 184, 166, 0.32)" : "var(--border-color)"}`,
+                                    color: planType === "PRO" ? "#38bdf8" :
+                                        planType === "ENTERPRISE" ? "#fbbf24" :
+                                            planType === "BASIC" ? "#5eead4" : "var(--text-secondary)",
                                     fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
                                 }}>
                                     {planType === "PRO" ? <Crown size={12} /> : planType === "ENTERPRISE" ? <Rocket size={12} /> : <Sparkles size={12} />}
@@ -119,12 +111,16 @@ export default function DashboardLayout({ children }) {
                                     padding: "8px 16px",
                                     borderRadius: 100,
                                     textDecoration: "none",
+                                    fontFamily: "var(--font-display)",
                                     fontSize: 14,
                                     fontWeight: active ? 600 : 500,
-                                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                                    background: active ? "var(--bg-input)" : "transparent",
+                                    color: active ? "#fff" : "var(--text-secondary)",
+                                    background: active ? "rgba(255,255,255,0.08)" : "transparent",
+                                    border: active ? "1px solid rgba(255,255,255,0.14)" : "1px solid transparent",
                                     transition: "all 0.15s ease",
-                                }}>
+                                }}
+                                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = "var(--text-primary)"; }}
+                                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = "var(--text-secondary)"; }}>
                                     {label}
                                 </Link>
                             );
@@ -141,9 +137,10 @@ export default function DashboardLayout({ children }) {
                         </div>
                         <div style={{
                             width: 36, height: 36, borderRadius: "50%",
-                            background: "var(--bg-input)", border: "1px solid var(--border-color)",
+                            background: "#0d9488",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "var(--text-primary)", fontSize: 14, fontWeight: 700,
+                            color: "#fff", fontSize: 14, fontWeight: 700,
+                            border: "1px solid rgba(255,255,255,0.12)",
                         }}>
                             {user?.name?.[0]?.toUpperCase()}
                         </div>
@@ -160,8 +157,11 @@ export default function DashboardLayout({ children }) {
             </header>
 
             {/* Main Content Area */}
-            <main style={{ flex: 1, overflowY: "auto", background: "var(--bg-base)" }}>
-                {children}
+            <main style={{ flex: 1, overflowY: "auto", background: "var(--bg-base)", position: "relative" }}>
+                <div className="sz-mesh sz-mesh-soft" style={{ position: "fixed", opacity: 0.5, zIndex: 0 }} />
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    {children}
+                </div>
             </main>
         </div>
     );

@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import axios from "axios";
 
 import connectDB from "./config/db.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
@@ -38,6 +39,7 @@ import {
     getPublicSite,
 } from "./modules/domain/domain.controller.js";
 import { chatWithWebsite } from "./modules/ai/ai.controller.js";
+import { recordEngagement } from "./modules/analytics/engagement.controller.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -160,6 +162,7 @@ app.get("/api/public/sites/:tenantSlug/pages/:slug", getPublicPage);
 app.use("/api/public/forms", formsRoutes);
 app.use("/api/public/unsplash", unsplashRoutes);
 app.post("/api/public/chat", chatWithWebsite);
+app.post("/api/public/analytics/engagement", recordEngagement);
 
 
 // Protected API routes
@@ -185,6 +188,31 @@ if (fs.existsSync(frontendDist)) {
     });
 }
 
+// AI Layout Generation
+app.post("/api/layout", async (req, res) => {
+    try {
+
+        const prompt = req.body.prompt;
+
+        const response = await axios.post(
+            "http://localhost:6000/generate-layout",
+            { prompt }
+        );
+
+        res.json(response.data);
+
+    } catch (error) {
+
+        console.error(error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "AI layout generation failed"
+        });
+
+    }
+});
+
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
@@ -199,5 +227,7 @@ const startServer = async () => {
         console.log(`📡 Socket.io active`);
     });
 };
+
+
 
 startServer();
