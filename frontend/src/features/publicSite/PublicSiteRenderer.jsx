@@ -1552,6 +1552,29 @@ export default function PublicSiteRenderer() {
         if (siteData.website?.name) document.title = siteData.website.name;
     }, [siteData]);
 
+    // ── Per-page SEO meta: <title>, <meta description>, JSON-LD structured data ──
+    useEffect(() => {
+        const seo = currentPage?.seo;
+        const siteName = siteData?.website?.name;
+        if (seo?.metaTitle) document.title = siteName ? `${seo.metaTitle} · ${siteName}` : seo.metaTitle;
+        else if (siteName) document.title = siteName;
+
+        let metaEl = document.head.querySelector('meta[name="description"]');
+        if (seo?.metaDescription) {
+            if (!metaEl) { metaEl = document.createElement("meta"); metaEl.setAttribute("name", "description"); document.head.appendChild(metaEl); }
+            metaEl.setAttribute("content", seo.metaDescription);
+        }
+
+        const LD_ID = "sz-jsonld";
+        let ld = document.getElementById(LD_ID);
+        if (seo?.jsonLd) {
+            if (!ld) { ld = document.createElement("script"); ld.type = "application/ld+json"; ld.id = LD_ID; document.head.appendChild(ld); }
+            ld.textContent = JSON.stringify(seo.jsonLd);
+        } else if (ld) { ld.remove(); }
+
+        return () => { const el = document.getElementById(LD_ID); if (el) el.remove(); };
+    }, [currentPage, siteData]);
+
     // ── Track this browser tab as a live visitor ──────────────────────────────
     // Must be called before any early returns (Rules of Hooks)
     const _trackedWebsiteId = siteData?.website?._id || siteData?.pages?.[0]?.websiteId || searchParams.get("websiteId");

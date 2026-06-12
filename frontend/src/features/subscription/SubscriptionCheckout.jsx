@@ -127,7 +127,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                         position: "absolute",
                         top: 20,
                         right: 20,
-                        background: "rgba(255,255,255,0.05)",
+                        background: "rgba(var(--fg),0.05)",
                         border: "1px solid var(--border-color)",
                         borderRadius: 12,
                         width: 40,
@@ -140,11 +140,11 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                         transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                        e.currentTarget.style.background = "rgba(var(--fg),0.1)";
                         e.currentTarget.style.color = "var(--text-primary)";
                     }}
                     onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                        e.currentTarget.style.background = "rgba(var(--fg),0.05)";
                         e.currentTarget.style.color = "var(--text-secondary)";
                     }}
                 >
@@ -187,7 +187,7 @@ const SubscriptionCheckout = ({ plan, onSuccess, onClose }) => {
                 {/* Plan details */}
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.03)",
+                        background: "rgba(var(--fg),0.03)",
                         border: "1px solid var(--border-color)",
                         borderRadius: 16,
                         padding: 24,

@@ -1,6 +1,7 @@
 import Website from "./website.model.js";
 import Page from "../builder/page.model.js";
 import Deployment from "../deployment/deployment.model.js";
+import Domain from "../domain/domain.model.js";
 import { logActivity } from "../../middleware/logger.middleware.js";
 import { createWebsiteSchema, updateWebsiteSchema } from "./website.validation.js";
 import { websitePublishTotal, tenantWebsitesTotal } from "../../utils/metrics.js";
@@ -127,8 +128,15 @@ export const deleteWebsite = async (req, res) => {
     const website = await Website.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!website) return res.status(404).json({ success: false, message: "Website not found" });
 
-    // Cascade delete pages
+    // Cascade delete all data owned by this website…
     await Page.deleteMany({ websiteId: website._id, tenantId: req.tenantId });
+    await Deployment.deleteMany({ websiteId: website._id, tenantId: req.tenantId });
+    // …and FREE (un-allocate) any custom domains pointed at it so they can be reused.
+    // Default subdomains stay attached to the tenant; only custom links are released.
+    await Domain.updateMany(
+        { websiteId: website._id, tenantId: req.tenantId, isDefault: { $ne: true } },
+        { $set: { websiteId: null } }
+    );
     await website.deleteOne();
 
     await logActivity({

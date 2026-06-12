@@ -100,7 +100,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                         }
                     }}
                     title="Overwrite links with your currently created pages"
-                    style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: "4px", color: "#5eead4", fontSize: "10px", padding: "4px 8px", cursor: "pointer", fontWeight: 700 }}
+                    style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: "4px", color: "var(--text-accent)", fontSize: "10px", padding: "4px 8px", cursor: "pointer", fontWeight: 700 }}
                 >
                     Auto-Fill Pages
                 </button>
@@ -161,7 +161,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                 };
 
                 return (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, padding: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8 }}>
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, padding: 8, background: "rgba(var(--fg),0.02)", border: "1px solid rgba(var(--fg),0.05)", borderRadius: 8 }}>
                         <div style={{ display: "flex", gap: 4 }}>
                             <input value={title} onChange={e => updateItem('title', e.target.value)} style={{ ...inputStyle, marginTop: 0, flex: 1 }} placeholder="Title" />
                             <button onClick={() => handleRemoveArrayItem(key, i)} style={{ background: "rgba(239,68,68,0.1)", color: "#f87171", cursor: "pointer", padding: "0 8px", fontSize: "14px", border: "none", borderRadius: 4 }}>×</button>
@@ -313,7 +313,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                         width: 32, height: 32, borderRadius: 8, flexShrink: 0,
                         background: props[key] || defaultVal,
                         position: "relative", overflow: "hidden", cursor: "pointer",
-                        border: "1px solid rgba(255,255,255,0.15)",
+                        border: "1px solid rgba(var(--fg),0.15)",
                         boxShadow: `0 2px 8px ${hex}40`,
                     }}>
                         <input type="color" value={hex}
@@ -381,7 +381,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
         };
         const opts = variants[type] || ["Default", "Variant 2", "Variant 3"];
         return (
-            <div key="variant" style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div key="variant" style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(var(--fg),0.06)" }}>
                 <label style={{ ...labelStyle, color: "var(--color-primary)", marginTop: 0 }}>Choose Design Template</label>
                 <div style={{ position: "relative", marginTop: 8 }}>
                     <select
@@ -405,11 +405,11 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
         return (
             <div style={{
                 marginTop: 16, paddingTop: 14,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
+                borderTop: "1px solid rgba(var(--fg),0.06)",
             }}>
                 <p style={{
                     fontSize: "10px", fontWeight: 800, textTransform: "uppercase",
-                    letterSpacing: "0.1em", color: "rgba(255,255,255,0.25)",
+                    letterSpacing: "0.1em", color: "rgba(var(--fg),0.25)",
                     marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
                 }}>
                     🎨 Style Controls
