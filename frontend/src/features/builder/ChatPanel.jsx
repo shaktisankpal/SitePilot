@@ -102,10 +102,10 @@ export default function ChatPanel({ websiteId }) {
                 style={{
                     position: "fixed", bottom: 24, right: 24, zIndex: 999,
                     width: 56, height: 56, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    background: "linear-gradient(135deg, #14b8a6, #0ea5e9)",
                     border: "none", cursor: "pointer", display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 8px 32px rgba(99,102,241,0.5)",
+                    boxShadow: "0 8px 32px rgba(20,184,166,0.5)",
                     transition: "transform 0.2s ease",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
@@ -132,7 +132,7 @@ export default function ChatPanel({ websiteId }) {
         <div style={{
             position: "fixed", bottom: 24, right: 24, zIndex: 999,
             width: 380, height: 520, borderRadius: 24,
-            background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--bg-card)", border: "1px solid rgba(var(--fg),0.1)",
             boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
             display: "flex", flexDirection: "column", overflow: "hidden",
             animation: "scaleIn 0.2s ease-out",
@@ -141,24 +141,24 @@ export default function ChatPanel({ websiteId }) {
             <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px",
-                background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                background: "linear-gradient(135deg, rgba(20,184,166,0.15), rgba(16,185,129,0.15))",
+                borderBottom: "1px solid rgba(var(--fg),0.06)",
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <MessageCircle size={18} style={{ color: "#818cf8" }} />
+                    <MessageCircle size={18} style={{ color: "var(--text-accent)" }} />
                     <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                         Team Chat
                     </span>
                     <span style={{
                         fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100,
-                        background: "rgba(99,102,241,0.2)", color: "#818cf8",
+                        background: "rgba(20,184,166,0.2)", color: "var(--text-accent)",
                     }}>
                         LIVE
                     </span>
                 </div>
                 <button onClick={() => setOpen(false)} style={{
                     background: "none", border: "none", cursor: "pointer",
-                    color: "rgba(255,255,255,0.4)", padding: 4,
+                    color: "rgba(var(--fg),0.4)", padding: 4,
                 }}>
                     <X size={18} />
                 </button>
@@ -172,8 +172,8 @@ export default function ChatPanel({ websiteId }) {
                 {messages.length === 0 && (
                     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                         <div>
-                            <MessageCircle size={32} style={{ color: "rgba(255,255,255,0.08)", margin: "0 auto 8px" }} />
-                            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, fontWeight: 500 }}>
+                            <MessageCircle size={32} style={{ color: "rgba(var(--fg),0.08)", margin: "0 auto 8px" }} />
+                            <p style={{ color: "rgba(var(--fg),0.2)", fontSize: 13, fontWeight: 500 }}>
                                 No messages yet. Say hi to your team! 👋
                             </p>
                         </div>
@@ -191,13 +191,13 @@ export default function ChatPanel({ websiteId }) {
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                                     <div style={{
                                         width: 18, height: 18, borderRadius: "50%",
-                                        background: msg.color || "#6366f1",
+                                        background: msg.color || "#14b8a6",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         fontSize: 9, fontWeight: 800, color: "white",
                                     }}>
                                         {msg.userName?.[0]?.toUpperCase()}
                                     </div>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: msg.color || "#818cf8" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: msg.color || "var(--text-accent)" }}>
                                         {msg.userName}
                                     </span>
                                 </div>
@@ -205,8 +205,8 @@ export default function ChatPanel({ websiteId }) {
                             <div style={{
                                 maxWidth: "80%", padding: "10px 14px", borderRadius: 16,
                                 background: isMe
-                                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                                    : "rgba(255,255,255,0.06)",
+                                    ? "linear-gradient(135deg, #14b8a6, #0ea5e9)"
+                                    : "rgba(var(--fg),0.06)",
                                 color: isMe ? "white" : "var(--text-primary)",
                                 fontSize: 14, lineHeight: 1.5, wordBreak: "break-word",
                                 borderBottomRightRadius: isMe ? 4 : 16,
@@ -215,7 +215,7 @@ export default function ChatPanel({ websiteId }) {
                                 {msg.message}
                             </div>
                             <span style={{
-                                fontSize: 10, color: "rgba(255,255,255,0.25)",
+                                fontSize: 10, color: "rgba(var(--fg),0.25)",
                                 marginTop: 4, paddingLeft: isMe ? 0 : 4, paddingRight: isMe ? 4 : 0,
                             }}>
                                 {formatTime(msg.createdAt)}
@@ -228,7 +228,7 @@ export default function ChatPanel({ websiteId }) {
 
             {/* Input */}
             <div style={{
-                padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)",
+                padding: "12px 16px", borderTop: "1px solid rgba(var(--fg),0.06)",
                 display: "flex", alignItems: "center", gap: 10,
             }}>
                 <input
@@ -250,14 +250,14 @@ export default function ChatPanel({ websiteId }) {
                     style={{
                         width: 40, height: 40, borderRadius: 12,
                         background: draft.trim()
-                            ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                            : "rgba(255,255,255,0.05)",
+                            ? "linear-gradient(135deg, #14b8a6, #0ea5e9)"
+                            : "rgba(var(--fg),0.05)",
                         border: "none", cursor: draft.trim() ? "pointer" : "default",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         transition: "all 0.15s ease",
                     }}
                 >
-                    <Send size={16} color={draft.trim() ? "white" : "rgba(255,255,255,0.2)"} />
+                    <Send size={16} color={draft.trim() ? "white" : "rgba(var(--fg),0.2)"} />
                 </button>
             </div>
         </div>

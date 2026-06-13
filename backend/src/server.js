@@ -8,11 +8,13 @@ import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import axios from "axios";
 
 import connectDB from "./config/db.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { initializeSockets } from "./sockets/collaboration.socket.js";
+import { initializeVisitorSockets } from "./sockets/visitor.socket.js";
 import { registry, websitePageViewsTotal, websitePublishTotal, aiUsageTotal, tenantWebsitesTotal } from "./utils/metrics.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -37,6 +39,7 @@ import {
     getPublicSite,
 } from "./modules/domain/domain.controller.js";
 import { chatWithWebsite } from "./modules/ai/ai.controller.js";
+import { recordEngagement } from "./modules/analytics/engagement.controller.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +59,7 @@ const io = new Server(httpServer, {
 });
 
 initializeSockets(io);
+initializeVisitorSockets(io);
 
 // Security middleware
 app.use(
@@ -79,7 +83,7 @@ app.use(cors(corsOptions));
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 200,
+    max: process.env.NODE_ENV === "production" ? 200 : 10000, // increased for development
     message: { success: false, message: "Too many requests, please try again later" },
     standardHeaders: true,
     legacyHeaders: false,
@@ -89,7 +93,7 @@ app.use("/api", limiter);
 // Stricter limit for AI endpoints
 const aiLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 10,
+    max: process.env.NODE_ENV === "production" ? 10 : 1000, // increased for development
     message: { success: false, message: "AI rate limit exceeded" },
 });
 app.use("/api/ai", aiLimiter);
@@ -158,6 +162,7 @@ app.get("/api/public/sites/:tenantSlug/pages/:slug", getPublicPage);
 app.use("/api/public/forms", formsRoutes);
 app.use("/api/public/unsplash", unsplashRoutes);
 app.post("/api/public/chat", chatWithWebsite);
+app.post("/api/public/analytics/engagement", recordEngagement);
 
 
 // Protected API routes
@@ -183,6 +188,31 @@ if (fs.existsSync(frontendDist)) {
     });
 }
 
+// AI Layout Generation
+app.post("/api/layout", async (req, res) => {
+    try {
+
+        const prompt = req.body.prompt;
+
+        const response = await axios.post(
+            "http://localhost:6000/generate-layout",
+            { prompt }
+        );
+
+        res.json(response.data);
+
+    } catch (error) {
+
+        console.error(error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "AI layout generation failed"
+        });
+
+    }
+});
+
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
@@ -197,5 +227,7 @@ const startServer = async () => {
         console.log(`📡 Socket.io active`);
     });
 };
+
+
 
 startServer();

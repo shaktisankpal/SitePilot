@@ -3,6 +3,7 @@ import {
     getPages,
     getPage,
     createPage,
+    addAiPage,
     deletePage,
     updateSections,
     updateSectionProps,
@@ -19,6 +20,7 @@ const router = express.Router({ mergeParams: true });
 router.get("/", authChain, getPages);
 router.get("/:pageId", authChain, getPage);
 router.post("/", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), createPage);
+router.post("/ai", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), addAiPage);
 router.delete("/:pageId", authChain, requireRole("OWNER", "ADMIN"), deletePage);
 router.put("/:pageId/sections", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), updateSections);
 router.patch("/:pageId/sections/:sectionId", authChain, requireRole("OWNER", "ADMIN", "EDITOR", "DEVELOPER"), updateSectionProps);

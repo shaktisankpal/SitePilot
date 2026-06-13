@@ -9,12 +9,17 @@ import LoginPage from "./features/auth/LoginPage.jsx";
 import RegisterPage from "./features/auth/RegisterPage.jsx";
 import DashboardPage from "./features/dashboard/DashboardPage.jsx";
 import WebsitesPage from "./features/dashboard/WebsitesPage.jsx";
+import AnalyticsPage from "./features/dashboard/AnalyticsPage.jsx";
+import DeploymentsPage from "./features/dashboard/DeploymentsPage.jsx";
+import ActivityPage from "./features/dashboard/ActivityPage.jsx";
 import BuilderPage from "./features/builder/BuilderPage.jsx";
 import AIGeneratorPage from "./features/ai/AIGeneratorPage.jsx";
 import SettingsPage from "./features/settings/SettingsPage.jsx";
 import SubscriptionPage from "./features/subscription/SubscriptionPage.jsx";
 import PublicSiteRenderer from "./features/publicSite/PublicSiteRenderer.jsx";
+import TemplatePreviewPage from "./features/publicSite/TemplatePreviewPage.jsx";
 import HomePage from "./features/home/HomePage.jsx";
+import { ProductPage, ResourcesPage, CompanyPage, LegalPage, FeaturesPage } from "./features/marketing/MarketingPages.jsx";
 
 export default function App() {
   const hostname = window.location.hostname;
@@ -63,9 +68,18 @@ export default function App() {
           {/* Public pages — share Navbar + Footer via PublicLayout */}
           <Route element={<PublicLayout />}>
             <Route path="/home" element={<HomePage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/product" element={<ProductPage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/company" element={<CompanyPage />} />
+            <Route path="/legal" element={<LegalPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Route>
+
+          {/* Dev-only template preview (no backend) */}
+          <Route path="/preview" element={<TemplatePreviewPage />} />
+          <Route path="/preview/:templateId" element={<TemplatePreviewPage />} />
 
           {/* Public site rendering (no shared layout) */}
           <Route path="/site/:tenantSlug" element={<PublicSiteRenderer />} />
@@ -74,7 +88,10 @@ export default function App() {
           {/* Protected app routes */}
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/deployments" element={<DeploymentsPage />} />
+            <Route path="/activity" element={<ActivityPage />} />
             <Route path="/websites" element={<WebsitesPage />} />
+            <Route path="/websites/:websiteId/analytics" element={<AnalyticsPage />} />
             <Route path="/websites/:websiteId/builder" element={<BuilderPage />} />
             <Route path="/websites/:websiteId/builder/:pageId" element={<BuilderPage />} />
             <Route path="/ai" element={<AIGeneratorPage />} />
@@ -83,8 +100,8 @@ export default function App() {
           </Route>
 
           {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </BrowserRouter>
     </Provider>

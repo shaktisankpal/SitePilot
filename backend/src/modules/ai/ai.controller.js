@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import ollama from "ollama";
+import ollama, { Ollama } from "ollama";
 import Joi from "joi";
 import AIUsageLog from "./aiUsageLog.model.js";
 import Page from "../builder/page.model.js";
@@ -10,15 +10,21 @@ import { v4 as uuidv4 } from "uuid";
 import FirebaseAgent from "../../agents/firebaseAgent.js";
 import { aiUsageTotal } from "../../utils/metrics.js";
 import { searchUnsplash, searchUnsplashBatch } from "../../services/unsplash.service.js";
+import axios from "axios";
 
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Configure Ollama client with host from environment
+const ollamaClient = new Ollama({
+    host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'
+});
 
 const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
 });
 
-const VALID_SECTION_TYPES = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "Navbar", "Footer"];
+const VALID_SECTION_TYPES = ["Hero", "Text", "Gallery", "CTA", "ContactForm", "DynamicForm", "Navbar", "Footer"];
 
 // ─── Bad Image Query Filter ────────────────────────────────────────────────────
 const BAD_IMAGE_QUERIES = [
@@ -255,6 +261,28 @@ async function postProcessAIOutput(layout, businessType) {
                     if (typeof f === "object" && f !== null) return f.name || f.label || "message";
                     return String(f);
                 });
+            }
+
+            // ── Normalise DynamicForm fields ────────────────────────────────────
+            if (section.type === "DynamicForm") {
+                // Qwen may output under 'fields' or 'dynamicFields' — normalise to 'dynamicFields'
+                const rawFields = section.props.dynamicFields || section.props.fields;
+                if (Array.isArray(rawFields) && rawFields.length > 0) {
+                    section.props.dynamicFields = rawFields.map(f => {
+                        // If it's just a string like "name" – convert to object
+                        if (typeof f === "string") return { name: f, label: f.charAt(0).toUpperCase() + f.slice(1), type: "text" };
+                        // Ensure all required keys exist
+                        return {
+                            name: f.name || f.label?.toLowerCase().replace(/\s+/g, "_") || "field",
+                            label: f.label || f.name || "Field",
+                            type: f.type || "text",
+                            ...(f.options ? { options: f.options } : {}),
+                            ...(f.placeholder ? { placeholder: f.placeholder } : {}),
+                            ...(f.required !== undefined ? { required: f.required } : { required: true }),
+                        };
+                    });
+                    delete section.props.fields; // avoid confusion
+                }
             }
 
             if (section.type === "Gallery" && Array.isArray(section.props.items)) {
@@ -507,17 +535,146 @@ const inputSchema = Joi.object({
  * POST /api/ai/generate-layout
  */
 export const generateLayout = async (req, res) => {
+
     console.log("📥 [AI] Received request:", { body: req.body });
 
     const { error, value } = inputSchema.validate(req.body);
+
     if (error) {
         console.error("❌ [AI] Validation error:", error.details[0].message);
-        return res.status(400).json({ success: false, message: error.details[0].message });
+        return res.status(400).json({
+            success: false,
+            message: error.details[0].message
+        });
     }
 
-    const { businessType, tone, targetAudience, features, websiteId, primaryColor, secondaryColor, theme, baseTemplateSections, preferredModel } = value;
+    let {
+        businessType,
+        tone,
+        targetAudience,
+        features,
+        websiteId,
+        primaryColor,
+        secondaryColor,
+        theme,
+        baseTemplateSections,
+        preferredModel
+    } = value;
 
-    // Verify website ownership if provided
+
+    // ==========================================
+    // STEP 1: CALL ML LAYOUT RECOMMENDER SERVICE
+    // ==========================================
+
+    let recommendedSections = [];
+
+    try {
+
+        const mlResponse = await axios.post(
+            "http://localhost:5050/generate-layout",
+            {
+                businessType,
+                tone,
+                targetAudience
+            }
+        );
+
+        /**
+         * Flask response format:
+         * {
+         *   success: true,
+         *   components: [...]
+         * }
+         */
+
+        if (mlResponse.data?.components) {
+
+            recommendedSections = mlResponse.data.components;
+
+        }
+
+        console.log("🤖 ML Recommended Sections:", recommendedSections);
+
+    } catch (err) {
+
+        console.warn("⚠️ ML recommender unavailable — fallback to manual features");
+
+    }
+
+
+    // ==========================================
+    // STEP 2: MAP ML OUTPUT → BUILDER FEATURES
+    // ==========================================
+
+    /**
+     * ML model outputs
+     * Example:
+     * hero_banner
+     * gallery
+     * testimonials
+     * call_to_action
+     *
+     * Builder expects:
+     * Hero
+     * Gallery
+     * CTA
+     */
+
+    const sectionMapping = {
+
+        hero_banner: "Hero",
+        hero: "Hero",
+
+        gallery: "Gallery",
+        gallery_section: "Gallery",
+
+        testimonials: "Gallery", // map testimonials into gallery-style showcase section
+
+        call_to_action: "CTA",
+        cta: "CTA",
+
+        contact_form: "ContactForm",
+        contact_section: "ContactForm",
+
+        navbar: "Navbar",
+
+        footer: "Footer",
+
+        blog_section: "Text",
+
+        product_grid: "Gallery",
+
+        booking_section: "ContactForm"
+    };
+
+
+    // Convert ML output → builder section list
+
+    const mlFeatures = recommendedSections
+        .map(section => sectionMapping[section])
+        .filter(Boolean);
+
+
+    // ==========================================
+    // STEP 3: AUTO-USE ML FEATURES IF AVAILABLE
+    // ==========================================
+
+    if (mlFeatures.length > 0) {
+
+        console.log("✅ Using ML predicted layout features:", mlFeatures);
+
+        features = mlFeatures;
+
+    } else {
+
+        console.log("⚠️ ML returned empty layout — using manual user selections");
+
+    }
+
+    // ==========================================
+    // STEP 4: VERIFY WEBSITE OWNERSHIP
+    // ==========================================
+
     let website = null;
     if (websiteId) {
         website = await Website.findOne({ _id: websiteId, tenantId: req.tenantId });
@@ -582,6 +739,7 @@ SECTION VARIANTS (assign intelligently):
 - Gallery: "Modern Grid" | "Horizontal Scroll" | "Masonry Column" | "Bento Grid"
 - CTA: "Centered Large" | "Floating Pill" | "Split Screen CTA" | "Dark Banner"
 - ContactForm: "Left Text Right Form" | "Centered Card"
+- DynamicForm: "Card Based" | "Split Left Text"
 - Footer: "Multi-Column Mock" | "Simple Centered" | "Ultra Minimal"
 
 CONTENT RULES:
@@ -593,6 +751,32 @@ CONTENT RULES:
 - CTA: conversion-focused copy with a compelling subheading
 - ContactForm: include fields relevant to the business (e.g., phone for medical, budget for agencies)
 - CONTACT FORM FIELDS (CRITICAL): The 'fields' property MUST be a flat array of STRING primitives (e.g. ["name", "email", "phone", "message"]), NEVER an array of objects.
+- DYNAMIC FORM (CRITICAL — READ CAREFULLY):
+  * Use 'dynamicFields' key (NOT 'fields') inside DynamicForm props.
+  * MUST be an array of field objects, each with: name, label, type, and optionally options (for select), placeholder, required.
+  * Field types allowed: "text", "email", "tel", "number", "select", "textarea", "date"
+  * Generate 5-8 fields that are HYPER-SPECIFIC to the actual business. Think about what a real customer of THIS business would order or enquire about.
+  * Example for a Juice Bar:
+    dynamicFields: [
+      {"name":"customer_name","label":"Your Name","type":"text","placeholder":"e.g. Rahul Sharma","required":true},
+      {"name":"phone","label":"Phone Number","type":"tel","placeholder":"+91 9876543210","required":true},
+      {"name":"juice_type","label":"Choose Your Juice","type":"select","options":["Fresh Orange","Watermelon","Mixed Fruit","Green Detox","ABC Juice","Pomegranate"],"required":true},
+      {"name":"size","label":"Size","type":"select","options":["Small (250ml)","Medium (500ml)","Large (750ml)"],"required":true},
+      {"name":"quantity","label":"Quantity","type":"number","placeholder":"1","required":true},
+      {"name":"add_ons","label":"Add-ons","type":"select","options":["None","Chia Seeds","Honey","Ginger Shot","Protein Boost"],"required":false},
+      {"name":"delivery_time","label":"Preferred Delivery Time","type":"select","options":["Morning (8am-12pm)","Afternoon (12pm-4pm)","Evening (4pm-8pm)"],"required":true},
+      {"name":"special_instructions","label":"Special Instructions","type":"textarea","placeholder":"Allergies, preferences...","required":false}
+    ]
+  * Example for a Salon:
+    dynamicFields: [
+      {"name":"name","label":"Full Name","type":"text","required":true},
+      {"name":"phone","label":"Phone","type":"tel","required":true},
+      {"name":"service","label":"Service","type":"select","options":["Haircut","Hair Color","Facial","Manicure","Pedicure","Waxing","Bridal Package"],"required":true},
+      {"name":"stylist","label":"Preferred Stylist","type":"select","options":["Any Available","Senior Stylist","Junior Stylist"],"required":false},
+      {"name":"appointment_date","label":"Appointment Date","type":"date","required":true},
+      {"name":"notes","label":"Special Requests","type":"textarea","required":false}
+    ]
+  * NEVER generate generic fields like just name/email/message for a DynamicForm — those belong in ContactForm.
 
 Return ONLY valid JSON in this exact structure (no markdown, no explanation):
 
@@ -615,6 +799,7 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
             "items": [],
             "text": "...",
             "fields": ["name", "email", "message"],
+            "dynamicFields": [{"name": "quantity", "label": "Quantity", "type": "number"}],
             "variant": "...",
             "bgColor": "#hex",
             "textColor": "#hex",
@@ -630,7 +815,7 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanation):
 MANDATORY PAGE RULES:
 - Every page MUST start with Navbar and end with Footer
 - Generate exactly 3 pages: Home, About, Contact
-- Home page MUST include: Navbar, Hero, Text, Gallery, CTA, ContactForm or just CTA, Footer
+- Home page MUST include: Navbar, Hero, Text, Gallery, CTA, DynamicForm, Footer
 - About page: Navbar, Hero or Text, Text, Gallery (team/values), Footer
 - Contact page: Navbar, ContactForm, Footer
 
@@ -644,7 +829,7 @@ COLOR RULES:
     let aiResponse = null;
     let success = true;
     let errorMessage = null;
-    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen3.5:4b (Ollama)";
+    let usedModel = preferredModel === "gemini" ? "gemini-3-flash-preview" : "qwen:4b (Ollama)";
 
     try {
         let text = "";
@@ -656,21 +841,21 @@ COLOR RULES:
         } else {
             try {
                 console.log("🤖 [AI] Attempting generation with Basic AI (Ollama qwen3.5)...");
-                const r = await ollama.chat({
+                const r = await ollamaClient.chat({
                     model: 'qwen3.5:4b',
+                    think: false,
                     messages: [
                         { role: 'system', content: 'You are an expert AI website generator and elite copywriter. You MUST generate unique, engaging content perfectly tailored to the requested business type. NEVER blindly copy placeholder text from templates.' },
                         { role: 'user', content: prompt }
                     ],
                     format: 'json',
-                    think: false,
                     options: {
-                        num_predict: 8192,
+                        num_predict: 5000,
                         num_ctx: 8192,
                         temperature: 0.1
                     }
                 });
-                text = r.message.content;
+                text = r.message.content || '';
                 console.log("🟢 [AI] Successfully used Basic AI for content generation.");
             } catch (ollamaErr) {
                 console.warn("⚠️ [AI] Basic AI failed, falling back to Pro AI...");
@@ -718,7 +903,14 @@ COLOR RULES:
         if (website) {
             const autoPublish = req.query.autoPublish === "true" || req.body.autoPublish === true;
 
-            for (const pageData of aiResponse.pages) {
+            // Map the first generated page onto the project's existing homepage (instead of
+            // creating a second "Home"), so a full generation never leaves a stale placeholder.
+            const existingHome = await Page.findOne({ websiteId: website._id, tenantId: req.tenantId, isHomePage: true });
+            const savedPages = [];
+            let homeHandled = false;
+
+            for (let i = 0; i < aiResponse.pages.length; i++) {
+                const pageData = aiResponse.pages[i];
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
                     type: s.type,
@@ -729,30 +921,57 @@ COLOR RULES:
                     },
                     order: idx,
                 }));
+                const slug = pageData.slug.toLowerCase();
+                const isHome = i === 0 || slug === "home";
 
-                const existing = await Page.findOne({
-                    websiteId: website._id,
-                    slug: pageData.slug.toLowerCase(),
-                    tenantId: req.tenantId,
-                });
+                if (isHome && existingHome && !homeHandled) {
+                    existingHome.title = pageData.title;
+                    existingHome.layoutConfig = { sections: sectionsWithIds };
+                    existingHome.status = autoPublish ? "published" : "draft";
+                    existingHome.markModified("layoutConfig");
+                    await existingHome.save();
+                    homeHandled = true;
+                    savedPages.push(existingHome);
+                    continue;
+                }
 
+                const existing = await Page.findOne({ websiteId: website._id, slug, tenantId: req.tenantId });
                 if (existing) {
-                    existing.layoutConfig.sections = sectionsWithIds;
+                    existing.layoutConfig = { sections: sectionsWithIds };
                     existing.title = pageData.title;
                     existing.status = autoPublish ? "published" : "draft";
+                    existing.markModified("layoutConfig");
                     await existing.save();
+                    savedPages.push(existing);
                 } else {
-                    await Page.create({
+                    const created = await Page.create({
                         tenantId: req.tenantId,
                         websiteId: website._id,
                         title: pageData.title,
-                        slug: pageData.slug.toLowerCase(),
-                        isHomePage: pageData.slug.toLowerCase() === "home",
+                        slug,
+                        isHomePage: isHome && !existingHome && !homeHandled,
                         layoutConfig: { sections: sectionsWithIds },
                         status: autoPublish ? "published" : "draft",
                         createdBy: req.user._id,
                     });
+                    if (created.isHomePage) homeHandled = true;
+                    savedPages.push(created);
                 }
+            }
+
+            // Exactly one homepage, and wire every page's navbar to the real pages so
+            // navigation is interconnected out of the box.
+            const homeId = (savedPages.find((p) => p.isHomePage) || savedPages[0])?._id?.toString();
+            const navLinks = savedPages
+                .slice().sort((a, b) => (b.isHomePage ? 1 : 0) - (a.isHomePage ? 1 : 0))
+                .map((p) => ({ label: p.title, url: p.isHomePage ? "/" : `/${p.slug}` }));
+            for (const p of savedPages) {
+                const shouldBeHome = p._id?.toString() === homeId;
+                if (p.isHomePage !== shouldBeHome) p.isHomePage = shouldBeHome;
+                const nav = (p.layoutConfig?.sections || []).find((s) => s.type === "Navbar");
+                if (nav) { nav.props = nav.props || {}; nav.props.links = navLinks; }
+                p.markModified("layoutConfig");
+                await p.save();
             }
 
             // Auto-publish website if requested
@@ -787,12 +1006,12 @@ COLOR RULES:
                 console.log(`🤖 [AI] Triggering FirebaseAgent for immediate backend setup...`);
 
                 const firebaseAgent = new FirebaseAgent();
-                
+
                 // Get tenant info for human-readable slugs
                 const tenant = await Tenant.findById(req.tenantId);
                 const tenantSlug = tenant?.slug || req.tenantId.toString();
                 const websiteSlug = website.slug || website.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || website._id.toString();
-                
+
                 const deploymentContext = {
                     tenantId: req.tenantId.toString(),
                     siteId: website._id.toString(),
@@ -879,6 +1098,103 @@ export const getAILogs = async (req, res) => {
 };
 
 /**
+ * POST /api/ai/auto-configure
+ * Uses Qwen (Ollama) to auto-pick template, tone, audience, theme, purpose and brand
+ * colors from a free-text concept. The frontend supplies the template list + option
+ * enums so templates.js stays the single source of truth. Falls back to Gemini.
+ */
+export const autoConfigureFromPrompt = async (req, res) => {
+    try {
+        const concept = (req.body.concept || "").trim();
+        if (!concept) return res.status(400).json({ success: false, message: "Concept is required." });
+
+        const templates = Array.isArray(req.body.templates) ? req.body.templates.slice(0, 50) : [];
+        if (templates.length === 0) return res.status(400).json({ success: false, message: "No templates provided." });
+
+        const opts = req.body.options || {};
+        const tones = Array.isArray(opts.tones) && opts.tones.length ? opts.tones : ["Professional", "Friendly", "Bold", "Minimalist", "Playful", "Luxury"];
+        const audiences = Array.isArray(opts.audiences) && opts.audiences.length ? opts.audiences : ["General Public", "Businesses", "Developers", "Creatives", "Students", "Executives"];
+        const purposes = Array.isArray(opts.purposes) && opts.purposes.length ? opts.purposes : ["Sell products", "Generate leads", "Build brand", "Showcase portfolio", "Allow bookings", "Share content", "Educate users", "Promote events"];
+        const themes = Array.isArray(opts.themes) && opts.themes.length ? opts.themes : ["Light", "Dark"];
+
+        const templateLines = templates.map(t => `- ${t.id}: "${t.name}" — ${t.description || ""}`).join("\n");
+
+        const prompt = `You are a senior brand & web-design director. A user described the website they want. Choose the BEST configuration.
+
+USER CONCEPT:
+"""${concept}"""
+
+Pick ONE template id from this list. Templates are STYLE-based (palette + mood), NOT industry-locked — match the aesthetic to the concept:
+${templateLines}
+
+Return ONLY a JSON object (no prose, no markdown fences) with EXACTLY these keys:
+{
+  "templateId": "<one id copied exactly from the list above>",
+  "tone": "<one of ${JSON.stringify(tones)}>",
+  "audience": "<one of ${JSON.stringify(audiences)}>",
+  "theme": "<one of ${JSON.stringify(themes)}>",
+  "purpose": "<one of ${JSON.stringify(purposes)}>",
+  "primaryColor": "<hex like #1d4ed8 that fits the brand>",
+  "secondaryColor": "<complementary hex>",
+  "reason": "<max 16 words explaining the choice>"
+}
+
+Guidance: choose colors that truly match the concept's industry & mood (spa→soft rose, fintech→deep blue, eco→green, luxury dining→gold/espresso, kids→bright playful). Choose theme by vibe (sleek/premium/nightlife→Dark; clean/airy/editorial→Light).`;
+
+        let text = "";
+        let usedModel = "qwen3.5:4b (Ollama)";
+        try {
+            const r = await ollamaClient.chat({
+                model: 'qwen3.5:4b',
+                think: false,
+                messages: [
+                    { role: 'system', content: 'You are a precise design configuration engine. You output only strict, valid JSON.' },
+                    { role: 'user', content: prompt }
+                ],
+                format: 'json',
+                options: { num_predict: 600, num_ctx: 8192, temperature: 0.3 }
+            });
+            text = r.message.content || "";
+        } catch (ollamaErr) {
+            console.warn("⚠️ [AI Auto-Config] Ollama failed, falling back to Gemini:", ollamaErr.message);
+            usedModel = "gemini-3-flash-preview";
+            const result = await model.generateContent(prompt);
+            text = result.response.text();
+        }
+
+        // Extract JSON (handle markdown fences / surrounding prose)
+        let jsonStr = text;
+        const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fence) jsonStr = fence[1];
+        else { const obj = text.match(/\{[\s\S]*\}/); if (obj) jsonStr = obj[0]; }
+
+        let parsed = {};
+        try { parsed = JSON.parse(jsonStr.trim()); } catch { parsed = {}; }
+
+        // Validate & coerce against the allowed values
+        const pick = (val, list, fb) => list.includes(val) ? val : fb;
+        const hex = (c, fb) => (typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c.trim())) ? c.trim() : fb;
+        const validTemplateId = templates.some(t => t.id === parsed.templateId) ? parsed.templateId : templates[0].id;
+
+        const config = {
+            templateId: validTemplateId,
+            tone: pick(parsed.tone, tones, tones[0]),
+            audience: pick(parsed.audience, audiences, audiences[0]),
+            theme: pick(parsed.theme, themes, "Light"),
+            purpose: pick(parsed.purpose, purposes, purposes[0]),
+            primaryColor: hex(parsed.primaryColor, "#14b8a6"),
+            secondaryColor: hex(parsed.secondaryColor, "#0ea5e9"),
+            reason: typeof parsed.reason === "string" ? parsed.reason.slice(0, 160) : "",
+        };
+
+        return res.json({ success: true, config, model: usedModel });
+    } catch (err) {
+        console.error("❌ [AI Auto-Config] error:", err);
+        return res.status(500).json({ success: false, message: "Failed to auto-configure." });
+    }
+};
+
+/**
  * POST /api/public/ai/chat
  */
 export const chatWithWebsite = async (req, res) => {
@@ -898,18 +1214,18 @@ export const chatWithWebsite = async (req, res) => {
             return `Page: ${page.title} (${page.slug})
 Sections:
 ${(page.layoutConfig?.sections || []).map(s => {
-    const p = s.props || {};
-    // Extract textual content to form the context
-    let content = `- [${s.type} Section]:`;
-    if (p.heading) content += ` Heading: "${p.heading}"`;
-    if (p.subheading) content += ` Subheading: "${p.subheading}"`;
-    if (p.description) content += ` Description: "${p.description}"`;
-    if (p.text) content += ` Text: "${p.text}"`;
-    if (p.items && Array.isArray(p.items)) {
-        content += ` Items: ` + p.items.map(i => `(Title: ${i.title}, Desc: ${i.description})`).join(', ');
-    }
-    return content;
-}).join('\n')}
+                const p = s.props || {};
+                // Extract textual content to form the context
+                let content = `- [${s.type} Section]:`;
+                if (p.heading) content += ` Heading: "${p.heading}"`;
+                if (p.subheading) content += ` Subheading: "${p.subheading}"`;
+                if (p.description) content += ` Description: "${p.description}"`;
+                if (p.text) content += ` Text: "${p.text}"`;
+                if (p.items && Array.isArray(p.items)) {
+                    content += ` Items: ` + p.items.map(i => `(Title: ${i.title}, Desc: ${i.description})`).join(', ');
+                }
+                return content;
+            }).join('\n')}
 `;
         }).join('\n\n');
 
@@ -930,21 +1246,22 @@ ${siteContext}
 
         try {
             console.log("🤖 [AI Chat] Attempting answer with qwen3.5:4b...");
-            const r = await ollama.chat({
+            const r = await ollamaClient.chat({
                 model: 'qwen3.5:4b',
+                think: false,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: question }
                 ],
-                think: false,
                 options: {
-                    num_predict: 1024,
-                    num_ctx: 8192,
+                    num_predict: 512,
+                    num_ctx: 4096,
                     temperature: 0.2
                 }
             });
-            console.log("🟢 [AI Chat] Answer generated via qwen3.5:4b.");
-            return res.json({ success: true, answer: r.message.content });
+            const answer = r.message.content || '';
+            console.log("🟢 [AI Chat] Answer generated via qwen:4b.");
+            return res.json({ success: true, answer });
         } catch (ollamaErr) {
             console.warn("⚠️ [AI Chat] Ollama failure, falling back to Gemini...");
             const result = await model.generateContent(systemPrompt + "\\n\\nUser Question: " + question);
@@ -956,5 +1273,52 @@ ${siteContext}
     } catch (err) {
         console.error("❌ [AI Chat] generate response error:", err);
         res.status(500).json({ success: false, message: "Failed to process chat" });
+    }
+};
+
+/**
+ * POST /api/ai/help
+ * In-app AI help assistant — answers "how do I…" / "what is…" questions about using
+ * Sitezy, with short, friendly, step-by-step guidance. Qwen first, Gemini fallback.
+ */
+const HELP_KNOWLEDGE = `You are the in-app help assistant for Sitezy, an AI website builder. Answer the user's question with SHORT, friendly, step-by-step guidance (use numbered steps when explaining how to do something). Keep it concise. Only discuss Sitezy. Never mention the underlying AI model names.
+
+HOW TO BUILD A SITE (follow these EXACTLY — do not invent extra steps):
+- From scratch: 1) On the Dashboard or Projects page, click "Create Project". 2) Enter a name (and optional description), then click "Create Project". IMPORTANT: this only asks for a name/description — it does NOT ask for a template, tone, audience, colors, or blocks. 3) Your new project appears on the Projects page — click "Edit" on its card to open the Builder and start editing. 4) In the Builder, use "Add Section" to add blocks (Hero, Gallery, etc.) and click any section to edit it. 5) Click Save, then Publish to go live. (Tip: to fill it with AI-written content, open the AI Playground and set "Apply to" your project.)
+- With AI (AI Playground): 1) Open "AI Playground" (from the Projects page header or the Dashboard). 2) Describe your website concept. 3) Optionally click "AI auto configure" to let AI choose everything. 4) Pick a base template and set Tone, Audience, Theme Mode and Website Purpose, plus colors and Required Blocks. 5) Set "Apply to" to a project (or leave it on Preview), then click "Generate with Basic AI" or "Generate with Pro AI". 6) Open the project in the Builder to fine-tune, then Publish.
+
+PLATFORM MAP:
+- Dashboard: overview. "Create Project" makes a new blank project (asks for a name + description only). "AI Playground" generates a full site with AI. "At a Glance" shows website + deploy counts. Quick Links → Custom Domains & Team Settings. Recent Deployments and Activity Log open full history pages.
+- Projects page: each project card has Edit (open builder), Update/Deploy (publish), the rename/details pencil, Form Submissions (inbox), Analytics (bar chart), Delete, and an "Export" button (downloads the working code as a zip). AI Playground & Settings buttons are on this page header.
+- AI Playground: 1) Describe your concept. 2) Optionally click "AI auto configure" to let AI pick everything. 3) Pick a base template (the starting design). 4) Set Tone, Audience, Theme Mode, Website Purpose. 5) Pick Primary/Secondary colors. 6) "Apply to" = save into a project or just preview. 7) Choose Required Blocks (sections to include). 8) Generate with Basic AI (fast) or Pro AI (higher quality, more relevant images).
+   - TONE = the writing voice (Professional, Friendly, Bold, etc.). AUDIENCE = who the site is for. THEME MODE = Light or Dark look. WEBSITE PURPOSE = the main goal (sell, build brand, book, etc.). REQUIRED BLOCKS = which sections the page must include (Hero, Gallery, Pricing, Contact Form, etc.).
+- Builder: Left column = Pages list (+ to add an AI-built page) and "Page Layers (Sections)". Click "Add Section" to add a block. Drag the handle to reorder sections. Click a section to open its editor on the right.
+   - SECTIONS: Navbar = the top bar with your brand + menu links. Hero = the big intro/banner at the top. Text = a paragraph/about block. Gallery = a grid of images/cards. CTA (Call To Action) = a band that nudges visitors to act (e.g. "Order now"). ContactForm/DynamicForm = a form to collect details (you can add fields: text, email, dropdown, radio, checkbox). Footer = the bottom bar. Button/Image/Spacer = small building blocks.
+   - EDIT AN IMAGE (e.g. in the Navbar or Hero): click that section in Page Layers → its editor opens on the right → find the "Background Image" / image field → paste an image URL or click Upload.
+   - SEO button (top toolbar): scores your page's SEO, predicts engagement, and scans design health; "Auto-Improve" rewrites copy and "Generate meta & schema" adds SEO metadata.
+   - History: every Save/Publish is a version snapshot you can roll back to.
+   - Save = saves your draft. Publish = takes the site live and lets you pick a domain.
+- Settings: Workspace Details, Team Members, Custom Domains (open / rename / remove your domains).`;
+
+export const helpAssistant = async (req, res) => {
+    try {
+        const question = (req.body.question || "").toString().slice(0, 500).trim();
+        if (!question) return res.status(400).json({ success: false, message: "Ask a question." });
+        const where = (req.body.context || "").toString();
+        const prompt = `${HELP_KNOWLEDGE}\n\nThe user is currently on the ${where || "app"}.\n\nUser question: ${question}`;
+        try {
+            const r = await ollamaClient.chat({
+                model: "qwen3.5:4b", think: false,
+                messages: [{ role: "system", content: "You are Sitezy's concise, friendly in-app help assistant." }, { role: "user", content: prompt }],
+                options: { num_predict: 450, num_ctx: 8192, temperature: 0.3 },
+            });
+            return res.json({ success: true, answer: r.message?.content || "" });
+        } catch (e) {
+            const result = await model.generateContent(prompt);
+            return res.json({ success: true, answer: result.response.text() });
+        }
+    } catch (err) {
+        console.error("❌ [AI Help] error:", err?.message);
+        return res.status(500).json({ success: false, message: "Help is unavailable right now." });
     }
 };

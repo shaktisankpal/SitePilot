@@ -13,8 +13,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "modern-minimalist",
-        name: "Modern Minimalist",
-        description: "An ultra-clean, editorial layout built on white space and typography.",
+        name: "Ivory Editorial",
+        description: "Ultra-clean white canvas with editorial serif type and generous whitespace. Works for any brand.",
         themeSelected: "Light",
         sections: [
             {
@@ -106,8 +106,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "vibrant-playful",
-        name: "Vibrant SaaS",
-        description: "Lively, bold, neon-accented SaaS layout for modern digital products.",
+        name: "Neon Pop",
+        description: "Bold, energetic dark theme with vivid magenta-violet accents. Great for any modern brand.",
         themeSelected: "Dark",
         sections: [
             {
@@ -202,8 +202,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "sleek-dark-mode",
-        name: "Dark Web3",
-        description: "Premium deep dark theme with electric blue accents — SaaS, crypto, and Web3.",
+        name: "Midnight Cobalt",
+        description: "Sleek deep near-black with electric blue accents — modern and high-tech for any use.",
         themeSelected: "Dark",
         sections: [
             {
@@ -298,8 +298,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "elegant-corporate",
-        name: "Elegant Corporate",
-        description: "Trustworthy, structured professional layout for agencies, law firms, and enterprises.",
+        name: "Forest Heritage",
+        description: "Refined cream-and-forest-green palette with classic serif elegance. Polished and timeless.",
         themeSelected: "Light",
         sections: [
             {
@@ -405,8 +405,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "bold-agency",
-        name: "Bold Creative Agency",
-        description: "Maximum impact creative agency template — bold, expressive, unforgettable.",
+        name: "Ember Noir",
+        description: "High-impact jet-black canvas with a fiery orange accent. Bold, expressive, unforgettable.",
         themeSelected: "Dark",
         sections: [
             {
@@ -514,8 +514,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "local-restaurant",
-        name: "Restaurant & Food",
-        description: "Warm, rich, appetizing layout for restaurants, cafes, and food businesses.",
+        name: "Golden Amber",
+        description: "Warm cream tones with golden amber accents and a cozy serif. Rich and inviting for any brand.",
         themeSelected: "Light",
         sections: [
             {
@@ -560,14 +560,15 @@ export const TEMPLATES = [
             {
                 type: "Gallery",
                 props: {
+                    eyebrow: "On the Menu",
                     heading: "Featured Dishes",
                     items: [
-                        { title: "Seared Duck Breast", description: "Free-range duck with cherry gastrique and truffle jus.", imageQuery: "gourmet" },
-                        { title: "Truffle Risotto", description: "Aged parmesan and black truffle from the Périgord.", imageQuery: "dining" },
-                        { title: "Catch of the Day", description: "Line-caught fish with seasonal vegetable medley.", imageQuery: "food" },
-                        { title: "Artisan Desserts", description: "Handcrafted pastries by our award-winning pastry chef.", imageQuery: "bakery" },
+                        { title: "Seared Duck Breast", description: "Free-range duck with cherry gastrique and truffle jus.", imageQuery: "gourmet duck plate", price: "$34" },
+                        { title: "Truffle Risotto", description: "Aged parmesan and black truffle from the Périgord.", imageQuery: "truffle risotto", price: "$28" },
+                        { title: "Catch of the Day", description: "Line-caught fish with seasonal vegetable medley.", imageQuery: "seafood plate", price: "$36" },
+                        { title: "Artisan Desserts", description: "Handcrafted pastries by our award-winning pastry chef.", imageQuery: "dessert plating", price: "$14" },
                     ],
-                    variant: "Horizontal Scroll",
+                    variant: "Modern Grid",
                     bgColor: "#fef3e2",
                     textColor: "#1c0f00",
                     accentColor: "#b45309",
@@ -621,8 +622,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "fitness-wellness",
-        name: "Fitness & Wellness",
-        description: "Energetic, athletic layout for gyms, studios, and wellness brands.",
+        name: "Charcoal Volt",
+        description: "Athletic black theme with an electric lime-green punch. Energetic and high-contrast.",
         themeSelected: "Dark",
         sections: [
             {
@@ -718,8 +719,8 @@ export const TEMPLATES = [
     // ─────────────────────────────────────────────
     {
         id: "beauty-spa",
-        name: "Beauty & Spa",
-        description: "Soft, luxurious, and feminine — for salons, spas, and beauty brands.",
+        name: "Blush Rosé",
+        description: "Soft blush-pink and rose tones with a delicate, luxurious serif. Elegant and refined.",
         themeSelected: "Light",
         sections: [
             {
@@ -806,6 +807,207 @@ export const TEMPLATES = [
                     fontFamily: "Playfair Display",
                 },
             },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 9. FITNESS — EDITORIAL LIGHT ("Move With Meaning")
+    //    Off-white + charcoal, lime accent, Playfair serif
+    // ─────────────────────────────────────────────
+    {
+        id: "fitness-editorial",
+        name: "Sage Magazine",
+        description: "Off-white editorial layout with sage-lime accents and elegant serif headlines.",
+        themeSelected: "Light",
+        sections: [
+            { type: "Navbar", props: { brand: "Sensia", links: ["Overview", "Features", "Technology", "Community"], variant: "Minimal Transparent", bgColor: "#f4f5f0", textColor: "#15170f", accentColor: "#65a30d", fontFamily: "Playfair Display" } },
+            { type: "Hero", props: { eyebrow: "AI Wellness Companion", heading: "Move With Meaning", subheading: "Sensia is your AI-driven coach that listens, learns, and adapts — helping your body find its natural rhythm every day.", ctaText: "Start Moving", ctaLink: "#start", variant: "Editorial Centered", bgColor: "#eef0e8", textColor: "#15170f", accentColor: "#65a30d", fontFamily: "Playfair Display", backgroundImageQuery: "athlete running portrait" } },
+            { type: "Text", props: { heading: "Fitness That Understands You", description: "Sensia combines the precision of a tracker with the intuition of a coach — helping you move better, eat smarter, and rest deeper. Every plan adapts to how you actually feel.", variant: "Left Aligned Big", bgColor: "#f4f5f0", textColor: "#15170f", accentColor: "#65a30d", fontFamily: "Playfair Display" } },
+            { type: "Gallery", props: { heading: "Built Around You", items: [
+                { title: "Adaptive Coaching", description: "Plans that learn your patterns and adjust in real time.", imageQuery: "fitness coaching" },
+                { title: "Balance Over Burnout", description: "Recovery-first programming that keeps you consistent.", imageQuery: "yoga stretch" },
+                { title: "Effortless Connection", description: "Syncs with Apple Watch, Garmin, and Whoop instantly.", imageQuery: "smartwatch fitness" },
+                { title: "Real Progress", description: "Track strength, sleep, and energy in one clean view.", imageQuery: "gym workout" },
+            ], variant: "Bento Grid", bgColor: "#15170f", textColor: "#f4f5f0", accentColor: "#a3e635", fontFamily: "Playfair Display" } },
+            { type: "CTA", props: { heading: "Train smarter, not harder.", subheading: "Join thousands moving with intention every day.", ctaText: "Download the App", ctaLink: "#download", variant: "Split Screen CTA", bgColor: "#65a30d", textColor: "#ffffff", accentColor: "#15170f", fontFamily: "Playfair Display" } },
+            { type: "Footer", props: { text: "© 2026 Sensia. Move with meaning.", variant: "Multi-Column Mock", bgColor: "#15170f", textColor: "#8a8f7d", accentColor: "#a3e635", fontFamily: "Playfair Display" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 10. FITNESS — NEON DARK ("Velocity / Run Club")
+    //     Near-black, electric lime, Space Grotesk
+    // ─────────────────────────────────────────────
+    {
+        id: "fitness-neon-dark",
+        name: "Electric Lime",
+        description: "High-energy near-black with neon lime accents and bold geometric type.",
+        themeSelected: "Dark",
+        sections: [
+            { type: "Navbar", props: { brand: "Velocity", links: ["Classes", "Trainers", "Membership", "Shop"], variant: "Glassy Island", bgColor: "#0a0b0a", textColor: "#ffffff", accentColor: "#bef264", fontFamily: "Space Grotesk" } },
+            { type: "Hero", props: { heading: "Push Your Limits", subheading: "Train with elite coaches, smart equipment, and a community that shows up. Your strongest self starts now.", ctaText: "Start Free Trial", ctaLink: "#trial", variant: "Split Text Left", bgColor: "#0a0b0a", textColor: "#ffffff", accentColor: "#bef264", fontFamily: "Space Grotesk", backgroundImageQuery: "dark gym workout athlete" } },
+            { type: "Gallery", props: { heading: "Train Your Way", items: [
+                { title: "Strength Lab", description: "Progressive overload programs that build real power.", imageQuery: "weightlifting gym" },
+                { title: "HIIT Studio", description: "45-minute sessions that torch calories fast.", imageQuery: "hiit training" },
+                { title: "Endurance", description: "Run-club coaching with live pace tracking.", imageQuery: "runner night" },
+                { title: "Mobility", description: "Recovery and flexibility built into every week.", imageQuery: "stretching fitness" },
+                { title: "Nutrition", description: "Personalized fuel plans from registered dietitians.", imageQuery: "healthy meal prep" },
+                { title: "Community", description: "Leaderboards, challenges, and accountability.", imageQuery: "group fitness class" },
+            ], variant: "Bento Grid", bgColor: "#0a0b0a", textColor: "#ffffff", accentColor: "#bef264", fontFamily: "Space Grotesk" } },
+            { type: "Text", props: { heading: "Results You Can Measure", description: "Every rep, run, and recovery session is tracked and visualized. See your duration, distance, and heart rate trend up — week after week.", variant: "Card Based", bgColor: "#111311", textColor: "#ffffff", accentColor: "#bef264", fontFamily: "Space Grotesk" } },
+            { type: "CTA", props: { heading: "Your first week is on us.", subheading: "No contracts. Cancel anytime.", ctaText: "Claim Your Spot", ctaLink: "#join", variant: "Floating Pill", bgColor: "#0a0b0a", textColor: "#ffffff", accentColor: "#bef264", fontFamily: "Space Grotesk" } },
+            { type: "Footer", props: { text: "© 2026 Velocity Club. Move fast.", variant: "Multi-Column Mock", bgColor: "#060706", textColor: "#6b6f66", accentColor: "#bef264", fontFamily: "Space Grotesk" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 11. RESTAURANT — LUXURY DARK ("Savor Luxury / Velora")
+    //     Deep espresso + warm gold, Cormorant serif
+    // ─────────────────────────────────────────────
+    {
+        id: "restaurant-luxury",
+        name: "Espresso Gold",
+        description: "Opulent espresso-and-gold dark theme with a refined serif. Luxurious and dramatic.",
+        themeSelected: "Dark",
+        sections: [
+            { type: "Navbar", props: { brand: "Velora", links: ["Menu", "Bar", "Experience", "Reservations"], variant: "Minimal Transparent", bgColor: "#140f0a", textColor: "#f3e9da", accentColor: "#c9a16b", fontFamily: "Cormorant Garamond" } },
+            { type: "Hero", props: { eyebrow: "Fine Dining · Est. 2009", heading: "Savor Luxury", subheading: "An exquisite dining journey where culinary artistry meets world-class cocktails in an atmosphere of timeless elegance.", ctaText: "Reserve a Table", ctaLink: "#reserve", secondaryCtaText: null, variant: "Centered Image Bg", bgColor: "#140f0a", textColor: "#ffffff", accentColor: "#c9a16b", fontFamily: "Cormorant Garamond", backgroundImageQuery: "luxury restaurant bar interior" } },
+            { type: "Text", props: { eyebrow: "Our Philosophy", heading: "Where every flavor is elevated by elegance", description: "From the first pour to the final course, every detail is considered. Seasonal ingredients, masterful technique, and a setting designed for unforgettable evenings.", variant: "Left Aligned Big", bgColor: "#f5efe6", textColor: "#2a1d12", accentColor: "#9a6b34", fontFamily: "Cormorant Garamond" } },
+            { type: "Gallery", props: { eyebrow: "Best Sellers", heading: "Signature Dishes", items: [
+                { title: "Wagyu Risotto", description: "Creamy arborio rice with the earthy aroma of black truffle, tender premium wagyu, and a delicate drizzle of truffle oil.", imageQuery: "wagyu fine dining plate", price: "$48" },
+                { title: "Midnight Velvet", description: "Premium vodka blended with fresh espresso and a touch of dark chocolate, finished with a silky foam top.", imageQuery: "espresso martini cocktail", price: "$22" },
+                { title: "Velora Steak", description: "Dry-aged ribeye finished over open flame, served with seasonal accompaniments.", imageQuery: "grilled steak gourmet", price: "$64" },
+                { title: "Black Truffle Pasta", description: "Hand-shaved truffle over house-made tagliatelle in a silky parmesan emulsion.", imageQuery: "truffle pasta plate", price: "$38" },
+            ], variant: "Editorial Showcase", bgColor: "#140f0a", textColor: "#f3e9da", accentColor: "#c9a16b", fontFamily: "Cormorant Garamond" } },
+            { type: "ContactForm", props: { heading: "Reserve Your Evening", fields: ["name", "email", "phone", "date", "guests", "message"], variant: "Centered Card", bgColor: "#1c150d", textColor: "#f3e9da", accentColor: "#c9a16b", fontFamily: "Cormorant Garamond", submitText: "Request Reservation" } },
+            { type: "Footer", props: { text: "© 2026 Velora. Timeless elegance, every evening.", variant: "Multi-Column Mock", bgColor: "#0d0906", textColor: "#9a8b76", accentColor: "#c9a16b", fontFamily: "Cormorant Garamond" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 12. RESTAURANT — WARM CREAM ("Drizzle")
+    //     Cream + terracotta red, Playfair serif
+    // ─────────────────────────────────────────────
+    {
+        id: "restaurant-warm",
+        name: "Terracotta Cream",
+        description: "Cozy cream canvas with warm terracotta accents and an elegant serif. Heritage-inspired.",
+        themeSelected: "Light",
+        sections: [
+            { type: "Navbar", props: { brand: "Drizzle", links: ["Menu", "About", "Gallery", "Reservations"], variant: "Minimal Transparent", bgColor: "#f7f1e3", textColor: "#3a1e18", accentColor: "#b1402f", fontFamily: "Playfair Display" } },
+            { type: "Hero", props: { eyebrow: "Made with Love, Served with Joy", heading: "Experience the Language of Taste", subheading: "Blending tradition and innovation to create unforgettable dining experiences.", ctaText: "Reserve a Table", ctaLink: "#reserve", variant: "Editorial Centered", bgColor: "#f7f1e3", textColor: "#3a1e18", accentColor: "#b1402f", fontFamily: "Playfair Display", backgroundImageQuery: "warm restaurant interior dining" } },
+            { type: "Text", props: { eyebrow: "Know About Us", heading: "Blending tradition & innovation", description: "Every dish tells a story of heritage and craft. Our chefs source the freshest seasonal ingredients to create plates that feel both familiar and exciting.", variant: "Left Aligned Big", bgColor: "#fdf8ee", textColor: "#3a1e18", accentColor: "#b1402f", fontFamily: "Playfair Display" } },
+            { type: "Gallery", props: { eyebrow: "A Feast for the Eyes", heading: "Taste the vibes through our gallery", items: [
+                { title: "Seafood Delights", description: "Fresh catches prepared with bold, bright flavors.", imageQuery: "seafood plate gourmet" },
+                { title: "Pasta & Risotto", description: "Hand-made pasta with rich, slow-cooked sauces.", imageQuery: "pasta dish restaurant" },
+                { title: "Fresh Salads", description: "Light, healthy, and packed with garden flavor.", imageQuery: "fresh salad bowl" },
+                { title: "Wood-Fired", description: "Colorful creations inspired by nature.", imageQuery: "wood fired pizza" },
+                { title: "Craft Drinks", description: "Sip, savor, and refresh your senses.", imageQuery: "craft cocktails drinks" },
+                { title: "Desserts", description: "Sweet endings worth saving room for.", imageQuery: "dessert plating restaurant" },
+            ], variant: "Polaroid Strip", bgColor: "#fdf8ee", textColor: "#3a1e18", accentColor: "#b1402f", fontFamily: "Playfair Display" } },
+            { type: "CTA", props: { heading: "Where every visit becomes a memory.", subheading: "Reserve your spot — the ultimate joy of dining done right.", ctaText: "Reserve Your Table", ctaLink: "#reserve", variant: "Split Screen CTA", bgColor: "#b1402f", textColor: "#fdf8ee", accentColor: "#3a1e18", fontFamily: "Playfair Display" } },
+            { type: "Footer", props: { text: "© 2026 Drizzle. Made with love, served with joy.", variant: "Multi-Column Mock", bgColor: "#3a1e18", textColor: "#c8a99a", accentColor: "#e9b949", fontFamily: "Playfair Display" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 13. CLOTHING — MINIMAL EDITORIAL ("Almina / Nextgen")
+    //     Off-white + ink black, Archivo / Outfit
+    // ─────────────────────────────────────────────
+    {
+        id: "clothing-minimal",
+        name: "Gallery Mono",
+        description: "Minimalist off-white gallery layout with bold sans type and neutral tones.",
+        themeSelected: "Light",
+        sections: [
+            { type: "Navbar", props: { brand: "ALMINA", links: ["Shop", "Lookbook", "Our Story", "Contact"], variant: "Minimal Transparent", bgColor: "#f2f0ec", textColor: "#0e0e0e", accentColor: "#0e0e0e", fontFamily: "Archivo" } },
+            { type: "Hero", props: { heading: "Our Latest Offerings", subheading: "Discover a curated collection of fashion designed to suit your unique style — cutting-edge design and premium quality for every occasion.", ctaText: "Explore Product", ctaLink: "#shop", variant: "Centered Image Bg", bgColor: "#e8e6e1", textColor: "#0e0e0e", accentColor: "#0e0e0e", fontFamily: "Archivo", backgroundImageQuery: "fashion editorial model studio" } },
+            { type: "Gallery", props: { eyebrow: "Our Product", heading: "Browse the Collection", items: [
+                { title: "Oversized Blazer", description: "Tailored structure in premium tencel.", imageQuery: "fashion blazer model", price: "$240" },
+                { title: "Zip-Up Knit", description: "Soft merino blend for everyday layering.", imageQuery: "knitwear fashion", price: "$180" },
+                { title: "Linen Shirt", description: "Breathable, relaxed, effortlessly refined.", imageQuery: "linen shirt fashion", price: "$120" },
+                { title: "Wide Trousers", description: "Fluid drape with a clean high waist.", imageQuery: "trousers fashion model", price: "$160" },
+                { title: "Wool Coat", description: "A timeless silhouette for cooler days.", imageQuery: "wool coat fashion", price: "$360" },
+                { title: "Essential Tee", description: "The perfect heavyweight cotton basic.", imageQuery: "tshirt fashion minimal", price: "$60" },
+            ], variant: "Modern Grid", bgColor: "#f2f0ec", textColor: "#0e0e0e", accentColor: "#0e0e0e", fontFamily: "Archivo" } },
+            { type: "Text", props: { heading: "Where dreams meet couture", description: "We design enduring pieces meant to be worn, loved, and kept. Considered materials, honest construction, and a quiet confidence in every stitch.", variant: "Left Aligned Big", bgColor: "#e8e6e1", textColor: "#0e0e0e", accentColor: "#0e0e0e", fontFamily: "Archivo" } },
+            { type: "CTA", props: { heading: "Summer arrival is here.", subheading: "Sign up and get 20% off your first order.", ctaText: "Shop Now", ctaLink: "#shop", variant: "Centered Large", bgColor: "#0e0e0e", textColor: "#ffffff", accentColor: "#d8c3a5", fontFamily: "Archivo" } },
+            { type: "Footer", props: { text: "© 2026 ALMINA Concept.", variant: "Multi-Column Mock", bgColor: "#0e0e0e", textColor: "#8a8a8a", accentColor: "#ffffff", fontFamily: "Archivo" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 14. CLOTHING — STREET DARK
+    //     Charcoal + acid accent, Space Grotesk
+    // ─────────────────────────────────────────────
+    {
+        id: "clothing-street",
+        name: "Acid Street",
+        description: "Confident charcoal theme with an acid-yellow accent and bold geometric type.",
+        themeSelected: "Dark",
+        sections: [
+            { type: "Navbar", props: { brand: "NEXTGEN", links: ["Men", "Women", "Drops", "About"], variant: "Glassy Island", bgColor: "#0c0c0d", textColor: "#ffffff", accentColor: "#e2ff54", fontFamily: "Space Grotesk" } },
+            { type: "Hero", props: { heading: "Wear the Future", subheading: "Limited drops, premium fabrics, and silhouettes built for the street. Quality fashion that reflects your style.", ctaText: "Shop the Drop", ctaLink: "#shop", variant: "Split Text Right", bgColor: "#0c0c0d", textColor: "#ffffff", accentColor: "#e2ff54", fontFamily: "Space Grotesk", backgroundImageQuery: "streetwear fashion model dark" } },
+            { type: "Gallery", props: { eyebrow: "New Arrivals", heading: "This Season's Drop", items: [
+                { title: "Tech Cargo", description: "Utility-driven cargos in water-repellent shell.", imageQuery: "cargo pants streetwear", price: "$140" },
+                { title: "Boxy Hoodie", description: "Heavyweight fleece with a relaxed cut.", imageQuery: "hoodie streetwear", price: "$110" },
+                { title: "Graphic Tee", description: "Screen-printed art on organic cotton.", imageQuery: "graphic tshirt fashion", price: "$55" },
+                { title: "Shell Jacket", description: "Lightweight, packable, all-weather ready.", imageQuery: "jacket fashion model", price: "$220" },
+                { title: "Knit Beanie", description: "Ribbed merino for cold-weather edge.", imageQuery: "beanie streetwear", price: "$35" },
+                { title: "Chunky Sneaker", description: "Sculpted sole, premium leather upper.", imageQuery: "sneakers fashion", price: "$190" },
+            ], variant: "Modern Grid", bgColor: "#0c0c0d", textColor: "#ffffff", accentColor: "#e2ff54", fontFamily: "Space Grotesk" } },
+            { type: "CTA", props: { heading: "Don't sleep on the next drop.", subheading: "Subscribe for early access and member-only releases.", ctaText: "Get Early Access", ctaLink: "#join", variant: "Floating Pill", bgColor: "#0c0c0d", textColor: "#ffffff", accentColor: "#e2ff54", fontFamily: "Space Grotesk" } },
+            { type: "Footer", props: { text: "© 2026 NEXTGEN. Worn forward.", variant: "Multi-Column Mock", bgColor: "#070708", textColor: "#6f6f74", accentColor: "#e2ff54", fontFamily: "Space Grotesk" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 15. CORPORATE — TRUST BLUE ("ECI / ROV")
+    //     White + navy, Outfit
+    // ─────────────────────────────────────────────
+    {
+        id: "corporate-trust",
+        name: "Navy Trust",
+        description: "Crisp white-and-navy palette — confident, clean, and trustworthy.",
+        themeSelected: "Light",
+        sections: [
+            { type: "Navbar", props: { brand: "ECI", links: ["About", "Services", "Team", "News"], variant: "Full Width Solid", bgColor: "#ffffff", textColor: "#0f2747", accentColor: "#2563eb", fontFamily: "Outfit" } },
+            { type: "Hero", props: { eyebrow: "Innovation & Integrity", heading: "Secure Tomorrow With Confidence", subheading: "Protecting your future with tailored solutions and a forward-thinking approach — built on integrity, expertise, and trust.", ctaText: "Get Started", ctaLink: "#contact", socialProof: "Trusted by 200+ enterprises worldwide", variant: "Split Text Left", bgColor: "#eef3fb", textColor: "#0f2747", accentColor: "#2563eb", fontFamily: "Outfit", backgroundImageQuery: "modern corporate architecture building" } },
+            { type: "Text", props: { heading: "Protecting Futures, Empowering Progress", description: "For over two decades we've been a trusted partner for businesses and families worldwide. We design smart solutions that help you plan with clarity and act with confidence.", variant: "Card Based", bgColor: "#ffffff", textColor: "#0f2747", accentColor: "#2563eb", fontFamily: "Outfit" } },
+            { type: "Gallery", props: { heading: "The Foundation of Our Commitment", items: [
+                { title: "Strength & Reliability", description: "Decades of expertise and a record clients depend on.", imageQuery: "corporate handshake business" },
+                { title: "Integrity & Transparency", description: "The highest ethical standards in everything we do.", imageQuery: "business meeting office" },
+                { title: "Client First", description: "Tailored guidance built entirely around your goals.", imageQuery: "professional consulting" },
+                { title: "Sustainable Growth", description: "Solutions designed for the long term, not the moment.", imageQuery: "city skyline business" },
+            ], variant: "Modern Grid", bgColor: "#f4f7fc", textColor: "#0f2747", accentColor: "#2563eb", fontFamily: "Outfit" } },
+            { type: "CTA", props: { heading: "Ready to secure your future?", subheading: "Whether protecting your family or your business, we're here to help.", ctaText: "Talk to an Expert", ctaLink: "#contact", variant: "Dark Banner", bgColor: "#0f2747", textColor: "#ffffff", accentColor: "#60a5fa", fontFamily: "Outfit" } },
+            { type: "Footer", props: { text: "© 2026 ECI Corporate. Innovation & integrity.", variant: "Multi-Column Mock", bgColor: "#0a1c33", textColor: "#7e93ab", accentColor: "#60a5fa", fontFamily: "Outfit" } },
+        ],
+    },
+
+    // ─────────────────────────────────────────────
+    // 16. SAAS — HEALTHCARE / ELEGANT ("Livera")
+    //     Soft blue gradient, Outfit
+    // ─────────────────────────────────────────────
+    {
+        id: "saas-healthcare",
+        name: "Soft Azure",
+        description: "Calm, airy soft-blue gradients with plenty of whitespace. Clean and premium.",
+        themeSelected: "Light",
+        sections: [
+            { type: "Navbar", props: { brand: "Livera", links: ["Features", "Solutions", "Resources", "Pricing"], variant: "Glassy Island", bgColor: "#eef2fb", textColor: "#10203a", accentColor: "#3b6ef5", fontFamily: "Outfit" } },
+            { type: "Hero", props: { heading: "The intelligence layer for digital clinics", subheading: "Livera helps modern healthcare providers operate safer, faster, and more compliantly — without sacrificing clinical quality or scale.", ctaText: "Book a Private Demo", ctaLink: "#demo", variant: "Centered Image Bg", bgColor: "#e7eefb", textColor: "#10203a", accentColor: "#3b6ef5", fontFamily: "Outfit", backgroundImageQuery: "abstract blue flowing waves" } },
+            { type: "Text", props: { heading: "Built for outcomes, not overhead", description: "Digital clinics don't compete on marketing — they compete on infrastructure. Livera gives you the operating system to scale care with confidence.", variant: "Left Aligned Big", bgColor: "#ffffff", textColor: "#10203a", accentColor: "#3b6ef5", fontFamily: "Outfit" } },
+            { type: "Gallery", props: { heading: "Everything your clinic needs", items: [
+                { title: "Smart Scheduling", description: "AI-optimized booking that cuts no-shows in half.", imageQuery: "healthcare technology" },
+                { title: "Compliance Engine", description: "HIPAA-ready workflows baked into every action.", imageQuery: "medical data security" },
+                { title: "Patient Portal", description: "A calm, modern experience patients actually love.", imageQuery: "patient app healthcare" },
+                { title: "Care Analytics", description: "Real-time dashboards across every location.", imageQuery: "medical dashboard analytics" },
+                { title: "Secure Messaging", description: "Encrypted communication for teams and patients.", imageQuery: "doctor laptop clinic" },
+                { title: "Integrations", description: "Connect your EHR, billing, and labs in minutes.", imageQuery: "modern clinic technology" },
+            ], variant: "Bento Grid", bgColor: "#eef2fb", textColor: "#10203a", accentColor: "#3b6ef5", fontFamily: "Outfit" } },
+            { type: "CTA", props: { heading: "See Livera in your workflow.", subheading: "Private demos for founding clinics now open.", ctaText: "Book a Private Demo", ctaLink: "#demo", variant: "Floating Pill", bgColor: "#10203a", textColor: "#ffffff", accentColor: "#7aa2ff", fontFamily: "Outfit" } },
+            { type: "Footer", props: { text: "© 2026 Livera. Intelligence for modern care.", variant: "Multi-Column Mock", bgColor: "#0a1526", textColor: "#7388a8", accentColor: "#7aa2ff", fontFamily: "Outfit" } },
         ],
     },
 ];
