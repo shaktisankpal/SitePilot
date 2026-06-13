@@ -73,7 +73,7 @@ Three services run together:
 | **Backend API** | Node.js, Express, Mongoose, Socket.io, JWT, Prometheus, Firebase Admin, Razorpay | `5000` | Auth/tenancy, builder & pages, AI orchestration, domains, analytics, payments |
 | **AI Engine** | Python, Flask, PyTorch, scikit-learn, Transformers | `5050` | SEO MLP, GRU engagement, design autoencoder/Isolation Forest, RandomForest layout recommender |
 
-**LLMs:** the backend uses **Ollama (`qwen3.5:4b`) locally with a Google **Gemini** cloud fallback** for layout generation, auto-configure, SEO rewrites, the visitor chatbot, and the help assistant.
+**LLMs:** the backend uses **Ollama (`qwen3.5:4b`)** locally with a Google **Gemini** cloud fallback for layout generation, auto-configure, SEO rewrites, the visitor chatbot, and the help assistant.
 
 ```
 SitePilot/

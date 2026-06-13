@@ -20,7 +20,13 @@ const MKT_CSS = `
   .mkt-card p { font-size: 14px; color: rgba(var(--fg),0.6); line-height: 1.65; margin: 0; }
   .mkt-link { color: var(--text-accent); font-weight: 600; text-decoration: none; font-size: 14px; }
   .mkt-pill { display: inline-flex; align-items: center; gap: 8px; padding: 12px 26px; border-radius: 100px; background: var(--grad-btn); color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 6px 18px rgba(8,90,72,0.35); }
-  @media (max-width: 860px) { .mkt-g3, .mkt-g2 { grid-template-columns: 1fr; } }
+  .mkt-backend-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px; align-items: center; }
+  .mkt-backend-perks { display: flex; flex-direction: column; gap: 13px; padding-left: 28px; border-left: 1px solid rgba(45,212,191,0.22); }
+  @media (max-width: 860px) {
+    .mkt-g3, .mkt-g2 { grid-template-columns: 1fr; }
+    .mkt-backend-grid { grid-template-columns: 1fr; gap: 26px; }
+    .mkt-backend-perks { padding-left: 0; border-left: none; padding-top: 22px; border-top: 1px solid rgba(45,212,191,0.22); }
+  }
 `;
 
 function Shell({ children }) {
@@ -67,11 +73,40 @@ const FEATURES = [
     ["Built-in Analytics", "Privacy-first visitor analytics with real-time dashboards. Understand your audience without sacrificing their data."],
 ];
 
+// Automatic-backend perks (accurate to the platform — images are link-based, not stored uploads).
+const BACKEND_PERKS = [
+    "A managed database, provisioned instantly",
+    "Form submissions captured to a searchable inbox",
+    "Hosting, global CDN & SSL on publish",
+    "Images by link — pull in any URL or pick from the library",
+    "Secure data APIs handled behind the scenes",
+];
+
 export function FeaturesPage() {
     return (
         <Shell>
-            <Hero eyebrow="Features" title="Everything you need to ship a site" sub="From a one-line prompt to a polished, published website — Sitezy handles design, content, SEO, and hosting in one place." />
+            <Hero eyebrow="Features" title="Everything you need to ship a site" sub="From a one-line prompt to a polished, published website — Sitezy handles design, content, SEO, hosting, and the entire backend in one place. No servers to set up, ever." />
             <Section id="all" eyebrow="The toolkit" title="Powerful by default, simple on the surface">
+                {/* Zero-backend highlight — flaunts the automatic backend */}
+                <div className="mkt-card mkt-backend" style={{ borderColor: "rgba(45,212,191,0.45)", background: "rgba(20,184,166,0.07)", marginBottom: 22, padding: 30 }}>
+                    <div className="mkt-backend-grid">
+                        <div>
+                            <span className="mkt-eyebrow" style={{ marginBottom: 10 }}>No servers · No setup</span>
+                            <h3 style={{ fontSize: 22, marginBottom: 10 }}>Your backend builds itself</h3>
+                            <p style={{ margin: 0, maxWidth: 560 }}>
+                                You never touch a server, database, or line of backend code. Publish a site and Sitezy automatically
+                                provisions everything it needs — then hands you the data right inside your dashboard.
+                            </p>
+                        </div>
+                        <div className="mkt-backend-perks">
+                            {BACKEND_PERKS.map((p) => (
+                                <span key={p} style={{ fontSize: 13.5, color: "rgba(var(--fg),0.78)", display: "flex", gap: 9, alignItems: "flex-start" }}>
+                                    <span style={{ color: "var(--text-accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>{p}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
                 <div className="mkt-grid mkt-g3">
                     {FEATURES.map(([t, d]) => <Card key={t} title={t}>{d}</Card>)}
                 </div>
@@ -85,9 +120,9 @@ export function FeaturesPage() {
 
 /* ─────────────────────────── PRODUCT ─────────────────────────── */
 const PRICING = [
-    { name: "Free", price: "$0", note: "for getting started", feats: ["1 published site", "AI generations", "Sitezy subdomain + SSL", "Community support"] },
-    { name: "Pro", price: "$19", note: "per month", feats: ["10 sites", "Custom domains", "DL SEO auto-improve", "Remove Sitezy badge"], hot: true },
-    { name: "Business", price: "$49", note: "per month", feats: ["Unlimited sites", "Team collaboration", "Native eCommerce", "Priority support"] },
+    { name: "Free", price: "$0", note: "for getting started", cta: "Choose plan", feats: ["1 published site", "AI generations", "Sitezy subdomain + SSL", "Community support"] },
+    { name: "Pro", price: "$19", note: "per month", cta: "Start Pro", feats: ["10 sites", "Custom domains", "DL SEO auto-improve", "Remove Sitezy badge"], hot: true },
+    { name: "Business", price: "$49", note: "per month", cta: "Start Business", feats: ["Unlimited sites", "Team collaboration", "Native eCommerce", "Priority support"] },
 ];
 const CHANGELOG = [
     ["v2.4 · Jun 2026", "Deep-learning SEO engine with AI auto-improve, plus a GRU-based engagement optimizer."],
@@ -139,7 +174,7 @@ export function ProductPage() {
                             <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "16px 0 20px" }}>
                                 {p.feats.map((f) => <span key={f} style={{ fontSize: 13.5, color: "rgba(var(--fg),0.7)", display: "flex", gap: 8 }}><span style={{ color: "var(--text-accent)" }}>✓</span>{f}</span>)}
                             </div>
-                            <Link to="/register" className="mkt-pill" style={{ width: "100%", justifyContent: "center", boxShadow: "none", padding: "11px 0", ...(p.hot ? {} : { background: "rgba(var(--fg),0.06)", border: "1px solid var(--glass-border)" }) }}>{p.hot ? "Start Pro" : "Choose plan"}</Link>
+                            <Link to="/register" className="mkt-pill" style={{ width: "100%", justifyContent: "center", boxShadow: "none", padding: "11px 0", ...(p.hot ? {} : { background: "rgba(var(--fg),0.06)", border: "1px solid var(--glass-border)" }) }}>{p.cta}</Link>
                         </div>
                     ))}
                 </div>
