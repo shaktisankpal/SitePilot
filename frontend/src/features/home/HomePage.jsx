@@ -114,7 +114,32 @@ const HERO_STYLES = `
   .hp-faq[open] summary .hp-faq-plus { transform: rotate(45deg); }
   .hp-faq-body { padding: 0 22px 20px; color: rgba(var(--fg),0.6); font-size: 14.5px; line-height: 1.7; }
 
+  /* ───── Zero-backend spotlight ───── */
+  .hp-backend { position: relative; border-radius: 28px; padding: 56px 52px; overflow: hidden; }
+  .hp-backend-grid { display: grid; grid-template-columns: 1.04fr 0.96fr; gap: 48px; align-items: center; position: relative; z-index: 1; }
+  .hp-check-list { display: flex; flex-direction: column; gap: 15px; margin-top: 26px; }
+  .hp-check { display: flex; align-items: flex-start; gap: 13px; }
+  .hp-check-tick { width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0; margin-top: 1px;
+    background: var(--grad-brand-soft); border: 1px solid var(--border-brand); color: var(--text-accent);
+    display: flex; align-items: center; justify-content: center; }
+  .hp-check-t { font-family: var(--font-display); font-weight: 600; font-size: 14.5px; color: #fff; letter-spacing: -0.01em; }
+  .hp-check-d { font-size: 13px; color: rgba(var(--fg),0.5); line-height: 1.55; margin-top: 2px; }
+
+  /* Infra "auto-provisioned" mock */
+  .hp-infra { border-radius: 18px; overflow: hidden; border: 1px solid rgba(var(--fg),0.09); background: #091013; box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(var(--fg),0.06); }
+  .hp-infra-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgba(var(--fg),0.06); background: rgba(var(--fg),0.02); }
+  .hp-infra-rows { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .hp-infra-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(var(--fg),0.03); border: 1px solid rgba(var(--fg),0.05); }
+  .hp-infra-dot { width: 8px; height: 8px; border-radius: 50%; background: #2dd4bf; box-shadow: 0 0 9px #2dd4bf; flex-shrink: 0; animation: hp-dotGlow 2.4s ease-in-out infinite; }
+  .hp-infra-name { font-size: 13px; font-weight: 600; color: rgba(var(--fg),0.82); font-family: var(--font-display); flex: 1; }
+  .hp-infra-badge { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--text-accent); padding: 3px 9px; border-radius: 100px; background: rgba(20,184,166,0.12); border: 1px solid rgba(20,184,166,0.26); }
+  .hp-infra-tick { color: #2dd4bf; flex-shrink: 0; }
+
   /* ───── Responsive ───── */
+  @media (max-width: 880px) {
+    .hp-backend { padding: 44px 26px; }
+    .hp-backend-grid { grid-template-columns: 1fr; gap: 38px; }
+  }
   @media (max-width: 980px) {
     .hp-grid-3, .hp-grid-templates { grid-template-columns: repeat(2,1fr); }
     .hp-grid-templates-bottom { max-width: 100%; }
@@ -168,6 +193,8 @@ const GlobeIcon = () => <I><circle cx="12" cy="12" r="10" /><line x1="2" y1="12"
 const BoltIcon = () => <I><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round" /></I>;
 const ShieldIcon = () => <I><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" /></I>;
 const ChartIcon = () => <I><line x1="18" y1="20" x2="18" y2="10" strokeLinecap="round" /><line x1="12" y1="20" x2="12" y2="4" strokeLinecap="round" /><line x1="6" y1="20" x2="6" y2="14" strokeLinecap="round" /><line x1="2" y1="20" x2="22" y2="20" strokeLinecap="round" /></I>;
+const ServerIcon = () => <I><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /><line x1="7" y1="7.5" x2="7.01" y2="7.5" strokeLinecap="round" /><line x1="7" y1="16.5" x2="7.01" y2="16.5" strokeLinecap="round" /></I>;
+const Tick = ({ s = 14 }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" style={{ width: s, height: s }}><path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const Plus = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="hp-faq-plus" style={{ width: 18, height: 18 }}><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 
@@ -178,6 +205,23 @@ const FEATURES = [
     { icon: <BoltIcon />, color: "#38bdf8", title: "Real-Time Collaboration", desc: "Co-edit with your team live — shared cursors, instant sync, and full version history so you can roll back anytime." },
     { icon: <ShieldIcon />, color: "#2dd4bf", title: "Multi-Tenant Security", desc: "Strict logical isolation, role-based access, and granular permissions keep every workspace's data self-contained." },
     { icon: <ChartIcon />, color: "#bef264", title: "Built-in Analytics", desc: "Privacy-first visitor analytics with real-time dashboards. Understand your audience without sacrificing their data." },
+];
+
+// Zero-backend flaunt — everything the platform provisions automatically.
+const BACKEND_PERKS = [
+    { t: "A managed database, instantly", d: "Every signup, order, and message is stored for you — no schemas, servers, or connection strings to manage." },
+    { t: "Form submissions captured automatically", d: "Contact and custom forms feed straight into a searchable inbox in your dashboard. Wire up nothing." },
+    { t: "Hosting, global CDN & SSL included", d: "Your site goes live on fast edge infrastructure with HTTPS — provisioned the moment you publish." },
+    { t: "Images by link — no uploads to manage", d: "Drop in any image URL or pick from the built-in library, and it renders on your live site instantly. Nothing to host yourself." },
+    { t: "Secure data APIs behind the scenes", d: "Your content, forms, and analytics are served through managed endpoints — secured and scaled for you." },
+];
+
+const BACKEND_INFRA = [
+    { name: "Database", badge: "Ready" },
+    { name: "Form submissions", badge: "3 new" },
+    { name: "Hosting + SSL", badge: "Live" },
+    { name: "Image library", badge: "Ready" },
+    { name: "Data API", badge: "Active" },
 ];
 
 const STEPS = [
@@ -506,7 +550,7 @@ export default function HomePage() {
                         </h1>
 
                         <p style={{ fontSize: "clamp(16px,2vw,20px)", lineHeight: 1.65, color: "rgba(var(--fg),0.62)", maxWidth: 600, margin: "0 auto 34px", animation: "heroFadeUp 0.7s cubic-bezier(0.4,0,0.2,1) 0.45s both" }}>
-                            Describe your idea and let AI design the first draft — then refine it on a pro drag-and-drop canvas and publish in one click.
+                            Describe it, refine the AI's draft on a pro canvas, ship in one click. The backend builds itself — zero setup.
                         </p>
 
                         {/* AI prompt bar */}
@@ -595,6 +639,60 @@ export default function HomePage() {
                                     <p style={{ fontSize: 14, color: "rgba(var(--fg),0.52)", lineHeight: 1.7, position: "relative", zIndex: 1 }}>{desc}</p>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ══════ ZERO-BACKEND SPOTLIGHT ══════ */}
+                <section className="hp-section" style={{ paddingTop: 20 }}>
+                    <div className="hp-wrap">
+                        <div className="hp-backend glass-strong">
+                            <div className="sz-mesh" style={{ opacity: 0.5 }} />
+                            <div className="hp-backend-grid">
+                                {/* Copy */}
+                                <div>
+                                    <div className="sz-badge" style={{ marginBottom: 20 }}>No servers · No setup</div>
+                                    <h2 className="hp-h2" style={{ fontSize: "clamp(28px,4vw,44px)", marginBottom: 16 }}>
+                                        Your backend<br /><span className="serif-accent gradient-text" style={{ fontSize: "1.06em" }}>builds itself.</span>
+                                    </h2>
+                                    <p className="hp-lead">
+                                        You never touch a server, database, or line of backend code. Publish a site and Sitezy.ai
+                                        automatically provisions everything it needs — and hands you the data right inside your dashboard.
+                                    </p>
+                                    <div className="hp-check-list">
+                                        {BACKEND_PERKS.map((p) => (
+                                            <div key={p.t} className="hp-check">
+                                                <span className="hp-check-tick"><Tick s={13} /></span>
+                                                <div>
+                                                    <div className="hp-check-t">{p.t}</div>
+                                                    <div className="hp-check-d">{p.d}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Auto-provisioned infrastructure mock */}
+                                <div className="hp-infra">
+                                    <div className="hp-infra-head">
+                                        <div style={{ display: "flex", alignItems: "center", gap: 9, color: "var(--text-accent)" }}>
+                                            <ServerIcon />
+                                            <span className="font-display" style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>Backend · auto-provisioned</span>
+                                        </div>
+                                        <span className="hp-infra-badge">All systems go</span>
+                                    </div>
+                                    <div className="hp-infra-rows">
+                                        {BACKEND_INFRA.map((r) => (
+                                            <div key={r.name} className="hp-infra-row">
+                                                <span className="hp-infra-dot" />
+                                                <span className="hp-infra-name">{r.name}</span>
+                                                <span className="hp-infra-badge">{r.badge}</span>
+                                                <span className="hp-infra-tick"><Tick s={15} /></span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
