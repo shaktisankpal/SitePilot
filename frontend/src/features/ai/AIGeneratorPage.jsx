@@ -3,11 +3,38 @@ import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../services/api.js";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
+import webDesignIcon from "../../components/icons/web-design_16603388.png";
+
+// Tint the (blue) web-design template icon toward each template's accent color while
+// keeping its detail — by rotating its hue from blue (~210°) to the accent's hue.
+function hexToHsl(hex) {
+    let h = String(hex || "").replace("#", "");
+    if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return [210, 0.5, 0.5];
+    const r = parseInt(h.slice(0, 2), 16) / 255, g = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let hue = 0;
+    if (d) {
+        if (max === r) hue = ((g - b) / d) % 6;
+        else if (max === g) hue = (b - r) / d + 2;
+        else hue = (r - g) / d + 4;
+        hue *= 60; if (hue < 0) hue += 360;
+    }
+    const l = (max + min) / 2;
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    return [hue, s, l];
+}
+function templateIconFilter(hex) {
+    const [hue, s] = hexToHsl(hex);
+    if (s < 0.12) return "saturate(0.15) brightness(1.2)"; // near-gray accent → neutral icon
+    const rot = Math.round((((hue - 210) % 360) + 360) % 360);
+    return `hue-rotate(${rot}deg) saturate(1.25)`;
+}
 import { fetchWebsites } from "../../store/slices/websiteSlice.js";
 import toast from "react-hot-toast";
 import {
     Wand2, Sparkles, Loader2, CheckCircle,
-    Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate, Globe, Mic
+    Code2, Eye, ChevronDown, ChevronRight, LayoutTemplate, Globe, Mic, ArrowRight
 } from "lucide-react";
 import { SECTION_MAP } from "../publicSite/PublicSiteRenderer.jsx";
 import { updateTenantBranding } from "../../store/slices/authSlice.js";
@@ -396,6 +423,11 @@ export default function AIGeneratorPage() {
             <style>{`
                 .ai-tpl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
                 .ai-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+                /* Describe-concept beside the template picker; required-blocks beside the generate buttons */
+                .ai-concept-row { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; align-items: stretch; }
+                .ai-blocks-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: stretch; }
+                .ai-tpl-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 192px; overflow-y: auto; padding-right: 6px; }
+                @media (max-width: 900px) { .ai-concept-row, .ai-blocks-row { grid-template-columns: 1fr; } }
                 @media (max-width: 1100px) { .ai-tpl-grid { grid-template-columns: repeat(3, 1fr); } }
                 @media (max-width: 900px) {
                     .ai-twocol { grid-template-columns: 1fr !important; }
@@ -440,8 +472,9 @@ export default function AIGeneratorPage() {
                             </div>
 
                             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                                {/* 1 — Describe Your Concept (with inline AI auto-configure) */}
-                                <div>
+                                {/* 1 + 2 — Describe (left) beside the base-template picker (right) */}
+                                <div className="ai-concept-row">
+                                <div style={{ display: "flex", flexDirection: "column" }}>
                                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                                         <label style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(var(--fg),0.4)" }}>
                                             Describe Your Concept *
@@ -459,10 +492,10 @@ export default function AIGeneratorPage() {
                                             </select>
                                         </div>
                                     </div>
-                                    <div style={{ position: "relative" }}>
+                                    <div style={{ position: "relative", flex: 1, minHeight: 170 }}>
                                         <textarea value={form.businessType} onChange={(e) => setForm((p) => ({ ...p, businessType: e.target.value }))}
                                             placeholder={inputLanguage === 'hi' ? "उदाहरण: एक आधुनिक स्टार्टअप जो स्लीक एआई एजेंट बनाता है..." : inputLanguage === 'mr' ? "उदाहरण: आधुनिक एआय एजंट्स तयार करणारी स्टार्टअप..." : "e.g. A futuristic startup building smart AI agents with a sleek, dark aesthetic..."}
-                                            rows={3} required style={{ ...inputStyle, resize: "none", lineHeight: 1.6, paddingBottom: 52 }} />
+                                            required style={{ ...inputStyle, resize: "none", lineHeight: 1.6, paddingBottom: 52, height: "100%", minHeight: 170 }} />
                                         {/* Inline action row — voice + AI auto-configure, right-aligned like a chat composer's send */}
                                         <div style={{ position: "absolute", right: 12, bottom: 10, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
                                             <button
@@ -505,10 +538,10 @@ export default function AIGeneratorPage() {
                                     )}
                                 </div>
 
-                                {/* 2 — Base template */}
-                                <div>
+                                {/* 2 — Base template (right column, 2×2 scrollable) */}
+                                <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
                                     <label style={{ display: "block", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(var(--fg),0.4)", marginBottom: 12 }}>Pick A Base Template</label>
-                                    <div className="ai-tpl-grid" style={{ maxHeight: "210px", overflowY: "auto", paddingRight: 6 }}>
+                                    <div className="ai-tpl-2">
                                         {TEMPLATES.map((tmpl) => {
                                             const selected = form.baseTemplateSections === tmpl.sections;
                                             const swBg = tmpl.sections[0]?.props?.bgColor || "#111";
@@ -522,7 +555,7 @@ export default function AIGeneratorPage() {
                                                 }}>
                                                     <div style={{ display: "flex", gap: 11, alignItems: "center", minWidth: 0 }}>
                                                         <div style={{ width: 34, height: 34, borderRadius: 8, background: swBg, border: "1px solid rgba(var(--fg),0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                                            <span style={{ width: 14, height: 14, borderRadius: "50%", background: swAccent, boxShadow: "0 0 0 2px rgba(var(--fg),0.08)" }} />
+                                                            <img src={webDesignIcon} alt="" style={{ width: 22, height: 22, objectFit: "contain", filter: templateIconFilter(swAccent) }} />
                                                         </div>
                                                         <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tmpl.name}</div>
                                                     </div>
@@ -536,6 +569,7 @@ export default function AIGeneratorPage() {
                                             );
                                         })}
                                     </div>
+                                </div>
                                 </div>
 
                                 {/* 3 — Tone · Audience · Theme · Purpose (one row) */}
@@ -596,7 +630,8 @@ export default function AIGeneratorPage() {
                             </div>
                         </div>
 
-                        {/* Feature Selection */}
+                        {/* Required Blocks (left) beside the generate buttons (right) */}
+                        <div className="ai-blocks-row">
                         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 20, padding: 24 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
                                 <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>Required Blocks</h3>
@@ -637,23 +672,45 @@ export default function AIGeneratorPage() {
                             </div>
                         </div>
 
-                        {/* Generate Buttons */}
-                        <div style={{ display: "flex", gap: "16px" }}>
+                        {/* Generate Buttons — compact Basic on top, feature-rich Pro filling the rest */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                             <button type="button" onClick={(e) => handleGenerate(e, 'qwen')} disabled={loading} className="saas-button" style={{
-                                flex: 1, padding: "18px 0", borderRadius: 16, fontSize: 16,
+                                width: "100%", padding: "15px 0", borderRadius: 16, fontSize: 15.5,
                                 opacity: loading ? 0.7 : 1, cursor: loading ? "not-allowed" : "pointer",
                             }}>
-                                {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking...</> : <><Sparkles size={20} strokeWidth={2.5} /> Generate with Basic AI</>}
+                                {loading ? <><Loader2 size={19} className="animate-spin" /> Cooking...</> : <><Sparkles size={19} strokeWidth={2.5} /> Generate with Basic AI</>}
                             </button>
 
                             <button type="button" onClick={(e) => handleGenerate(e, 'gemini')} disabled={loading} className="sz-btn-soft" style={{
-                                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                                padding: "18px 0", borderRadius: 16, fontSize: 16, fontWeight: 600, fontFamily: "var(--font-display)",
-                                color: loading ? "var(--text-muted)" : "var(--text-accent)",
+                                flex: 1, width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14,
+                                padding: "22px 24px", borderRadius: 16, textAlign: "left",
+                                border: "1px solid rgba(20,184,166,0.32)", transition: "all 0.2s ease",
                                 cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1,
-                            }}>
-                                {loading ? <><Loader2 size={20} className="animate-spin" /> Cooking...</> : <><Wand2 size={20} strokeWidth={2.5} /> Generate with Pro AI</>}
+                            }}
+                                onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = "rgba(45,212,191,0.6)"; e.currentTarget.style.boxShadow = "0 12px 30px rgba(13,148,136,0.22)"; e.currentTarget.style.background = "rgba(20,184,166,0.08)"; } }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = "rgba(20,184,166,0.32)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = ""; }}>
+                                {loading ? (
+                                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 16, fontWeight: 600, color: "var(--text-accent)", fontFamily: "var(--font-display)" }}>
+                                        <Loader2 size={20} className="animate-spin" /> Cooking...
+                                    </span>
+                                ) : (
+                                    <>
+                                        <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 16.5, fontWeight: 700, color: "var(--text-accent)", fontFamily: "var(--font-display)" }}>
+                                            <Wand2 size={20} strokeWidth={2.5} /> Generate with Pro AI
+                                            <ArrowRight size={18} style={{ marginLeft: "auto", opacity: 0.85 }} />
+                                        </span>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                                            {["Generated faster, in less time", "Sharper, better-written content", "More relevant images"].map((t) => (
+                                                <span key={t} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, fontWeight: 500, color: "var(--text-secondary)", fontFamily: "var(--font-display)" }}>
+                                                    <CheckCircle size={15} strokeWidth={2.5} style={{ color: "var(--text-accent)", flexShrink: 0 }} /> {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <span style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-accent)", opacity: 0.75 }}>Tap to generate →</span>
+                                    </>
+                                )}
                             </button>
+                        </div>
                         </div>
                     </form>
 

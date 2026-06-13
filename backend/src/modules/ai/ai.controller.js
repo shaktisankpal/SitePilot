@@ -903,7 +903,14 @@ COLOR RULES:
         if (website) {
             const autoPublish = req.query.autoPublish === "true" || req.body.autoPublish === true;
 
-            for (const pageData of aiResponse.pages) {
+            // Map the first generated page onto the project's existing homepage (instead of
+            // creating a second "Home"), so a full generation never leaves a stale placeholder.
+            const existingHome = await Page.findOne({ websiteId: website._id, tenantId: req.tenantId, isHomePage: true });
+            const savedPages = [];
+            let homeHandled = false;
+
+            for (let i = 0; i < aiResponse.pages.length; i++) {
+                const pageData = aiResponse.pages[i];
                 const sectionsWithIds = pageData.sections.map((s, idx) => ({
                     id: uuidv4(),
                     type: s.type,
@@ -914,30 +921,57 @@ COLOR RULES:
                     },
                     order: idx,
                 }));
+                const slug = pageData.slug.toLowerCase();
+                const isHome = i === 0 || slug === "home";
 
-                const existing = await Page.findOne({
-                    websiteId: website._id,
-                    slug: pageData.slug.toLowerCase(),
-                    tenantId: req.tenantId,
-                });
+                if (isHome && existingHome && !homeHandled) {
+                    existingHome.title = pageData.title;
+                    existingHome.layoutConfig = { sections: sectionsWithIds };
+                    existingHome.status = autoPublish ? "published" : "draft";
+                    existingHome.markModified("layoutConfig");
+                    await existingHome.save();
+                    homeHandled = true;
+                    savedPages.push(existingHome);
+                    continue;
+                }
 
+                const existing = await Page.findOne({ websiteId: website._id, slug, tenantId: req.tenantId });
                 if (existing) {
-                    existing.layoutConfig.sections = sectionsWithIds;
+                    existing.layoutConfig = { sections: sectionsWithIds };
                     existing.title = pageData.title;
                     existing.status = autoPublish ? "published" : "draft";
+                    existing.markModified("layoutConfig");
                     await existing.save();
+                    savedPages.push(existing);
                 } else {
-                    await Page.create({
+                    const created = await Page.create({
                         tenantId: req.tenantId,
                         websiteId: website._id,
                         title: pageData.title,
-                        slug: pageData.slug.toLowerCase(),
-                        isHomePage: pageData.slug.toLowerCase() === "home",
+                        slug,
+                        isHomePage: isHome && !existingHome && !homeHandled,
                         layoutConfig: { sections: sectionsWithIds },
                         status: autoPublish ? "published" : "draft",
                         createdBy: req.user._id,
                     });
+                    if (created.isHomePage) homeHandled = true;
+                    savedPages.push(created);
                 }
+            }
+
+            // Exactly one homepage, and wire every page's navbar to the real pages so
+            // navigation is interconnected out of the box.
+            const homeId = (savedPages.find((p) => p.isHomePage) || savedPages[0])?._id?.toString();
+            const navLinks = savedPages
+                .slice().sort((a, b) => (b.isHomePage ? 1 : 0) - (a.isHomePage ? 1 : 0))
+                .map((p) => ({ label: p.title, url: p.isHomePage ? "/" : `/${p.slug}` }));
+            for (const p of savedPages) {
+                const shouldBeHome = p._id?.toString() === homeId;
+                if (p.isHomePage !== shouldBeHome) p.isHomePage = shouldBeHome;
+                const nav = (p.layoutConfig?.sections || []).find((s) => s.type === "Navbar");
+                if (nav) { nav.props = nav.props || {}; nav.props.links = navLinks; }
+                p.markModified("layoutConfig");
+                await p.save();
             }
 
             // Auto-publish website if requested
@@ -1239,5 +1273,52 @@ ${siteContext}
     } catch (err) {
         console.error("❌ [AI Chat] generate response error:", err);
         res.status(500).json({ success: false, message: "Failed to process chat" });
+    }
+};
+
+/**
+ * POST /api/ai/help
+ * In-app AI help assistant — answers "how do I…" / "what is…" questions about using
+ * Sitezy, with short, friendly, step-by-step guidance. Qwen first, Gemini fallback.
+ */
+const HELP_KNOWLEDGE = `You are the in-app help assistant for Sitezy, an AI website builder. Answer the user's question with SHORT, friendly, step-by-step guidance (use numbered steps when explaining how to do something). Keep it concise. Only discuss Sitezy. Never mention the underlying AI model names.
+
+HOW TO BUILD A SITE (follow these EXACTLY — do not invent extra steps):
+- From scratch: 1) On the Dashboard or Projects page, click "Create Project". 2) Enter a name (and optional description), then click "Create Project". IMPORTANT: this only asks for a name/description — it does NOT ask for a template, tone, audience, colors, or blocks. 3) Your new project appears on the Projects page — click "Edit" on its card to open the Builder and start editing. 4) In the Builder, use "Add Section" to add blocks (Hero, Gallery, etc.) and click any section to edit it. 5) Click Save, then Publish to go live. (Tip: to fill it with AI-written content, open the AI Playground and set "Apply to" your project.)
+- With AI (AI Playground): 1) Open "AI Playground" (from the Projects page header or the Dashboard). 2) Describe your website concept. 3) Optionally click "AI auto configure" to let AI choose everything. 4) Pick a base template and set Tone, Audience, Theme Mode and Website Purpose, plus colors and Required Blocks. 5) Set "Apply to" to a project (or leave it on Preview), then click "Generate with Basic AI" or "Generate with Pro AI". 6) Open the project in the Builder to fine-tune, then Publish.
+
+PLATFORM MAP:
+- Dashboard: overview. "Create Project" makes a new blank project (asks for a name + description only). "AI Playground" generates a full site with AI. "At a Glance" shows website + deploy counts. Quick Links → Custom Domains & Team Settings. Recent Deployments and Activity Log open full history pages.
+- Projects page: each project card has Edit (open builder), Update/Deploy (publish), the rename/details pencil, Form Submissions (inbox), Analytics (bar chart), Delete, and an "Export" button (downloads the working code as a zip). AI Playground & Settings buttons are on this page header.
+- AI Playground: 1) Describe your concept. 2) Optionally click "AI auto configure" to let AI pick everything. 3) Pick a base template (the starting design). 4) Set Tone, Audience, Theme Mode, Website Purpose. 5) Pick Primary/Secondary colors. 6) "Apply to" = save into a project or just preview. 7) Choose Required Blocks (sections to include). 8) Generate with Basic AI (fast) or Pro AI (higher quality, more relevant images).
+   - TONE = the writing voice (Professional, Friendly, Bold, etc.). AUDIENCE = who the site is for. THEME MODE = Light or Dark look. WEBSITE PURPOSE = the main goal (sell, build brand, book, etc.). REQUIRED BLOCKS = which sections the page must include (Hero, Gallery, Pricing, Contact Form, etc.).
+- Builder: Left column = Pages list (+ to add an AI-built page) and "Page Layers (Sections)". Click "Add Section" to add a block. Drag the handle to reorder sections. Click a section to open its editor on the right.
+   - SECTIONS: Navbar = the top bar with your brand + menu links. Hero = the big intro/banner at the top. Text = a paragraph/about block. Gallery = a grid of images/cards. CTA (Call To Action) = a band that nudges visitors to act (e.g. "Order now"). ContactForm/DynamicForm = a form to collect details (you can add fields: text, email, dropdown, radio, checkbox). Footer = the bottom bar. Button/Image/Spacer = small building blocks.
+   - EDIT AN IMAGE (e.g. in the Navbar or Hero): click that section in Page Layers → its editor opens on the right → find the "Background Image" / image field → paste an image URL or click Upload.
+   - SEO button (top toolbar): scores your page's SEO, predicts engagement, and scans design health; "Auto-Improve" rewrites copy and "Generate meta & schema" adds SEO metadata.
+   - History: every Save/Publish is a version snapshot you can roll back to.
+   - Save = saves your draft. Publish = takes the site live and lets you pick a domain.
+- Settings: Workspace Details, Team Members, Custom Domains (open / rename / remove your domains).`;
+
+export const helpAssistant = async (req, res) => {
+    try {
+        const question = (req.body.question || "").toString().slice(0, 500).trim();
+        if (!question) return res.status(400).json({ success: false, message: "Ask a question." });
+        const where = (req.body.context || "").toString();
+        const prompt = `${HELP_KNOWLEDGE}\n\nThe user is currently on the ${where || "app"}.\n\nUser question: ${question}`;
+        try {
+            const r = await ollamaClient.chat({
+                model: "qwen3.5:4b", think: false,
+                messages: [{ role: "system", content: "You are Sitezy's concise, friendly in-app help assistant." }, { role: "user", content: prompt }],
+                options: { num_predict: 450, num_ctx: 8192, temperature: 0.3 },
+            });
+            return res.json({ success: true, answer: r.message?.content || "" });
+        } catch (e) {
+            const result = await model.generateContent(prompt);
+            return res.json({ success: true, answer: result.response.text() });
+        }
+    } catch (err) {
+        console.error("❌ [AI Help] error:", err?.message);
+        return res.status(500).json({ success: false, message: "Help is unavailable right now." });
     }
 };

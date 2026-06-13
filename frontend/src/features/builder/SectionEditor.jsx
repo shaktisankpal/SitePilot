@@ -430,6 +430,49 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
         );
     };
 
+    // Full field editor for DynamicForm — add/remove fields, pick a type, and (for
+    // dropdown / radio / checkbox) edit the list of options.
+    const FIELD_TYPES = ["text", "email", "tel", "number", "date", "textarea", "select", "radio", "checkbox"];
+    const fieldSlug = (s) => String(s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "field";
+    const renderDynamicFields = (label, key) => {
+        const fields = props[key] || (Array.isArray(props.fields) && typeof props.fields[0] === "object" ? props.fields : []);
+        const setFields = (next) => onChange({ [key]: next });
+        const updateField = (i, patch) => setFields(fields.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+        const hasOptions = (t) => ["select", "radio", "checkbox"].includes(t);
+        return (
+            <div key={key}>
+                <label style={labelStyle}>{label}</label>
+                {fields.map((f, i) => (
+                    <div key={i} style={{ marginTop: 8, padding: 8, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <input value={f.label || ""} placeholder="Field label" onChange={(e) => updateField(i, { label: e.target.value, name: fieldSlug(e.target.value) })} style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
+                            <button onClick={() => setFields(fields.filter((_, idx) => idx !== i))} style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "none", borderRadius: 6, cursor: "pointer", padding: "0 9px", fontSize: 14 }}>×</button>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <select value={f.type || "text"} onChange={(e) => updateField(i, { type: e.target.value })} style={{ ...inputStyle, marginTop: 0, flex: 1, cursor: "pointer" }}>
+                                {FIELD_TYPES.map((t) => <option key={t} value={t} style={{ background: "#1e293b", color: "#fff" }}>{t}</option>)}
+                            </select>
+                            <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", cursor: "pointer" }}>
+                                <input type="checkbox" checked={f.required !== false} onChange={(e) => updateField(i, { required: e.target.checked })} /> Required
+                            </label>
+                        </div>
+                        {hasOptions(f.type) && (
+                            <textarea value={(f.options || []).join("\n")} placeholder="One option per line" rows={3}
+                                // Keep raw lines (incl. the blank line you're typing) so Enter works;
+                                // blank options are filtered out at render time.
+                                onChange={(e) => updateField(i, { options: e.target.value.split("\n") })}
+                                style={{ ...inputStyle, marginTop: 0, resize: "vertical" }} />
+                        )}
+                    </div>
+                ))}
+                <button onClick={() => setFields([...fields, { name: fieldSlug(`field ${fields.length + 1}`), label: `Field ${fields.length + 1}`, type: "text", required: true }])}
+                    style={{ marginTop: 8, fontSize: 12, color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                    + Add field
+                </button>
+            </div>
+        );
+    };
+
     const renderByType = () => {
         switch (type) {
             case "Navbar":
@@ -483,6 +526,7 @@ export default function SectionEditor({ section, onChange, pages = [] }) {
                 return <>
                     {renderField("Heading", "heading", "text", "Fill Details")}
                     {renderField("Description", "description", "textarea", "Please provide the following information.")}
+                    {renderDynamicFields("Form Fields", "dynamicFields")}
                     {renderField("Submit Button Text", "submitText", "text", "Submit")}
                     {renderImageField("Background Image", "backgroundImage")}
                 </>;

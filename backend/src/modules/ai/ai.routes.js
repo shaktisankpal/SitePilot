@@ -1,5 +1,5 @@
 import express from "express";
-import { generateLayout, getAILogs, autoConfigureFromPrompt } from "./ai.controller.js";
+import { generateLayout, getAILogs, autoConfigureFromPrompt, helpAssistant } from "./ai.controller.js";
 import { scoreSeo, autoImproveSeo, designHealth, suggestEngagement, generateSeoMeta } from "./seo.controller.js";
 import { authChain, requireRole } from "../../middleware/auth.middleware.js";
 
@@ -14,6 +14,8 @@ router.post("/seo/auto-improve", authChain, requireRole("OWNER", "ADMIN", "DEVEL
 router.post("/seo/generate-meta", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), generateSeoMeta);
 router.post("/design/health", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), designHealth);
 router.post("/engagement/suggest", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), suggestEngagement);
+
+router.post("/help", authChain, helpAssistant);
 
 router.get("/logs", authChain, requireRole("OWNER", "ADMIN"), getAILogs);
 

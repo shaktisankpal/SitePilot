@@ -162,19 +162,22 @@ function engagementRubric(types) {
 function ensureKeywordInCopy(sections, keyword) {
     if (!keyword) return [];
     const kw = keyword.trim().toLowerCase();
-    // Already present somewhere? Then a single natural mention already satisfies density —
-    // do NOT add more (this is what caused keyword stuffing).
-    if (collectCopy(sections).toLowerCase().includes(kw)) return [];
-
-    const key = ["description", "subheading", "text"];
-    const bSec = sections.find((s) => key.some((k) => typeof s.props?.[k] === "string" && s.props[k].trim()));
-    if (!bSec) return [];
-    const k = key.find((kk) => typeof bSec.props[kk] === "string" && bSec.props[kk].trim());
-    const before = bSec.props[k];
-    const after = clampText(`${before} Discover what makes our ${kw} stand out.`, EDITABLE_PROPS[k]);
-    if (after === before) return [];
-    bSec.props[k] = after;
-    return [{ sectionId: bSec.id, type: bSec.type, propKey: k, before, after }];
+    const has = (s) => (s || "").toLowerCase().includes(kw);
+    const keys = ["description", "subheading", "text"];
+    // Add the keyword once to a body field that doesn't already contain it — this lifts
+    // density/coverage naturally without stuffing the same paragraph repeatedly.
+    for (const s of sections) {
+        for (const k of keys) {
+            const v = s.props?.[k];
+            if (typeof v === "string" && v.trim() && !has(v)) {
+                const after = clampText(`${v} Discover what makes our ${kw} stand out.`, EDITABLE_PROPS[k]);
+                if (after === v) continue;
+                s.props[k] = after;
+                return [{ sectionId: s.id, type: s.type, propKey: k, before: v, after }];
+            }
+        }
+    }
+    return [];
 }
 
 async function loadPage(req) {
@@ -363,9 +366,27 @@ export const autoImproveSeo = async (req, res) => {
             }
         }
 
+        // Structured data + meta description aren't copy edits — generate them as SEO
+        // metadata so those checks can pass too. Persisted (invisible to visitors), so it
+        // doesn't need the section "Apply" step.
+        const metaWeak = (bestFactors || []).some((f) => ["structured_data_present", "meta_desc_length"].includes(f.key) && f.status !== "good");
+        let metaGenerated = false;
+        if (metaWeak) {
+            const heroHeading = heroHeadingOf(best);
+            const metaTitle = clampText(heroHeading || page.title || "Home", 60);
+            const metaDescription = buildMetaDescription(best, keyword);
+            const jsonLd = buildJsonLd({ name: heroHeading || page.title, description: metaDescription, type: inferSchemaType(collectCopy(best)) });
+            page.seo = { metaTitle, metaDescription, keyword, jsonLd };
+            await page.save();
+            const after = await scoreOf(best);
+            steps.push({ iteration: steps.length + 1, targeted: ["structured_data_present", "meta_desc_length"], changes: [], meta: true, label: "Generated a meta description and structured data (JSON-LD).", scoreBefore: bestScore, scoreAfter: after.score });
+            bestScore = after.score; bestFactors = after.factors; metaGenerated = true;
+        }
+
         return res.json({
             success: true,
             keyword, keywordDerived: !typed,
+            metaGenerated,
             before: { score: before.score, factors: before.factors },
             after: { score: bestScore, factors: bestFactors },
             proposedSections: best,

@@ -13,6 +13,7 @@ import api from "../services/api.js";
 import Logo from "../components/Logo.jsx";
 import Avatar from "../components/Avatar.jsx";
 import ThemeToggle from "../components/ThemeToggle.jsx";
+import HelpAssistant from "../components/HelpAssistant.jsx";
 import { AVATAR_KEYS, avatarSrc } from "../utils/avatars.js";
 
 // AI Playground & Settings intentionally live on the Projects page header (not here).
@@ -295,6 +296,19 @@ export default function DashboardLayout({ children }) {
             </header>
 
             {editOpen && <EditProfileModal user={user} onClose={() => setEditOpen(false)} />}
+
+            <HelpAssistant
+                position="bottom-right"
+                context="dashboard / projects / AI playground / settings"
+                topics={[
+                    "How do I build a website?",
+                    "What do Tone, Audience and Theme Mode mean?",
+                    "What are Required Blocks?",
+                    "How do I add a custom domain?",
+                    "How do I publish my site and pick a domain?",
+                    "Where do I see my form submissions?",
+                ]}
+            />
 
             {/* Mobile nav dropdown */}
             {menuOpen && (

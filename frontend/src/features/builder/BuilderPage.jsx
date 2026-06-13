@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
-    fetchPages, fetchPage, createPage, deletePage, updateSections, saveDraft,
+    fetchPages, fetchPage, createPage, createAiPage, deletePage, updateSections, saveDraft,
     setSelectedSection, setCurrentPage, updateLocalSections, updateSectionProps,
     setActiveEditors, applyRemoteUpdate,
 } from "../../store/slices/builderSlice.js";
@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 import SectionEditor from "./SectionEditor.jsx";
 import { SECTION_MAP, globalResponsiveCss } from "../publicSite/PublicSiteRenderer.jsx";
 import ChatPanel from "./ChatPanel.jsx";
+import HelpAssistant from "../../components/HelpAssistant.jsx";
 import VersionPanel from "./VersionPanel.jsx";
 import SeoPanel from "./SeoPanel.jsx";
 import PublishModal from "./PublishModal.jsx";
@@ -118,12 +119,18 @@ export default function BuilderPage() {
 
     const handlePageSelect = (page) => { navigate(`/websites/${websiteId}/builder/${page._id}`); dispatch(setCurrentPage(page)); };
     const handleAddPage = async () => {
-        const title = prompt("Page title:");
-        if (!title) return;
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-        const res = await dispatch(createPage({ websiteId, data: { title, slug } }));
-        if (createPage.fulfilled.match(res)) { toast.success("Page created"); navigate(`/websites/${websiteId}/builder/${res.payload._id}`); }
-        else toast.error(res.payload || "Failed to create page");
+        const title = prompt("New page name (e.g. Menu, Services, Pricing):");
+        if (!title || !title.trim()) return;
+        const t = toast.loading("AI is building your page…");
+        const res = await dispatch(createAiPage({ websiteId, title: title.trim() }));
+        if (createAiPage.fulfilled.match(res)) {
+            // The new page + every existing page's navbar changed server-side → resync.
+            await dispatch(fetchPages(websiteId));
+            toast.success("Page added & linked into your navigation", { id: t });
+            navigate(`/websites/${websiteId}/builder/${res.payload._id}`);
+        } else {
+            toast.error(res.payload || "Failed to add page", { id: t });
+        }
     };
     const handleDeletePage = async (page) => {
         if (page.isHomePage) return toast.error("Cannot delete homepage");
@@ -632,7 +639,7 @@ export default function BuilderPage() {
                                                                     canEdit && dispatch(setSelectedSection(section.id));
                                                                 }}
                                                             >
-                                                                <Component props={section.props || {}} branding={tenant?.branding} websiteId={websiteId} allPages={pages} currentPage={currentPage} />
+                                                                <Component props={section.props || {}} branding={tenant?.branding} websiteId={websiteId} allPages={pages} currentPage={currentPage} onPageChange={handlePageSelect} />
                                                             </div>
                                                         )}
                                                     </Draggable>
@@ -682,6 +689,21 @@ export default function BuilderPage() {
 
                 {/* ====== Floating Overlays ====== */}
                 {websiteId && <ChatPanel websiteId={websiteId} />}
+
+                {!isFullscreen && (
+                    <HelpAssistant
+                        position="bottom-left"
+                        context="website builder"
+                        topics={[
+                            "What is a Navbar, Hero and CTA?",
+                            "How do I edit an image in the navbar?",
+                            "What does the SEO button do?",
+                            "What is version History and how do I roll back?",
+                            "How do I add a new page?",
+                            "How do I add fields to a form?",
+                        ]}
+                    />
+                )}
 
                 {
                     showPublishModal && (

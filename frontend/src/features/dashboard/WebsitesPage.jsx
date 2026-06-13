@@ -7,9 +7,11 @@ import toast from "react-hot-toast";
 import {
     Plus, Pencil, Trash2, Rocket, ExternalLink,
     CheckCircle, Clock, X, Loader2, Link as LinkIcon, FolderDot,
-    LayoutTemplate, Zap, ArrowRight, BarChart2, SquarePen, Check, Wand2, Settings, Inbox
+    LayoutTemplate, Zap, ArrowRight, BarChart2, SquarePen, Check, Wand2, Settings, Inbox, Code2
 } from "lucide-react";
 import { TEMPLATES } from "../../utils/templates.js";
+import api from "../../services/api.js";
+import { exportSiteZip } from "../../utils/exportSite.jsx";
 import PublishModal from "../builder/PublishModal.jsx";
 import FormSubmissionsModal from "../../components/FormSubmissionsModal.jsx";
 
@@ -256,6 +258,25 @@ export default function WebsitesPage() {
     const [upgradeMessage, setUpgradeMessage] = useState("");
     const [editSite, setEditSite] = useState(null);
     const [submissionsSite, setSubmissionsSite] = useState(null);
+    const [exportingId, setExportingId] = useState(null);
+
+    const handleExport = async (site) => {
+        setExportingId(site._id);
+        const t = toast.loading("Packaging your site…");
+        try {
+            // Pull the live pages and render them with the SAME components as the preview,
+            // so the download is an exact copy of what you see in the editor.
+            const { data } = await api.get(`/builder/websites/${site._id}/pages`);
+            const pages = data.pages || [];
+            if (!pages.length) { toast.error("This project has no pages to export yet.", { id: t }); return; }
+            exportSiteZip(site, tenant?.branding || {}, pages);
+            toast.success("Code exported — an exact copy of your site ✓", { id: t });
+        } catch {
+            toast.error("Export failed.", { id: t });
+        } finally {
+            setExportingId(null);
+        }
+    };
 
     const canCreate = ["OWNER", "ADMIN"].includes(user?.role);
     const canViewSubmissions = ["OWNER", "ADMIN"].includes(user?.role);
@@ -400,10 +421,18 @@ export default function WebsitesPage() {
 
                                 {/* Body */}
                                 <div style={{ flex: 1, padding: "20px 22px 0", display: "flex", flexDirection: "column", position: "relative" }}>
-                                    {/* Title */}
-                                    <h3 className="font-display" style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.025em", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 6 }}>
-                                        {site.name}
-                                    </h3>
+                                    {/* Title + Export code */}
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+                                        <h3 className="font-display" style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.025em", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                                            {site.name}
+                                        </h3>
+                                        <button onClick={() => handleExport(site)} disabled={exportingId === site._id} title="Export the working frontend code (.zip)" className="sz-btn-soft" style={{
+                                            display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 100, flexShrink: 0,
+                                            cursor: exportingId === site._id ? "wait" : "pointer", color: "var(--text-secondary)", fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display)",
+                                        }}>
+                                            {exportingId === site._id ? <Loader2 size={13} className="animate-spin" /> : <Code2 size={13} strokeWidth={2.5} />} Export
+                                        </button>
+                                    </div>
                                     <p style={{ fontSize: 13.5, color: site.description ? "var(--text-secondary)" : "var(--text-muted)", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontStyle: site.description ? "normal" : "italic", opacity: site.description ? 1 : 0.6 }}>
                                         {site.description || "No description provided."}
                                     </p>

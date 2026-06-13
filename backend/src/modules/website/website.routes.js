@@ -8,6 +8,7 @@ import {
     publishWebsite,
     getDeployments,
     rollback,
+    exportWebsite,
 } from "./website.controller.js";
 import { authChain, requireRole } from "../../middleware/auth.middleware.js";
 
@@ -19,6 +20,7 @@ router.post("/", authChain, requireRole("OWNER", "ADMIN"), createWebsite);
 router.put("/:id", authChain, requireRole("OWNER", "ADMIN", "EDITOR"), updateWebsite);
 router.delete("/:id", authChain, requireRole("OWNER", "ADMIN"), deleteWebsite);
 router.post("/:id/publish", authChain, requireRole("OWNER", "ADMIN"), publishWebsite);
+router.get("/:id/export", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), exportWebsite);
 router.get("/:id/deployments", authChain, requireRole("OWNER", "ADMIN", "DEVELOPER"), getDeployments);
 router.post("/:id/rollback/:deploymentId", authChain, requireRole("OWNER"), rollback);
 

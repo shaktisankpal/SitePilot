@@ -232,20 +232,27 @@ export default function SeoPanel({ websiteId, pageId, open, onClose }) {
                                 <span style={{ fontSize: 20, fontWeight: 800, color: scoreColor(improve.after.score), fontFamily: "var(--font-display)" }}>{Math.round(improve.after.score)}</span>
                                 <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: "auto" }}>AI-assisted</span>
                             </div>
-                            {(improve.steps || []).flatMap((s) => s.changes).length === 0 && (
-                                <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No safe rewrites were found for this page.</p>
+                            {!improve.improved && (
+                                <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Your page already looks good — no further safe improvements were found.</p>
                             )}
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
-                                {(improve.steps || []).flatMap((s) => s.changes).map((c, i) => (
-                                    <div key={i} style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(0,0,0,0.2)" }}>
-                                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 4 }}>{c.type} · {c.propKey}</div>
-                                        <div style={{ fontSize: 11.5, color: "#f87171", textDecoration: "line-through", opacity: 0.7, lineHeight: 1.4 }}>{c.before}</div>
-                                        <div style={{ fontSize: 12, color: "#34d399", lineHeight: 1.45, marginTop: 3 }}>{c.after}</div>
-                                    </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 240, overflowY: "auto" }}>
+                                {(improve.steps || []).map((step, si) => (
+                                    step.meta ? (
+                                        <div key={`m${si}`} style={{ display: "flex", gap: 8, padding: "9px 10px", borderRadius: 9, background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)" }}>
+                                            <Check size={14} style={{ color: "#34d399", marginTop: 1, flexShrink: 0 }} />
+                                            <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.45 }}>{step.label}</span>
+                                        </div>
+                                    ) : (step.changes || []).map((c, i) => (
+                                        <div key={`${si}-${i}`} style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(0,0,0,0.2)" }}>
+                                            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 4 }}>{c.type} · {c.propKey}</div>
+                                            <div style={{ fontSize: 11.5, color: "#f87171", textDecoration: "line-through", opacity: 0.7, lineHeight: 1.4 }}>{c.before}</div>
+                                            <div style={{ fontSize: 12, color: "#34d399", lineHeight: 1.45, marginTop: 3 }}>{c.after}</div>
+                                        </div>
+                                    ))
                                 ))}
                             </div>
                             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                                <button onClick={applyImprove} disabled={applying || !(improve.steps || []).flatMap((s) => s.changes).length} style={btn("#0d9488", "#fff")}>
+                                <button onClick={applyImprove} disabled={applying} style={btn("#0d9488", "#fff")}>
                                     {applying ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Apply
                                 </button>
                                 <button onClick={() => setImprove(null)} style={{ ...btn("var(--bg-input)", "var(--text-secondary)", "1px solid var(--border-color)"), width: "auto", padding: "11px 14px" }}>
